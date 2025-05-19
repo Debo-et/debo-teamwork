@@ -1,0 +1,17 @@
+void install_hadoop(char *version , char *location);
+void install_Atlas(char *version, char *location);
+void install_Storm(char *version, char *location);
+void install_Ranger(char* version, char *location);
+void install_phoenix(char *version, char *location);
+void install_Solr(char* version, char *location);
+void install_kafka(const char* version, char *location);
+void install_pig(char* version, char *location);
+void install_HBase(char *version, char *location);
+void install_Tez(char* version, char *location);
+void install_flink(char* version, char *location);
+void install_zookeeper(char *version, char *location);
+void install_Presto(char* version, char *location);
+void install_hive(char* version, char *location);
+void install_spark(const char* version, char *location);
+void install_Zeppelin(char *version, char *location);
+void install_Livy(char* version, char *location);

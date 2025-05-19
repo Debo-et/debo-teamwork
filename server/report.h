@@ -1,0 +1,22 @@
+#ifndef REPORT_H
+#define REPORT_H
+char *report_hdfs();
+char *report_hbase();
+char *report_hbase();
+char *report_hive();
+char *report_kafka();
+char *report_livy();
+char *report_phoenix();
+char *report_flink();
+char *report_storm();
+char *report_pig();
+char* report_presto();
+char *report_atlas();
+char *report_ranger();
+char *report_solr();
+char *report_spark();
+char *report_tez();
+char *report_hive();
+char *report_zeppelin();
+char *report_zookeeper();
+#endif
