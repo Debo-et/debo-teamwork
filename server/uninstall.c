@@ -1254,6 +1254,7 @@ void uninstall_kafka() {
 	
 		printf( "Kafka uninstallation completed: Removed installation directory and cleaned environment variables\n");
 }
+
 void uninstall_Solr() {
 	char command[512];
 		const char *install_dir = NULL;

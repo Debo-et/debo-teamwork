@@ -8,6 +8,9 @@
 #include <ctype.h>
 #include <limits.h>
 
+#include <libxml/parser.h>
+#include <libxml/tree.h>
+
 #define MAX_LINE_LENGTH 1024
 
 static char *
@@ -1210,3 +1213,822 @@ bool handleValidationResult(ValidationResult result) {
     }
     return false;
 }
+// Helper function to check if a line contains the target key
+static bool is_key_present(const char *line, const char *key) {
+    // Skip leading whitespace
+    while (*line == ' ' || *line == '\t' || *line == '\f') {
+        line++;
+    }
+    
+    // Skip comment lines
+    if (*line == '#' || *line == '!') {
+        return false;
+    }
+    
+    // Check for key match
+    const char *k = key;
+    while (*k != '\0') {
+        if (*line != *k) {
+            return false;
+        }
+        line++;
+        k++;
+    }
+    
+    // Verify separator after key
+    return (*line == '=' || *line == ':' || *line == ' ' || 
+            *line == '\t' || *line == '\f' || *line == '\0' || 
+            *line == '\r' || *line == '\n');
+}
+
+// Main configuration function
+int configure_hadoop_property(const char *file_path, const char *key, const char *value) {
+    FILE *fp = fopen(file_path, "r");
+    if (!fp) {
+        perror("❌ Error opening file");
+        return -1;
+    }
+
+    // Read all lines into memory
+    char **lines = NULL;
+    size_t line_count = 0;
+    char buffer[1024];
+    bool key_found = false;
+    int status = 0; // 0=success, -1=error
+
+    while (fgets(buffer, sizeof(buffer), fp)) {
+        // Allocate space for new line pointer
+        char **new_lines = realloc(lines, (line_count + 1) * sizeof(char *));
+        if (!new_lines) {
+            status = -1;
+            goto CLEANUP_READ;
+        }
+        lines = new_lines;
+
+        // Check for key presence and update if found
+        if (!key_found && is_key_present(buffer, key)) {
+            lines[line_count] = malloc(strlen(key) + strlen(value) + 3);
+            if (!lines[line_count]) {
+                status = -1;
+                goto CLEANUP_READ;
+            }
+            sprintf(lines[line_count], "%s=%s\n", key, value);
+            key_found = true;
+        } 
+        else {
+            // Preserve existing line
+            lines[line_count] = strdup(buffer);
+            if (!lines[line_count]) {
+                status = -1;
+                goto CLEANUP_READ;
+            }
+        }
+        line_count++;
+    }
+
+    if (ferror(fp)) {
+        perror("❌ Error reading file");
+        status = -1;
+        goto CLEANUP_READ;
+    }
+    fclose(fp);
+    fp = NULL;
+
+    // Append new key-value pair if not found
+    if (!key_found) {
+        char **new_lines = realloc(lines, (line_count + 1) * sizeof(char *));
+        if (!new_lines) {
+            status = -1;
+            goto CLEANUP_READ;
+        }
+        lines = new_lines;
+        
+        lines[line_count] = malloc(strlen(key) + strlen(value) + 3);
+        if (!lines[line_count]) {
+            status = -1;
+            goto CLEANUP_READ;
+        }
+        sprintf(lines[line_count], "%s=%s\n", key, value);
+        line_count++;
+    }
+
+    // Write updated content back to file
+    fp = fopen(file_path, "w");
+    if (!fp) {
+        perror("❌ Error opening file for writing");
+        status = -1;
+        goto CLEANUP_READ;
+    }
+
+    for (size_t i = 0; i < line_count; i++) {
+        if (fputs(lines[i], fp) == EOF) {
+            perror("❌ Error writing to file");
+            status = -1;
+            break;
+        }
+    }
+
+    // Cleanup resources
+CLEANUP_READ:
+    if (fp) fclose(fp);
+    if (lines) {
+        for (size_t i = 0; i < line_count; i++) {
+            if (lines[i]) free(lines[i]);
+        }
+        free(lines);
+    }
+    return status;
+}
+
+int updateHadoopConfigXML(const char *filePath, const char *parameterName, const char *parameterValue) {
+    // Initialize libxml2
+    xmlInitParser();
+    LIBXML_TEST_VERSION
+
+    // Check file accessibility
+    FILE *file = fopen(filePath, "r");
+    if (!file) {
+        switch (errno) {
+            case ENOENT: return 1;  // File not found
+            case EACCES: return 2;  // Permission denied
+            default: return 3;      // Other errors
+        }
+    }
+    fclose(file);
+
+    xmlDoc *doc = NULL;
+    xmlNode *root = NULL;
+    int retCode = 0;
+    int found = 0;
+
+    // Parse XML document
+    doc = xmlReadFile(filePath, NULL, 0);
+    if (!doc) {
+        xmlErrorPtr err = xmlGetLastError();
+        if (err && err->code == XML_ERR_DOCUMENT_EMPTY) {
+            // Create new document for empty file
+            doc = xmlNewDoc(BAD_CAST "1.0");
+            if (!doc) {
+                xmlCleanupParser();
+                return 4;  // Memory allocation failure
+            }
+            root = xmlNewNode(NULL, BAD_CAST "configuration");
+            if (!root) {
+                xmlFreeDoc(doc);
+                xmlCleanupParser();
+                return 4;
+            }
+            xmlDocSetRootElement(doc, root);
+        } else {
+            xmlCleanupParser();
+            return 5;  // XML parse error
+        }
+    }
+
+    // Get root node (create if missing)
+    root = xmlDocGetRootElement(doc);
+    if (!root) {
+        root = xmlNewNode(NULL, BAD_CAST "configuration");
+        if (!root) {
+            xmlFreeDoc(doc);
+            xmlCleanupParser();
+            return 4;
+        }
+        xmlDocSetRootElement(doc, root);
+    }
+
+    // Validate root node name
+    if (xmlStrcmp(root->name, BAD_CAST "configuration")) {
+        xmlFreeDoc(doc);
+        xmlCleanupParser();
+        return 6;  // Invalid root node
+    }
+
+    // Search and update existing properties
+    for (xmlNode *prop = root->children; prop; prop = prop->next) {
+        if (prop->type != XML_ELEMENT_NODE || xmlStrcmp(prop->name, BAD_CAST "property"))
+            continue;
+
+        xmlNode *nameNode = NULL;
+        xmlNode *valueNode = NULL;
+        
+        // Find name and value nodes
+        for (xmlNode *child = prop->children; child; child = child->next) {
+            if (child->type != XML_ELEMENT_NODE) continue;
+            if (!xmlStrcmp(child->name, BAD_CAST "name")) 
+                nameNode = child;
+            else if (!xmlStrcmp(child->name, BAD_CAST "value")) 
+                valueNode = child;
+        }
+
+        // Check parameter name match
+        xmlChar *nameContent = nameNode ? xmlNodeGetContent(nameNode) : NULL;
+        if (nameContent && !xmlStrcmp(nameContent, BAD_CAST parameterName)) {
+            found = 1;
+            if (valueNode) {
+                // Update existing value
+                xmlNodeSetContent(valueNode, BAD_CAST parameterValue);
+            } else {
+                // Add missing value node
+                valueNode = xmlNewTextChild(prop, NULL, BAD_CAST "value", BAD_CAST parameterValue);
+                if (!valueNode) retCode = 4;
+            }
+        }
+        if (nameContent) xmlFree(nameContent);
+    }
+
+    // Add new property if not found
+    if (!found && !retCode) {
+        xmlNode *newProp = xmlNewNode(NULL, BAD_CAST "property");
+        if (!newProp) {
+            retCode = 4;
+        } else {
+            xmlNode *nameNode = xmlNewTextChild(newProp, NULL, BAD_CAST "name", BAD_CAST parameterName);
+            xmlNode *valueNode = xmlNewTextChild(newProp, NULL, BAD_CAST "value", BAD_CAST parameterValue);
+            
+            if (!nameNode || !valueNode) {
+                xmlFreeNode(newProp);
+                retCode = 4;
+            } else {
+                xmlAddChild(root, newProp);
+            }
+        }
+    }
+
+    // Save changes if no errors
+    if (!retCode) {
+        if (xmlSaveFormatFile(filePath, doc, 1) < 0)
+            retCode = 7;  // File save error
+    }
+
+    // Cleanup resources
+    xmlFreeDoc(doc);
+    xmlCleanupParser();
+    return retCode;
+}
+
+
+/* Helper functions to detect OS */
+int is_redhat() {
+    struct stat st;
+    return (stat("/etc/redhat-release", &st) == 0);
+}
+
+int is_debian() {
+    struct stat st;
+    return (stat("/etc/debian_version", &st) == 0);
+}
+
+void trim_whitespace(char *str) {
+    char *end;
+
+    // Trim leading space
+    while (*str == ' ' || *str == '\t') {
+        str++;
+    }
+
+    if (*str == 0) {
+        return;
+    }
+
+    // Trim trailing space
+    end = str + strlen(str) - 1;
+    while (end > str && (*end == ' ' || *end == '\t' || *end == '\n' || *end == '\r')) {
+        end--;
+    }
+    *(end + 1) = 0;
+}
+
+char *trim(char *str) {
+    char *end;
+
+    // Trim leading spaces
+    while (isspace((unsigned char)*str)) str++;
+
+    // Trim trailing spaces
+    if (*str == 0) return str; // All spaces?
+
+    end = str + strlen(str) - 1;
+    while (end > str && isspace((unsigned char)*end)) end--;
+
+    // Null-terminate the string
+    *(end + 1) = '\0';
+
+    return str;
+  }
+
+int mkdir_p(const char *path) {
+    char tmp[MAX_PATH_LEN];
+    char *p = NULL;
+    size_t len;
+
+    strncpy(tmp, path, sizeof(tmp));
+    tmp[sizeof(tmp) - 1] = '\0';
+    len = strlen(tmp);
+    if (len == 0) return -1;
+    if (tmp[len - 1] == '/') {
+        tmp[len - 1] = '\0';
+    }
+
+    for (p = tmp + 1; *p; p++) {
+        if (*p == '/') {
+            *p = '\0';
+            if (mkdir(tmp, S_IRWXU) != 0 && errno != EEXIST) {
+                return -1;
+            }
+            *p = '/';
+        }
+    }
+    if (mkdir(tmp, S_IRWXU) != 0 && errno != EEXIST) {
+        return -1;
+    }
+    return 0;
+}
+
+char* generate_regex_pattern(const char* canonical_name) {
+    char* copy = strdup(canonical_name);
+    if (!copy) return NULL;
+
+    int num_parts = 1;
+    for (char* p = copy; *p; p++) {
+        if (*p == '.') num_parts++;
+    }
+
+    char** parts = malloc(num_parts * sizeof(char*));
+    if (!parts) {
+        free(copy);
+        return NULL;
+    }
+
+    int i = 0;
+    char* token = strtok(copy, ".");
+    while (token != NULL) {
+        parts[i++] = token;
+        token = strtok(NULL, ".");
+    }
+
+    size_t regex_len = 2; // For ^ and $
+    regex_len += (i - 1) * strlen("[._-]+");
+    for (int j = 0; j < i; j++) {
+        regex_len += strlen(parts[j]);
+    }
+
+    // Check for potential overflow when adding 1 to regex_len
+    if (regex_len > SIZE_MAX - 1) {
+        fprintf(stderr, "Error: regex_len is too large\n");
+        free(copy);
+        free(parts);
+        return NULL;
+    }
+
+    size_t needed = regex_len + 1;
+    // Check if the needed size exceeds system's maximum allowed allocation size
+    if (needed > (size_t)SSIZE_MAX) {
+        fprintf(stderr, "Error: regex pattern exceeds maximum allowed size\n");
+        free(copy);
+        free(parts);
+        return NULL;
+    }
+
+    char* regex_pattern = malloc(needed);
+    if (!regex_pattern) {
+        free(copy);
+        free(parts);
+        return NULL;
+    }
+    regex_pattern[0] = '\0';
+
+    strcat(regex_pattern, "^");
+    for (int j = 0; j < i; j++) {
+        strcat(regex_pattern, parts[j]);
+        if (j < i - 1) {
+            strcat(regex_pattern, "[._-]+");
+        }
+    }
+    strcat(regex_pattern, "$");
+
+    free(copy);
+    free(parts);
+    return regex_pattern;
+}
+
+bool isPositiveInteger(const char *value) {
+    char *end;
+    long num = strtol(value, &end, 10);
+    return *end == '\0' && num > 0;
+}
+
+bool isValidPort(const char *value) {
+    char *end;
+    long port = strtol(value, &end, 10);
+    return *end == '\0' && port > 0 && port <= 65535;
+}
+
+bool isValidBoolean(const char *value) {
+    return strcmp(value, "true") == 0 || strcmp(value, "false") == 0;
+}
+
+bool isValidHostPort(const char *value) {
+    char *colon = strchr(value, ':');
+    if (!colon) return false;
+    return isValidPort(colon + 1);
+}
+
+bool isDataSize(const char *value) {
+    char *end;
+    strtol(value, &end, 10);
+    if (*end == '\0') return true;
+    
+    if (end == value) return false;
+    return tolower(*end) == 'k' || tolower(*end) == 'm' || 
+           tolower(*end) == 'g' || tolower(*end) == 't';
+}
+
+bool isValidDuration(const char *value) {
+    char *end;
+    long num = strtol(value, &end, 10);
+    if (num <= 0) return false;
+    if (*end == '\0') return true; // Assume seconds if no unit
+    if (strlen(end) != 1) return false;
+    char unit = tolower(*end);
+    return (unit == 's' || unit == 'm' || unit == 'h' || unit == 'd');
+}
+
+bool isValidCommaSeparatedList(const char *value) {
+    if (strlen(value) == 0) return false;
+    char *copy = strdup(value);
+    char *token = strtok(copy, ",");
+    while (token != NULL) {
+        if (strlen(token) == 0) {
+            free(copy);
+            return false;
+        }
+        token = strtok(NULL, ",");
+    }
+    free(copy);
+    return true;
+}
+
+bool isNonNegativeInteger(const char *value) {
+    char *end;
+    long num = strtol(value, &end, 10);
+    return *end == '\0' && num >= 0;
+}
+
+// New helper function for comma-separated host:port lists
+bool isValidHostPortList(const char *value) {
+    char *copy = strdup(value);
+    char *token = strtok(copy, ",");
+    bool valid = true;
+    
+    while (token != NULL) {
+        char *colon = strchr(token, ':');
+        if (!colon) {
+            valid = false;
+            break;
+        }
+        if (!isValidPort(colon + 1)) {
+            valid = false;
+            break;
+        }
+        token = strtok(NULL, ",");
+    }
+    
+    free(copy);
+    return valid;
+}
+
+// New helper for URL validation
+bool isValidUrl(const char *value) {
+    return strncmp(value, "http://", 7) == 0 || 
+           strncmp(value, "https://", 8) == 0 ||
+           strncmp(value, "jceks://", 8) == 0;
+}
+
+// New helper for directory/file paths
+bool isValidPath(const char *value) {
+    return strlen(value) > 0 && value[0] != '\0';
+}
+
+
+
+// HBase-specific helper functions
+bool isValidHBaseDuration(const char *value) {
+    char *end;
+    long num = strtol(value, &end, 10);
+    if (num <= 0) return false;
+    if (*end == '\0') return true; // Assume milliseconds
+    if (strlen(end) > 2) return false;
+    
+    // Allow ms/s/min/h/d suffixes
+    return strcmp(end, "ms") == 0 || strcmp(end, "s") == 0 ||
+           strcmp(end, "min") == 0 || strcmp(end, "h") == 0 ||
+           strcmp(end, "d") == 0;
+}
+
+bool isValidPrincipalFormat(const char *value) {
+    return strchr(value, '/') != NULL && strchr(value, '@') != NULL;
+}
+
+bool isDataSizeWithUnit(const char *value) {
+    char *end;
+    strtol(value, &end, 10);
+    if (*end == '\0') return true; // No unit = bytes
+    if (end == value) return false;
+    return tolower(*end) == 'k' || tolower(*end) == 'm' || 
+           tolower(*end) == 'g' || tolower(*end) == 't';
+}
+
+bool isValidEncoding(const char *value) {
+    // Supported encodings - extend as needed
+    const char *valid_encodings[] = {"UTF-8", "UTF-16", "ISO-8859-1", "ASCII"};
+    for (size_t i = 0; i < sizeof(valid_encodings)/sizeof(valid_encodings[0]); i++) {
+        if (strcmp(value, valid_encodings[i]) == 0) return true;
+    }
+    return false;
+}
+
+bool isValidSparkDuration(const char *value) {
+    char *end;
+    long num = strtol(value, &end, 10);
+    if (num <= 0) return false;
+    if (*end == '\0') return true; // Assume seconds
+    if (strlen(end) > 2) return false;
+    
+    // Allow s/min/h/d suffixes
+    return strcmp(end, "s") == 0 || strcmp(end, "min") == 0 || 
+           strcmp(end, "h") == 0 || strcmp(end, "d") == 0 ||
+           strcmp(end, "ms") == 0;
+}
+
+bool isValidSparkMasterFormat(const char *value) {
+    return strncmp(value, "local", 5) == 0 ||
+           strncmp(value, "yarn", 4) == 0 ||
+           strncmp(value, "spark://", 8) == 0 ||
+           strncmp(value, "k8s://", 6) == 0;
+}
+
+
+// Kafka-specific helper functions
+bool isHostPortPair(const char *value) {
+    char *colon = strchr(value, ':');
+    return colon && isValidPort(colon + 1);
+}
+
+bool isValidCompressionType(const char *value) {
+    const char *valid[] = {"none", "gzip", "snappy", "lz4", "zstd", NULL};
+    for (int i = 0; valid[i]; i++)
+        if (strcmp(value, valid[i]) == 0) return true;
+    return false;
+}
+
+bool isSecurityProtocolValid(const char *value) {
+    const char *valid[] = {"PLAINTEXT", "SSL", "SASL_PLAINTEXT", "SASL_SSL", NULL};
+    for (int i = 0; valid[i]; i++)
+        if (strcmp(value, valid[i]) == 0) return true;
+    return false;
+}
+
+bool isSaslMechanismValid(const char *value) {
+    const char *valid[] = {"PLAIN", "SCRAM-SHA-256", "SCRAM-SHA-512", "GSSAPI", NULL};
+    for (int i = 0; valid[i]; i++)
+        if (strcmp(value, valid[i]) == 0) return true;
+    return false;
+}
+
+bool isAutoOffsetResetValid(const char *value) {
+    const char *valid[] = {"earliest", "latest", "none", NULL};
+    for (int i = 0; valid[i]; i++)
+        if (strcmp(value, valid[i]) == 0) return true;
+    return false;
+}
+
+// Helper function to validate credential file format
+bool isValidCredentialFile(const char *value) {
+    return strncmp(value, "jceks://file/", 13) == 0;
+}
+
+
+// Flink-specific helper functions
+bool isMemorySize(const char *value) {
+    char *end;
+    strtol(value, &end, 10);
+    if (*end == '\0') return true; // bytes
+    if (end == value) return false;
+    return tolower(*end) == 'k' || tolower(*end) == 'm' || 
+           tolower(*end) == 'g' || tolower(*end) == 't';
+}
+
+bool isValidURI(const char *value) {
+    return strstr(value, "://") != NULL && strlen(value) > 5;
+}
+
+bool isFraction(const char *value) {
+    char *end;
+    float num = strtof(value, &end);
+    return *end == '\0' && num >= 0.0f && num <= 1.0f;
+}
+
+
+// ZooKeeper-specific helper functions
+bool isTimeMillis(const char *value) {
+    char *end;
+    long ms = strtol(value, &end, 10);
+    if (*end == '\0') return ms > 0;
+    if (strcmp(end, "ms") == 0) return ms > 0;
+    return false;
+}
+
+bool isSizeWithUnit(const char *value) {
+    char *end;
+    strtol(value, &end, 10);
+    if (*end == '\0') return true;
+    return end[0] == 'K' || end[0] == 'M' || end[0] == 'G';
+}
+
+bool isCommaSeparatedList(const char *value) {
+    if (strlen(value) == 0) return false;
+    char *copy = strdup(value);
+    char *token = strtok(copy, ",");
+    while (token != NULL) {
+        if (strlen(token) == 0) {
+            free(copy);
+            return false;
+        }
+        token = strtok(NULL, ",");
+    }
+    free(copy);
+    return true;
+}
+
+// Storm-specific helper functions
+bool isMemorySizeMB(const char *value) {
+    char *end;
+     (void)strtol(value, &end, 10);
+    if (*end == '\0') return true;
+    if (strcasecmp(end, "mb") == 0) return true;
+    return false;
+}
+
+bool isTimeSeconds(const char *value) {
+    char *end;
+    long seconds = strtol(value, &end, 10);
+    return *end == '\0' && seconds > 0;
+}
+
+bool isPercentage(const char *value) {
+    char *end;
+    float pct = strtof(value, &end);
+    return *end == '\0' && pct >= 0.0f && pct <= 100.0f;
+}
+
+bool isJDBCURL(const char *value) {
+    return strstr(value, "jdbc:") != NULL && strlen(value) > 10;
+}
+
+bool isValidCompressionCodec(const char *value) {
+    const char *valid[] = {"NONE", "SNAPPY", "GZIP", "LZO", "ZSTD", NULL};
+    for (int i = 0; valid[i]; i++)
+        if (strcmp(value, valid[i]) == 0) return true;
+    return false;
+}
+
+
+bool isURL(const char *value) {
+    return strstr(value, "://") != NULL && strlen(value) > 8;
+}
+
+bool isJCEKSPath(const char *value) {
+    return strstr(value, "jceks://file/") == value;
+}
+
+bool isValidAuthType(const char *value) {
+    const char *valid[] = {"kerberos", "ldap", "jwt", "basic", "none", NULL};
+    for (int i = 0; valid[i]; i++)
+        if (strcmp(value, valid[i]) == 0) return true;
+    return false;
+}
+
+bool isValidSparkMaster(const char *value) {
+    return strncmp(value, "local", 5) == 0 ||
+           strncmp(value, "yarn", 4) == 0 ||
+           strncmp(value, "k8s://", 5) == 0 ||
+           strstr(value, "spark://") != NULL;
+}
+
+// Solr-specific helper functions
+bool isValidZKHostList(const char *value) {
+    char *copy = strdup(value);
+    char *token = strtok(copy, ",");
+    bool valid = true;
+    
+    while (token != NULL) {
+        char *colon = strchr(token, ':');
+        if (!colon || !isValidPort(colon + 1)) {
+            valid = false;
+            break;
+        }
+        token = strtok(NULL, ",");
+    }
+    
+    free(copy);
+    return valid;
+}
+
+bool isValidLogLevel(const char *value) {
+    const char *levels[] = {"TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL", NULL};
+    for (int i = 0; levels[i]; i++) {
+        if (strcmp(value, levels[i]) == 0) return true;
+    }
+    return false;
+}
+
+bool isValidContextPath(const char *value) {
+    return value[0] == '/' && strchr(value, ' ') == NULL && 
+           strchr(value, ';') == NULL && strchr(value, '\\') == NULL;
+}
+
+bool isZKQuorum(const char *value) {
+    char *copy = strdup(value);
+    char *token = strtok(copy, ",");
+    bool valid = true;
+    
+    while (token != NULL) {
+        char *colon = strchr(token, ':');
+        if (!colon || !isValidPort(colon + 1)) {
+            valid = false;
+            break;
+        }
+        token = strtok(NULL, ",");
+    }
+    
+    free(copy);
+    return valid;
+}
+
+// Ranger-specific helper functions
+bool isSSLProtocolValid(const char *value) {
+    const char *valid[] = {"TLSv1.2", "TLSv1.3", NULL};
+    for (int i = 0; valid[i]; i++)
+        if (strstr(value, valid[i]) != NULL) return true;
+    return false;
+}
+
+bool isComponentValid(const char *component) {
+    const char *valid[] = {"hdfs", "hive", "hbase", "kafka", "yarn", NULL};
+    for (int i = 0; valid[i]; i++)
+        if (strcmp(component, valid[i]) == 0) return true;
+    return false;
+}
+
+bool isURLValid(const char *value) {
+    return strstr(value, "://") != NULL && strlen(value) > 8;
+}
+
+bool isRatio(const char *value) {
+    char *end;
+    float ratio = strtof(value, &end);
+    return *end == '\0' && ratio >= 0.0f && ratio <= 1.0f;
+}
+
+bool isCompressionCodec(const char *value) {
+    const char *valid[] = {"none", "gzip", "snappy", "lzo", "bzip2", "zstd", NULL};
+    for (int i = 0; valid[i]; i++)
+        if (strcasecmp(value, valid[i]) == 0) return true;
+    return false;
+}
+
+bool isExecutionModeValid(const char *value) {
+    return strcasecmp(value, "mapreduce") == 0 || strcasecmp(value, "tez") == 0;
+}
+
+bool isTimezoneValid(const char *value) {
+    // Simple check for format (more comprehensive validation would require TZ database lookup)
+    return strchr(value, '/') != NULL && strlen(value) > 3;
+}
+
+
+// Atlas-specific helper functions
+bool isHostPortList(const char *value) {
+    char *copy = strdup(value);
+    char *token = strtok(copy, ",");
+    bool valid = true;
+    
+    while (token != NULL) {
+        char *colon = strchr(token, ':');
+        if (!colon || !isValidPort(colon + 1)) {
+            valid = false;
+            break;
+        }
+        token = strtok(NULL, ",");
+    }
+    
+    free(copy);
+    return valid;
+}
+
+
+bool fileExists(const char *path) {
+    return access(path, R_OK) == 0;
+}
+

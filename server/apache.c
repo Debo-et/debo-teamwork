@@ -621,103 +621,7 @@ static void install_component(Component comp, char *version) {
     }
 } ////////////////////////////////////////// action start stop restart ///////////////
 
-/**
- * Retrieves the services associated with a given component.
- *
- * @param comp The component to query.
- * @return A pointer to the ComponentServices structure, or NULL if not found.
- */
-const ComponentServices* get_component_services(Component comp) {
-    for (size_t i = 0; i < sizeof(COMPONENT_SERVICES_MAP)/sizeof(COMPONENT_SERVICES_MAP[0]); i++) {
-        if (COMPONENT_SERVICES_MAP[i].component == comp) {
-            return &COMPONENT_SERVICES_MAP[i];
-        }
-    }
-    return NULL;
-}
 
-/**
- * Checks the status of a service on a given OS.
- *
- * @param os The operating system type.
- * @param service The name of the service to check.
- * @param check_active If true, checks if the service is active; otherwise, checks if inactive.
- * @return True if the service matches the expected status, otherwise false.
- */
-bool check_service_status(OS_TYPE os, const char *service, bool check_active) {
-    char cmd[256];
-    int status;
-    const char *status_check = check_active ? "active" : "inactive";
-    
-    switch(os) {
-        case OS_DEBIAN:
-        case OS_REDHAT:
-            snprintf(cmd, sizeof(cmd), "systemctl is-active %s | grep -q %s",
-                    service, status_check);
-            break;
-        case OS_MACOS:
-            snprintf(cmd, sizeof(cmd), "brew services list | awk '/%s/ {print $2}' | grep -q %s",
-                    service, check_active ? "started" : "stopped");
-            break;
-        default:
-            snprintf(cmd, sizeof(cmd), "service %s status 2>&1 | grep -q %s",
-                    service, check_active ? "running" : "stopped");
-    }
-   // if (port || host )
-    	// Check all connection parameters are present
-    //	status = execute_remote_command(host, user, password, cmd);
-   // else
-        status = executeSystemCommand(cmd);
-    return WIFEXITED(status) && WEXITSTATUS(status) == 0;
-}
-
-/**
- * Executes a start, stop, or restart action on a service.
- *
- * @param os The operating system type.
- * @param service The name of the service.
- * @param action The action to perform (start, stop, or restart).
- * @return True if the action succeeds, otherwise false.
- */
-bool execute_service_action(OS_TYPE os, const char *service, Action action) {
-    char command[256];
-    int status;
-    
-    switch(os) {
-        case OS_DEBIAN:
-        case OS_REDHAT:
-            snprintf(command, sizeof(command), "systemctl %s %s",
-                    (action == RESTART) ? "restart" : 
-                    (action == START) ? "start" : "stop",
-                    service);
-            break;
-        case OS_MACOS:
-            snprintf(command, sizeof(command), "brew services %s %s",
-                    (action == RESTART) ? "restart" : 
-                    (action == START) ? "start" : "stop",
-                    service);
-            break;
-        default:
-            snprintf(command, sizeof(command), "service %s %s",
-                    service,
-                    (action == RESTART) ? "restart" : 
-                    (action == START) ? "start" : "stop");
-    }
-
-   // if (port || host )
-    	// Check all connection parameters are present
-    //	status = execute_remote_command(host, user, password, command);
-    //else
-        status = system(command);
-
-    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) return false;
-    
-    // Verify action success
-    if (action == RESTART) {
-        return check_service_status(os, service, true);
-    }
-    return check_service_status(os, service, action == START);
-}
 
 /**
  * Performs an action (start, stop, restart) on all services of a given component.
@@ -776,6 +680,9 @@ static bool component_action(Component comp, Action action) {
              return true;
         case PIG:
              pig_action(action);
+             return true;
+        case PRESTO:
+             Presto_action(action);
              return true;
         default:
             fprintf(stderr, "Error: Unknown Hadoop component provided.\n");
@@ -923,7 +830,7 @@ ConfigStatus configure(Component component, char* param, char* value) {
             ConfigResult *hbaseResult= process_hbase_config(param,value);
             if (hbaseResult == NULL)
                     fprintf(stderr,"configuration parameter not supported yet");
-            ConfigStatus hbaseStatus =  update_hbase_config(hbaseResult->canonical_name, hbaseResult->value);
+            ConfigStatus hbaseStatus =  update_hbase_config(hbaseResult->canonical_name, hbaseResult->value, hbaseResult->config_file);
             handle_result(hbaseStatus);
             break;
         case SPARK:
@@ -996,10 +903,10 @@ ConfigStatus configure(Component component, char* param, char* value) {
             ConfigStatus pigStatus = update_pig_config(pigConf->canonical_name, pigConf->value);
             handle_result(pigStatus);
             break;
-        case PRESTO:
-            return modify_oozie_config(param,value);
-        case ATLAS:
-            return modify_oozie_config(param,value);
+       // case PRESTO:
+         //   return modify_oozie_config(param,value);
+        //case ATLAS:
+          //  return modify_oozie_config(param,value);
         case RANGER:
             ConfigResult *rangerConf = process_zeppelin_config_param(param,value);
             if (rangerConf == NULL)
@@ -1018,8 +925,8 @@ ConfigStatus configure(Component component, char* param, char* value) {
             handle_result(livyStatus);
             break;
         case PHOENIX:
-            ConfigStatus phoenixStatus = update_phoenix_config(param,value);
-            handle_result(phoenixStatus);
+      //      ConfigStatus phoenixStatus = update_phoenix_config(param,value);
+          //  handle_result(phoenixStatus);
             break;
         case SOLR:
             ValidationResult validationSolr = validateSolrConfigParam(param, value);
@@ -1060,9 +967,7 @@ ConfigStatus configure(Component component, char* param, char* value) {
 
 
 void report(Component comp) {
-const ComponentServices *cs = get_component_services(comp);
-const char *service = cs->services[0];
-OS_TYPE os = detect_os();
+
 printBorder("┌", "┐", YELLOW);
     switch(comp) {
         case HDFS:
@@ -1072,8 +977,7 @@ printBorder("┌", "┐", YELLOW);
                 printBorder("└", "┘", YELLOW);
             break;
         case YARN:
-            if (is_component_installed(comp) &&
-            check_service_status(os, service, true)) 
+            if (is_component_installed(comp)) 
             {
                 printTextBlock("YARN status", BOLD GREEN, YELLOW);
                 execute_and_print("yarn node -list");
@@ -1127,8 +1031,7 @@ printBorder("┌", "┐", YELLOW);
                 printBorder("└", "┘", YELLOW);
             break;
         case HUE:
-            if (is_component_installed(comp) &&
-            check_service_status(os, service, true)) 
+            if (is_component_installed(comp)) 
             {
                 printTextBlock("HUE status", BOLD GREEN, YELLOW);
                 execute_and_print("sudo systemctl status hue");
@@ -1146,8 +1049,7 @@ printBorder("┌", "┐", YELLOW);
                 printBorder("└", "┘", YELLOW);
             break;
         case OOZIE:
-            if (is_component_installed(comp) &&
-            check_service_status(os, service, true)) 
+            if (is_component_installed(comp)) 
             {
                 printTextBlock("OOZIE status", BOLD GREEN, YELLOW);
                 execute_and_print("oozie admin -status");
@@ -1180,6 +1082,12 @@ printBorder("┌", "┐", YELLOW);
                 printTextBlock("RANGER status", BOLD GREEN, YELLOW);
                 printBorder("├", "┤", YELLOW);
                 printTextBlock(report_ranger(), CYAN, YELLOW);
+                printBorder("└", "┘", YELLOW);
+                break;
+        case LIVY:
+                printTextBlock("LIVY status", BOLD GREEN, YELLOW);
+                printBorder("├", "┤", YELLOW);
+                printTextBlock(report_livy(), CYAN, YELLOW);
                 printBorder("└", "┘", YELLOW);
             break;        
         /* Add cases for all components */

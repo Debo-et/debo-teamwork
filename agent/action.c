@@ -514,35 +514,17 @@ static int execute_command(const char* script_path, const char* arg) {
 }
 
 void livy_action(Action a) {
-    const char *candidate_paths[] = {
-        getenv("LIVY_HOME"),  // Check LIVY_HOME first
-        "/opt/livy",          // Red Hat default
-        "/usr/local/livy",    // Debian default
-        NULL
-    };
-
-    const char *livy_home = NULL;
-    struct stat dir_stat;
-
-    // Search for valid installation directory
-    for (int i = 0; candidate_paths[i] != NULL; i++) {
-        const char *path = candidate_paths[i];
-        if (path == NULL) continue;
-
-        if (stat(path, &dir_stat) == 0 && S_ISDIR(dir_stat.st_mode)) {
-            livy_home = path;
-            break;
-        }
-    }
-
-    if (livy_home == NULL) {
-        FPRINTF(global_client_socket,  "Livy installation not found. Checked:\n"
-                "- LIVY_HOME environment variable\n"
-                "- /opt/livy\n"
-                "- /usr/local/livy\n");
+   const char *livy_home = NULL;
+    // Detect OS distribution
+    if (access("/etc/debian_version", F_OK) == 0) {
+        livy_home = "/usr/local/livy";
+    } else if (access("/etc/redhat-release", F_OK) == 0 || 
+             access("/etc/system-release", F_OK) == 0) {
+        livy_home = "/opt/livy";
+    } else {
+        fprintf(stderr,  "Error: Unsupported Linux distribution\n");
         return;
     }
-
     // Construct and validate server script path
     char script_path[PATH_MAX];
     size_t path_len = snprintf(script_path, sizeof(script_path), "%s/bin/livy-server", livy_home);
@@ -1129,7 +1111,7 @@ void Solr_action(Action a) {
             break;
     }
 }
-#define MAX_PATH_LEN 512
+
 #define MAX_CMD_LEN 512
 
 static int execute_script_action(const char *script_path, const char *action) {

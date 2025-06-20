@@ -3,7 +3,7 @@
 ConfigStatus modify_hdfs_config(const char* param, const char* value, const char *filename);
 ConfigStatus set_ranger_config(const char *param, const char *value, const char *config_file);
 ConfigStatus modify_yarn_config(const char* param, const char* value);
-ConfigStatus update_hbase_config(const char* param, const char* value);
+ConfigStatus update_hbase_config(const char* param, const char* value, const char *config_file);
 ConfigStatus update_spark_config(const char* param, const char* value);
 ConfigStatus modify_kafka_config(const char* param, const char* value, const char *config_file);
 ConfigStatus modify_zookeeper_config(const char* param, const char* value);

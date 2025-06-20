@@ -4,7 +4,17 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include "connutil.h"
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <limits.h>
+#include <regex.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <sys/stat.h>
+#include <ctype.h>
+#include <stdbool.h>
 
 #define RESET   "\033[0m"
 #define BOLD    "\033[1m"
@@ -22,6 +32,8 @@ extern const char       *host;
 extern const char       *user;
 extern char *password ;
 
+#define MAX_PATH_LEN 1024
+#define MAX_LINE_LENGTH 8096
 
 typedef enum {
     NONE,
@@ -100,7 +112,11 @@ typedef struct PromptInterruptContext
         bool            canceled;               /* indicates whether cancellation occurred */
 } PromptInterruptContext;
 
-
+typedef struct {
+    const char *canonicalName;
+    const char *normalizedName;
+    const char *configFile;
+} ConfigParam;
 
 
 typedef struct {
@@ -169,4 +185,64 @@ int PRINTF(ClientSocket *client_sock, const char *format, ...);
 int FPRINTF(ClientSocket *client_sock, const char *format, ...);
 void handle_result(ConfigStatus status);
 bool handleValidationResult(ValidationResult result);
+bool isPositiveInteger(const char *value);
+bool isValidPort(const char *value);
+bool isValidBoolean(const char *value);
+bool isValidHostPort(const char *value);
+bool isDataSize(const char *value);
+bool isValidDuration(const char *value);
+bool isValidCommaSeparatedList(const char *value);
+bool isNonNegativeInteger(const char *value);
+bool isValidHostPortList(const char *value);
+bool isValidUrl(const char *value);
+bool isValidPath(const char *value);
+bool isValidPath(const char *value);
+bool isValidHBaseDuration(const char *value);
+bool isValidPrincipalFormat(const char *value);
+bool isDataSizeWithUnit(const char *value);
+bool isValidEncoding(const char *value);
+bool isValidSparkDuration(const char *value);
+bool isValidSparkMasterFormat(const char *value);
+bool isValidCompressionType(const char *value);
+bool isSecurityProtocolValid(const char *value);
+bool isSaslMechanismValid(const char *value);
+bool isAutoOffsetResetValid(const char *value);
+bool isValidCredentialFile(const char *value);
+bool isHostPortPair(const char *value);
+bool isMemorySize(const char *value);
+bool isValidURI(const char *value);
+bool isFraction(const char *value);
+bool isTimeMillis(const char *value);
+bool isSizeWithUnit(const char *value);
+bool isCommaSeparatedList(const char *value);
+bool isMemorySizeMB(const char *value);
+bool isTimeSeconds(const char *value);
+bool isPercentage(const char *value);
+bool isJDBCURL(const char *value);
+bool isValidCompressionCodec(const char *value);
+bool isURL(const char *value);
+bool isJCEKSPath(const char *value);
+bool isValidSparkMaster(const char *value);
+bool isValidAuthType(const char *value);
+bool isValidZKHostList(const char *value);
+bool isValidLogLevel(const char *value);
+bool isValidContextPath(const char *value);
+bool isZKQuorum(const char *value);
+bool isSSLProtocolValid(const char *value);
+bool isComponentValid(const char *component);
+bool isURLValid(const char *value);
+bool isRatio(const char *value);
+bool isCompressionCodec(const char *value);
+bool isExecutionModeValid(const char *value);
+bool isTimezoneValid(const char *value);
+bool isHostPortList(const char *value);
+bool fileExists(const char *path);
+int is_redhat();
+int is_debian();
+void trim_whitespace(char *str);
+char *trim(char *str);
+int mkdir_p(const char *path);
+char* generate_regex_pattern(const char* canonical_name);
+int configure_hadoop_property(const char *file_path, const char *key, const char *value);
+int updateHadoopConfigXML(const char *filePath, const char *parameterName, const char *parameterValue);
 #endif

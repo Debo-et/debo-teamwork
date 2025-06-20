@@ -1377,11 +1377,11 @@ void install_HBase(char *version, char *location) {
     free(java_home);
 
     // Configure HBase settings
-   (void)update_hbase_config("hbase.rootdir", "hdfs://localhost:9000/hbase");
+   (void)update_hbase_config("hbase.rootdir", "hdfs://localhost:9000/hbase", "hbase-site.xml");
    // handle_result(result);
-    (void)update_hbase_config("hbase.cluster.distributed", "true");
+    (void)update_hbase_config("hbase.cluster.distributed", "true", "hbase-site.xml");
     //handle_result(result);
-    (void)update_hbase_config("hbase.zookeeper.property.clientPort", "2181");
+    (void)update_hbase_config("hbase.zookeeper.property.clientPort", "2181", "hbase-site.xml");
     //handle_result(result);
 
     FPRINTF(global_client_socket, "HBase successfully installed to %s/hbase\n", target_dir);
@@ -1765,11 +1765,11 @@ void install_Presto(char* version, char *location) {
     // Construct download URL
     if(version)
         snprintf(url, sizeof(url), 
-             "https://repo1.maven.org/maven2/io/prestosql/presto-server/%s/presto-server-%s.tar.gz",
+             "https://repo1.maven.org/maven2/com/facebook/presto/presto-server/%s/presto-server-%s.tar.gz",
              version, version);
     else
         snprintf(url, sizeof(url), 
-             "https://repo1.maven.org/maven2/io/prestosql/presto-server/0.280/presto-server-0.280.tar.gz");
+             "https://repo1.maven.org/maven2/com/facebook/presto/presto-server/0.282/presto-server-0.282.tar.gz");
 
     // Download the archive
     snprintf(command, sizeof(command), "wget -q %s", url);
@@ -1783,7 +1783,7 @@ void install_Presto(char* version, char *location) {
     if (version)
         snprintf(command, sizeof(command), "tar -xvzf presto-server-%s.tar.gz > /dev/null", version);
     else 
-        snprintf(command, sizeof(command), "tar -xvzf presto-server-0.280.tar.gz");
+        snprintf(command, sizeof(command), "tar -xvzf presto-server-0.282.tar.gz");
 
     if (!executeSystemCommand(command)) {
         FPRINTF(global_client_socket,  "taring  faild\n");
@@ -1795,7 +1795,7 @@ void install_Presto(char* version, char *location) {
     if (version)
         snprintf(command, sizeof(command), "sudo rm -f presto-server-%s.tar.gz", version);
     else
-        snprintf(command, sizeof(command), "sudo rm -f presto-server-0.280.tar.gz");
+        snprintf(command, sizeof(command), "sudo rm -f presto-server-0.282.tar.gz");
     if (!executeSystemCommand(command)) {
         FPRINTF(global_client_socket,  "Failed to remove archive.\n");
     }
@@ -1838,7 +1838,7 @@ void install_Presto(char* version, char *location) {
     if (version)
         snprintf(command, sizeof(command), "sudo mv presto-server-%s %s", version, install_dir);
     else
-        snprintf(command, sizeof(command), "sudo mv presto-server-0.280 %s", install_dir);
+        snprintf(command, sizeof(command), "sudo mv presto-server-0.282 %s", install_dir);
 
     if (!executeSystemCommand(command)) {
         FPRINTF(global_client_socket,  "making directory  faild\n");
@@ -2010,7 +2010,7 @@ void install_spark(char* version, char *location) {
     else
         // Default to a pre-built binary version
         snprintf(url, sizeof(url), 
-            "https://dlcdn.apache.org/spark/spark-3.5.5/spark-3.5.5-bin-hadoop3.tgz");
+            "https://dlcdn.apache.org/spark/spark-3.5.6/spark-3.5.6-bin-hadoop3.tgz");
     
 
     // Download Spark archive
@@ -2027,7 +2027,7 @@ void install_spark(char* version, char *location) {
     if (version)
         snprintf(tar_cmd, sizeof(tar_cmd), "tar -xvzf spark-%s-bin-hadoop3.tgz", version);
     else 
-        snprintf(tar_cmd, sizeof(tar_cmd), "tar -xvzf spark-3.5.5-bin-hadoop3.tgz");
+        snprintf(tar_cmd, sizeof(tar_cmd), "tar -xvzf spark-3.5.6-bin-hadoop3.tgz");
     if (!executeSystemCommand(tar_cmd)) {
         FPRINTF(global_client_socket,  "Error: Failed to extract archive\n");
         return;
@@ -2037,7 +2037,7 @@ void install_spark(char* version, char *location) {
     if (version) {
         snprintf(tar_cmd, sizeof(tar_cmd), "sudo rm -f spark-%s-bin-hadoop3.tgz", version);
     } else {
-        snprintf(tar_cmd, sizeof(tar_cmd), "sudo rm -f spark-3.5.5-bin-hadoop3.tgz");
+        snprintf(tar_cmd, sizeof(tar_cmd), "sudo rm -f spark-3.5.6-bin-hadoop3.tgz");
     }
     if (!executeSystemCommand(tar_cmd)) {
         FPRINTF(global_client_socket,  "Error: Failed to remove archive\n");
@@ -2067,7 +2067,7 @@ void install_spark(char* version, char *location) {
             "sudo mv spark-%s-bin-hadoop3 %s", version, install_path);
     } else {
         snprintf(mv_cmd, sizeof(mv_cmd), 
-            "sudo mv spark-3.5.5-bin-hadoop3 %s", install_path);
+            "sudo mv spark-3.5.6-bin-hadoop3 %s", install_path);
     }
     if (!executeSystemCommand(mv_cmd)) {
         FPRINTF(global_client_socket,  "Moving failed\n");

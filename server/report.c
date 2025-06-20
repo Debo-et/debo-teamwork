@@ -9,6 +9,8 @@
 #include <arpa/inet.h>
 #include <stdbool.h>
 #include <limits.h>
+#include <unistd.h>    // Added for access()
+#include <limits.h>    // Added for PATH_MAX
 
 
 
@@ -476,39 +478,49 @@ char *report_flink() {
 
 char *report_storm() {
     const char *storm_home_env = getenv("STORM_HOME");
+    // Removed non-standard /usr/local/storm/bin entry
     const char *possible_paths[] = {
         storm_home_env,
         "/opt/storm",
         "/usr/local/storm",
-        NULL  // Sentinel to mark end of array
+        "/usr/share/storm",
+        "/opt/apache-storm",
+        "/usr/lib/storm",
+        NULL
     };
-    struct stat stat_buf;
     const char *storm_home = NULL;
+    char *error_msg = NULL;
 
-    // Check each possible path in order
+    // Check each candidate path for bin/storm executable
     for (int i = 0; possible_paths[i] != NULL; i++) {
-        // Skip if STORM_HOME is not set (i=0 and possible_paths[0] is NULL)
         if (possible_paths[i] == NULL) continue;
 
-        if (stat(possible_paths[i], &stat_buf) == 0 && S_ISDIR(stat_buf.st_mode)) {
-            storm_home = possible_paths[i];
-            break;
+        char bin_path[PATH_MAX];
+        snprintf(bin_path, sizeof(bin_path), "%s/bin/storm", possible_paths[i]);
+        
+        if (access(bin_path, F_OK) == 0) {
+            if (access(bin_path, X_OK) == 0) {
+                storm_home = possible_paths[i];
+                break;
+            } else if (error_msg == NULL) {
+                asprintf(&error_msg, "Found storm at %s but cannot execute", bin_path);
+            }
         }
     }
 
     if (storm_home == NULL) {
-        return strdup("Storm installation directory not found.");
+        return error_msg ? error_msg : strdup("Storm installation directory not found.");
     }
+    free(error_msg);  // Clean up if we had permission errors but found valid home
 
-    // Construct the storm list command with full path
+    // Construct and execute storm list command
     char command[4096];
     snprintf(command, sizeof(command), "%s/bin/storm list 2>&1", storm_home);
 
     FILE *fp = popen(command, "r");
     if (fp == NULL) {
-        return strdup("Storm is not started.");
+        return strdup("Failed to execute storm command.");
     }
-
     // Read command output into dynamically allocated buffer
     char buffer[128];
     char *output = NULL;
@@ -1149,8 +1161,10 @@ char *report_zeppelin() {
 
 
 char *report_zookeeper() {
-    const char *env_home = getenv("ZOOKEPER_HOME");
-    const char *paths[] = {env_home, "/opt/zookeper", "/usr/local/zookeper"};
+    // Corrected environment variable name (ZOOKEEPER_HOME instead of ZOOKEPER_HOME)
+    const char *env_home = getenv("ZOOKEEPER_HOME");
+    // Fixed directory spellings (zookeeper instead of zookeper)
+    const char *paths[] = {env_home, "/opt/zookeeper", "/usr/local/zookeeper"};
     struct stat st;
     const char *install_dir = NULL;
 
@@ -1165,10 +1179,11 @@ char *report_zookeeper() {
     }
 
     if (install_dir == NULL) {
-        return strdup("Zookeper installation not found.");
+        // Corrected spelling in error message
+        return strdup("ZooKeeper installation not found.");
     }
 
-    // Check if ZooKeeper is running
+    // Check if ZooKeeper is running (class name already correct)
     FILE *fp = popen("jps -l 2>/dev/null", "r");
     if (fp == NULL) {
         return strdup("Error checking ZooKeeper status.");
@@ -1185,10 +1200,11 @@ char *report_zookeeper() {
     pclose(fp);
 
     if (!is_running) {
-        return strdup("Zookeper is not started.");
+        // Corrected spelling in error message
+        return strdup("ZooKeeper is not started.");
     }
 
-    // Execute zkCli.sh command to list znodes
+    // Execute zkCli.sh command (uses corrected install_dir path)
     char command[1024];
     snprintf(command, sizeof(command), "echo 'ls /' | %s/bin/zkCli.sh -server localhost:2181 2>&1", install_dir);
 

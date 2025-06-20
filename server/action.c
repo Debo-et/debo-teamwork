@@ -10,6 +10,10 @@
 #include <errno.h>
 #include <pwd.h>
 
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 #include "utiles.h"
 
 void hadoop_action(Action a) {
@@ -158,7 +162,7 @@ void Presto_action(Action action) {
     const char* candidates[] = {
         getenv("PRESTO_HOME"),
         "/opt/Presto",
-        "/usr/local/Presto",
+        "/usr/local/presto",
         NULL
     };
 
@@ -300,6 +304,49 @@ void spark_action(Action a) {
     }
 }
 
+
+// Helper function to check if Hive is running by testing port 10000
+static bool is_hive_running() {
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0) {
+        perror("socket");
+        return false;
+    }
+
+    struct sockaddr_in serv_addr;
+    memset(&serv_addr, 0, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(10000);
+    if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
+        perror("inet_pton");
+        close(sock);
+        return false;
+    }
+
+    // Non-blocking connect to check port status
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr))) {
+        close(sock);
+        return false;
+    }
+
+    close(sock);
+    return true;
+}
+
+// Checks if Hive started successfully by testing the port
+static bool check_hive_started() {
+    const int max_attempts = 10;
+    const int wait_seconds = 2;
+    
+    for (int i = 0; i < max_attempts; i++) {
+        if (is_hive_running()) {
+            return true;
+        }
+        sleep(wait_seconds);
+    }
+    return false;
+}
+
 void hive_action(Action a) {
     const char *hive_path = NULL;
     const char *hive_home = getenv("HIVE_HOME");
@@ -344,7 +391,7 @@ void hive_action(Action a) {
     char stop_cmd[PATH_MAX * 2];
     int ret;
 
-    // Construct commands with proper shell escaping
+    // Construct commands
     snprintf(start_cmd, sizeof(start_cmd),
         "\"%s/bin/hive\" --service hiveserver2 > /dev/null 2>&1 &", hive_path);
     
@@ -355,22 +402,28 @@ void hive_action(Action a) {
         case START: {
             ret = executeSystemCommand(start_cmd);
             if (ret == -1) {
-                perror( "Failed to execute start command");
+                perror("Failed to execute start command");
                 exit(EXIT_FAILURE);
             }
             
-            printf( "Hive service started successfully\n");
+            // Verify service actually started
+            if (check_hive_started()) {
+                printf("Hive service started successfully\n");
+            } else {
+                fprintf(stderr, "Error: Hive service failed to start. Port 10000 not listening after 20 seconds.\n");
+                exit(EXIT_FAILURE);
+            }
             break;
         }
 
         case STOP: {
             ret = executeSystemCommand(stop_cmd);
             if (ret == -1) {
-                perror( "Failed to execute stop command");
+                perror("Failed to execute stop command");
                 exit(EXIT_FAILURE);
             }
             
-                printf( "Hive service stopped successfully\n");
+            printf("Hive service stopped successfully\n");
             break;
         }
 
@@ -378,18 +431,24 @@ void hive_action(Action a) {
             // Stop phase
             ret = executeSystemCommand(stop_cmd);
             if (ret == -1) {
-                perror( "Failed to stop during restart");
+                perror("Failed to stop during restart");
                 exit(EXIT_FAILURE);
             }
 
             // Start phase
             ret = executeSystemCommand(start_cmd);
             if (ret == -1) {
-                perror( "Failed to start during restart");
+                perror("Failed to start during restart");
                 exit(EXIT_FAILURE);
             }
             
-            printf( "Hive service restarted successfully\n");
+            // Verify service restarted
+            if (check_hive_started()) {
+                printf("Hive service restarted successfully\n");
+            } else {
+                fprintf(stderr, "Error: Hive service failed to restart. Port 10000 not listening after 20 seconds.\n");
+                exit(EXIT_FAILURE);
+            }
             break;
         }
 
@@ -398,6 +457,7 @@ void hive_action(Action a) {
             exit(EXIT_FAILURE);
     }
 }
+
 void Zeppelin_action(Action a) {
     // Determine Zeppelin installation path
     const char *zeppelin_home = getenv("ZEPPELIN_HOME");
@@ -514,32 +574,16 @@ static int execute_command(const char* script_path, const char* arg) {
 }
 
 void livy_action(Action a) {
-    const char *candidate_paths[] = {
-        getenv("LIVY_HOME"),  // Check LIVY_HOME first
-        "/opt/livy",          // Red Hat default
-        "/usr/local/livy",    // Debian default
-        NULL
-    };
 
     const char *livy_home = NULL;
-    struct stat dir_stat;
-
-    // Search for valid installation directory
-    for (int i = 0; candidate_paths[i] != NULL; i++) {
-        const char *path = candidate_paths[i];
-        if (path == NULL) continue;
-
-        if (stat(path, &dir_stat) == 0 && S_ISDIR(dir_stat.st_mode)) {
-            livy_home = path;
-            break;
-        }
-    }
-
-    if (livy_home == NULL) {
-        fprintf(stderr,  "Livy installation not found. Checked:\n"
-                "- LIVY_HOME environment variable\n"
-                "- /opt/livy\n"
-                "- /usr/local/livy\n");
+    // Detect OS distribution
+    if (access("/etc/debian_version", F_OK) == 0) {
+        livy_home = "/usr/local/livy";
+    } else if (access("/etc/redhat-release", F_OK) == 0 || 
+             access("/etc/system-release", F_OK) == 0) {
+        livy_home = "/opt/livy";
+    } else {
+        fprintf(stderr,  "Error: Unsupported Linux distribution\n");
         return;
     }
 
@@ -1129,7 +1173,6 @@ void Solr_action(Action a) {
             break;
     }
 }
-#define MAX_PATH_LEN 512
 #define MAX_CMD_LEN 512
 
 static int execute_script_action(const char *script_path, const char *action) {
@@ -1594,6 +1637,7 @@ void storm_action(Action a) {
             fprintf(stderr,  "Invalid action specified\n");
     }
 }
+
 void flink_action(Action action) {
     const char* flink_home = getenv("FLINK_HOME");
     struct stat dir_info;

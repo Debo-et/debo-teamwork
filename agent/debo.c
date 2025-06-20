@@ -363,8 +363,8 @@ fork_process(void)
 	result = fork();
 	if (result == 0)
 	{
-	printf("Child (PID: %d) continuing execution.\n", getpid());
-	sleep(50);
+	//printf("Child (PID: %d) continuing execution.\n", getpid());
+	//sleep(50);
 		/* fork succeeded, in child */
 		//MyProcPid = getpid();
 #ifdef LINUX_PROFILE
@@ -855,7 +855,7 @@ static void handle_command(ClientSocket *client_socket) {
             ConfigResult *hbaseResult= process_hbase_config(result[0],result[1]);
             if (hbaseResult == NULL)
                     FPRINTF(global_client_socket,"configuration parameter not supported yet");
-            ConfigStatus hbaseStatus =  update_hbase_config(hbaseResult->canonical_name, hbaseResult->value);
+            ConfigStatus hbaseStatus =  update_hbase_config(hbaseResult->canonical_name, hbaseResult->value, hbaseResult->config_file);
             handle_result(hbaseStatus);
             break;
         case CliMsg_Spark_Configure:
@@ -885,7 +885,7 @@ static void handle_command(ClientSocket *client_socket) {
             ConfigResult *flinkResult = set_flink_config(result[0],result[1]);
             if (flinkResult ==NULL)
                     FPRINTF(global_client_socket,"configuration parameter not supported yet");
-            ConfigStatus flinkStatus = update_flink_config(flinkResult->canonical_name,flinkResult->value);
+            ConfigStatus flinkStatus = update_flink_config(flinkResult->canonical_name,flinkResult->value, flinkResult->config_file);
             handle_result(flinkStatus);
             break;
         case CliMsg_ZooKeeper_Configure:
@@ -895,7 +895,7 @@ static void handle_command(ClientSocket *client_socket) {
             ConfigResult *zookeperResult = parse_zookeeper_param(result[0],result[1]);
             if (zookeperResult == NULL)
                     FPRINTF(global_client_socket,"configuration parameter not supported yet");
-            ConfigStatus zookeeperStatus = modify_zookeeper_config(zookeperResult->canonical_name, zookeperResult->value);
+            ConfigStatus zookeeperStatus = modify_zookeeper_config(zookeperResult->canonical_name, zookeperResult->value, zookeperResult->config_file);
             handle_result(zookeeperStatus);
             break;
         case CliMsg_Storm_Configure:
@@ -949,10 +949,10 @@ static void handle_command(ClientSocket *client_socket) {
             ConfigStatus livyStatus = set_livy_config(livyConf->canonical_name, livyConf->value);
             handle_result(livyStatus);
             break;
-        case CliMsg_Phoenix_Configure:
-            ConfigStatus phoenixStatus = update_phoenix_config(result[0],result[1]);
-            handle_result(phoenixStatus);
-            break;
+       // case CliMsg_Phoenix_Configure:
+         //   ConfigStatus phoenixStatus = update_phoenix_config(result[0],result[1]);
+           // handle_result(phoenixStatus);
+           // break;
         case CliMsg_Solr_Configure:
             ValidationResult validationSolr = validateSolrConfigParam(result[0], result[1]);
             if (!handleValidationResult(validationSolr))

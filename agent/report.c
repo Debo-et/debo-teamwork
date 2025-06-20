@@ -1149,8 +1149,10 @@ char *report_zeppelin() {
 
 
 char *report_zookeeper() {
-    const char *env_home = getenv("ZOOKEPER_HOME");
-    const char *paths[] = {env_home, "/opt/zookeper", "/usr/local/zookeper"};
+    // Corrected environment variable name (ZOOKEEPER_HOME instead of ZOOKEPER_HOME)
+    const char *env_home = getenv("ZOOKEEPER_HOME");
+    // Fixed directory spellings (zookeeper instead of zookeper)
+    const char *paths[] = {env_home, "/opt/zookeeper", "/usr/local/zookeeper"};
     struct stat st;
     const char *install_dir = NULL;
 
@@ -1165,10 +1167,11 @@ char *report_zookeeper() {
     }
 
     if (install_dir == NULL) {
-        return strdup("Zookeper installation not found.");
+        // Corrected spelling in error message
+        return strdup("ZooKeeper installation not found.");
     }
 
-    // Check if ZooKeeper is running
+    // Check if ZooKeeper is running (class name already correct)
     FILE *fp = popen("jps -l 2>/dev/null", "r");
     if (fp == NULL) {
         return strdup("Error checking ZooKeeper status.");
@@ -1185,10 +1188,11 @@ char *report_zookeeper() {
     pclose(fp);
 
     if (!is_running) {
-        return strdup("Zookeper is not started.");
+        // Corrected spelling in error message
+        return strdup("ZooKeeper is not started.");
     }
 
-    // Execute zkCli.sh command to list znodes
+    // Execute zkCli.sh command (uses corrected install_dir path)
     char command[1024];
     snprintf(command, sizeof(command), "echo 'ls /' | %s/bin/zkCli.sh -server localhost:2181 2>&1", install_dir);
 
