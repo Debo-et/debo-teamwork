@@ -1,17 +1,20 @@
 #include "utiles.h"
 
+void configure_target_component(Component target);
+void configure_target_remote_component(Component target, const char* host, const char* port);
 ConfigStatus modify_hdfs_config(const char* param, const char* value, const char *filename);
 ConfigStatus set_ranger_config(const char *param, const char *value, const char *config_file);
 ConfigStatus modify_yarn_config(const char* param, const char* value);
 ConfigStatus update_hbase_config(const char* param, const char* value, const char *config_file);
-ConfigStatus update_spark_config(const char* param, const char* value);
+ConfigStatus
+update_spark_config(const char *param, const char *value, const char* configuration_file);
 ConfigStatus modify_kafka_config(const char* param, const char* value, const char *config_file);
-ConfigStatus modify_zookeeper_config(const char* param, const char* value);
+ConfigStatus modify_zookeeper_config(const char* config_param, const char* value, const char *filename);
 ConfigStatus modify_storm_config(const char* param, const char* value, const char *filename);
 ConfigStatus modify_hive_config(const char* config_param, const char* value, const char* configuration_file);
 ConfigStatus set_hue_config(const char* param, const char* value);
 ConfigStatus modify_oozie_config(const char* param, const char* value);
-ConfigStatus set_livy_config(const char* param, const char* value);
+ConfigStatus set_livy_config(const char *param, const char *value, const char *filename);
 ConfigStatus update_pig_config(char *param,  char *value);
 ConfigStatus update_phoenix_config(const char* param, const char* value);
 ConfigStatus update_solr_config(const char* param, const char* value, const char* configuration_file);
@@ -20,7 +23,7 @@ ConfigResult *get_hdfs_config(const char *param, const char *value);
 ConfigResult* process_hbase_config(const char *param_name, const char *param_value);
 ConfigResult *get_spark_config(const char *param_name, const char *param_value);
 ConfigResult *validate_kafka_config_param(const char *param_name, const char *param_value);
-ConfigStatus update_flink_config(const char *param, const char *value);
+ConfigStatus update_flink_config(const char *param, const char *value , const char *filename);
 ConfigResult *parse_zookeeper_param(const char *param_name, const char *param_value);
 ConfigResult* validate_storm_config_param(const char* param_name, const char* param_value);
 ConfigResult* process_hive_parameter(const char* param_name, const char* param_value);

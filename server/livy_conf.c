@@ -241,6 +241,7 @@ ConfigResult* result = malloc(sizeof(ConfigResult));
         if (ret == 0) {
             result->canonical_name = strdup(canonical);
             result->value = strdup(input_value);
+            result->config_file = strdup(livy_params[i].config_file);
             return result;
         }
     }
@@ -275,7 +276,7 @@ ConfigResult* result = malloc(sizeof(ConfigResult));
  *   SAVE_FAILED if final file replacement fails
 
  */
-ConfigStatus set_livy_config(const char *param, const char *value) {
+ConfigStatus set_livy_config(const char *param, const char *value, const char *filename) {
     const char *livy_home = getenv("LIVY_HOME");
     char config_path[MAX_PATH_LEN] = {0};
     char temp_path[MAX_PATH_LEN] = {0};

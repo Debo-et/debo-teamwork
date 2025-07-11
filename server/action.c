@@ -57,7 +57,7 @@ void hadoop_action(Action a) {
 
     switch (a) {
         case START:
-            len = snprintf(cmd, sizeof(cmd), "\"%s/sbin/start-all.sh\"", hadoop_home);
+            len = snprintf(cmd, sizeof(cmd), "\"%s/sbin/start-all.sh\" >/dev/null 2>&1", hadoop_home);
             if (len < 0 || (size_t)len >= sizeof(cmd)) {
                 fprintf(stderr,  "Command buffer overflow detected\n");
                 return;
@@ -74,7 +74,7 @@ void hadoop_action(Action a) {
             break;
 
         case STOP:
-            len = snprintf(cmd, sizeof(cmd), "\"%s/sbin/stop-all.sh\"", hadoop_home);
+            len = snprintf(cmd, sizeof(cmd), "\"%s/sbin/stop-all.sh\" >/dev/null 2>&1", hadoop_home);
             if (len < 0 || (size_t)len >= sizeof(cmd)) {
                 fprintf(stderr,  "Command buffer overflow detected\n");
                 return;
@@ -92,7 +92,7 @@ void hadoop_action(Action a) {
 
         case RESTART: {
             // Stop phase
-            len = snprintf(cmd, sizeof(cmd), "\"%s/sbin/stop-all.sh\"", hadoop_home);
+            len = snprintf(cmd, sizeof(cmd), "\"%s/sbin/stop-all.sh\" >/dev/null 2>&1", hadoop_home);
             if (len < 0 || (size_t)len >= sizeof(cmd)) {
                 fprintf(stderr,  "Command buffer overflow detected\n");
                 return;
@@ -108,7 +108,7 @@ void hadoop_action(Action a) {
             sleep(5);
 
             // Start phase
-            len = snprintf(cmd, sizeof(cmd), "\"%s/sbin/start-all.sh\"", hadoop_home);
+            len = snprintf(cmd, sizeof(cmd), "\"%s/sbin/start-all.sh\" >/dev/null 2>&1", hadoop_home);
             if (len < 0 || (size_t)len >= sizeof(cmd)) {
                 fprintf(stderr,  "Command buffer overflow detected\n");
                 return;
@@ -180,17 +180,17 @@ void Presto_action(Action action) {
     switch(action) {
         case START:
             action_name = "start";
-            snprintf(command, sizeof(command), "sudo %s start", launcher_path);
+            snprintf(command, sizeof(command), "sudo %s start >/dev/null 2>&1", launcher_path);
             break;
 
         case STOP:
             action_name = "stop";
-            snprintf(command, sizeof(command), "sudo %s stop", launcher_path);
+            snprintf(command, sizeof(command), "sudo %s stop >/dev/null 2>&1", launcher_path);
             break;
 
         case RESTART:
             // Stop phase
-            snprintf(command, sizeof(command), "sudo %s stop", launcher_path);
+            snprintf(command, sizeof(command), "sudo %s stop >/dev/null 2>&1", launcher_path);
             if ((ret = executeSystemCommand(command))) {
                 fprintf(stderr,  "Error: Failed to stop Presto (%d)\n", ret);
                 free(launcher_path);
@@ -198,7 +198,7 @@ void Presto_action(Action action) {
             }
             // Start phase
             action_name = "restart";
-            snprintf(command, sizeof(command), "sudo %s start", launcher_path);
+            snprintf(command, sizeof(command), "sudo %s start >/dev/null 2>&1", launcher_path);
             break;
 
         default:
@@ -396,7 +396,7 @@ void hive_action(Action a) {
         "\"%s/bin/hive\" --service hiveserver2 > /dev/null 2>&1 &", hive_path);
     
     snprintf(stop_cmd, sizeof(stop_cmd),
-        "pkill -f '\"%s/bin/hive\" --service hiveserver2'", hive_path);
+        "pkill -f '\"%s/bin/hive\" --service hiveserver2' >/dev/null 2>&1", hive_path);
 
     switch (a) {
         case START: {
@@ -498,7 +498,7 @@ void Zeppelin_action(Action a) {
     
     switch(a) {
         case START:
-            snprintf(command, sizeof(command), "sudo %s start", daemon_script);
+            snprintf(command, sizeof(command), "sudo %s start >/dev/null 2>&1", daemon_script);
           //  printf( "Starting Zeppelin...\n");
             ret = executeSystemCommand(command);
             if (WEXITSTATUS(ret) != 0) {
@@ -509,7 +509,7 @@ void Zeppelin_action(Action a) {
             break;
 
         case STOP:
-            snprintf(command, sizeof(command), "sudo %s stop", daemon_script);
+            snprintf(command, sizeof(command), "sudo %s stop >/dev/null 2>&1", daemon_script);
            // printf( "Stopping Zeppelin...\n");
             ret = executeSystemCommand(command);
             if (WEXITSTATUS(ret) != 0) {
@@ -521,7 +521,7 @@ void Zeppelin_action(Action a) {
 
         case RESTART:
             // Execute stop followed by start
-            snprintf(command, sizeof(command), "sudo %s stop", daemon_script);
+            snprintf(command, sizeof(command), "sudo %s stop >/dev/null 2>&1", daemon_script);
           //  printf( "Initiating restart...\n");
             ret = executeSystemCommand(command);
             if (WEXITSTATUS(ret) != 0) {
@@ -530,7 +530,7 @@ void Zeppelin_action(Action a) {
                 exit(EXIT_FAILURE);
             }
             
-            snprintf(command, sizeof(command), "sudo %s start", daemon_script);
+            snprintf(command, sizeof(command), "sudo %s start >/dev/null 2>&1", daemon_script);
             ret = executeSystemCommand(command);
             if (WEXITSTATUS(ret) != 0) {
                 fprintf(stderr,  "Restart failed - start phase: %d\n", 
@@ -550,7 +550,7 @@ void Zeppelin_action(Action a) {
 // Helper function to execute Livy commands
 static int execute_command(const char* script_path, const char* arg) {
     char command[PATH_MAX + 128]; // Increased buffer size
-    size_t len = snprintf(command, sizeof(command), "sudo %s %s", script_path, arg);
+    size_t len = snprintf(command, sizeof(command), "sudo %s %s >/dev/null 2>&1", script_path, arg);
     
     if (len >= sizeof(command)) {
         fprintf(stderr,  "Command truncated: 'sudo %s %s'\n", script_path, arg);
@@ -699,7 +699,7 @@ void pig_action(Action a) {
 
         case STOP: {
             len = snprintf(command, sizeof(command),
-                         "pkill -f '^%s/bin/pig -x local'", pig_home);
+                         "pkill -f '^%s/bin/pig -x local' >/dev/null 2>&1", pig_home);
             if (len < 0 || len >= (int)sizeof(command)) {
                 fprintf(stderr,  "Command construction error\n");
                 exit(EXIT_FAILURE);
@@ -774,8 +774,8 @@ void HBase_action(Action a) {
 
     // Construct script paths
     char start_cmd[512], stop_cmd[512];
-    snprintf(start_cmd, sizeof(start_cmd), "%s/bin/start-hbase.sh", hbase_home);
-    snprintf(stop_cmd, sizeof(stop_cmd), "%s/bin/stop-hbase.sh", hbase_home);
+    snprintf(start_cmd, sizeof(start_cmd), "%s/bin/start-hbase.sh >/dev/null 2>&1", hbase_home);
+    snprintf(stop_cmd, sizeof(stop_cmd), "%s/bin/stop-hbase.sh >/dev/null 2>&1", hbase_home);
 
     switch(a) {
         case START:
@@ -900,7 +900,7 @@ bool execute_tez_command(const char *operation) {
         return false;
     }
     
-    snprintf(command, required_len + 1, "%s/bin/tez-daemon.sh %s historyserver", tez_home, operation);
+    snprintf(command, required_len + 1, "%s/bin/tez-daemon.sh %s historyserver >/dev/null 2>&1", tez_home, operation);
 
     int status = executeSystemCommand(command);
     free(command);
@@ -1177,7 +1177,7 @@ void Solr_action(Action a) {
 
 static int execute_script_action(const char *script_path, const char *action) {
     char command[MAX_CMD_LEN];
-    int ret = snprintf(command, sizeof(command), "%s %s", script_path, action);
+    int ret = snprintf(command, sizeof(command), "%s %s >/dev/null 2>&1", script_path, action);
     
     if (ret < 0 || ret >= (int)sizeof(command)) {
         fprintf(stderr,  "Command buffer overflow for action: %s\n", action);
@@ -1309,7 +1309,7 @@ void ranger_action(Action a) {
         }
 
         char command[2048];
-        len = snprintf(command, sizeof(command), "%s", script_path);
+        len = snprintf(command, sizeof(command), "%s >/dev/null 2>&1", script_path);
         if (len < 0 || len >= (int)sizeof(command)) {
             fprintf(stderr,  "Command too long\n");
             return -1;
@@ -1492,7 +1492,7 @@ static int stop_services(const char *storm_cmd, const char **services, size_t nu
     int all_stopped = 1;
     for (size_t i = 0; i < num_services; i++) {
         char cmd[PATH_MAX * 2];
-        int ret = snprintf(cmd, sizeof(cmd), "pkill -f '%s %s'", storm_cmd, services[i]);
+        int ret = snprintf(cmd, sizeof(cmd), "pkill -f '%s %s' >/dev/null 2>&1", storm_cmd, services[i]);
         if (ret >= (int)sizeof(cmd)) {
             fprintf(stderr,  "Command buffer overflow for service %s\n", services[i]);
             all_stopped = 0;
@@ -1522,19 +1522,52 @@ static int start_services(const char *storm_cmd, const char **services, size_t n
     int all_started = 1;
     for (size_t i = 0; i < num_services; i++) {
         char cmd[PATH_MAX * 2];
-        int ret = snprintf(cmd, sizeof(cmd), "%s %s", storm_cmd, services[i]);
+        // Include stderr redirection to capture all output
+        int ret = snprintf(cmd, sizeof(cmd), "%s %s 2>&1", storm_cmd, services[i]);
         if (ret >= (int)sizeof(cmd)) {
             fprintf(stderr,  "Command buffer overflow for service %s\n", services[i]);
             all_started = 0;
             continue;
         }
 
-        int status = executeSystemCommand(cmd);
-        if (status != 0) {
-            fprintf(stderr,  "Failed to start %s (exit code %d)\n", services[i], WEXITSTATUS(status));
+        FILE *fp = popen(cmd, "r");
+        if (!fp) {
+            fprintf(stderr,  "Failed to run command for service %s\n", services[i]);
             all_started = 0;
+            continue;
+        }
+
+        char buffer[256];
+        int found_python_error = 0;
+
+        // Read and process command output line by line
+        while (fgets(buffer, sizeof(buffer), fp) != NULL) {
+            // Display command output to user
+            printf( "%s", buffer);
+            
+            // Check for Python version requirement message
+            if (strstr(buffer, "Need python version > 2.6") != NULL) {
+                found_python_error = 1;
+            }
+        }
+
+        int status = pclose(fp);
+        if (WIFEXITED(status)) {
+            int exit_code = WEXITSTATUS(status);
+            if (exit_code == 0) {
+                if (found_python_error) {
+                    fprintf(stderr, "Failed to start %s: Python version > 2.6 is required.\n", services[i]);
+                    all_started = 0;
+                } else {
+                    printf("Successfully started %s\n", services[i]);
+                }
+            } else {
+                fprintf(stderr,  "Failed to start %s (exit code %d)\n", services[i], exit_code);
+                all_started = 0;
+            }
         } else {
-            printf( "Successfully started %s\n", services[i]);
+            fprintf(stderr,  "Process termination error for %s\n", services[i]);
+            all_started = 0;
         }
     }
     return all_started;
@@ -1664,8 +1697,8 @@ void flink_action(Action action) {
     // Validate cluster scripts
     char start_script[PATH_MAX];
     char stop_script[PATH_MAX];
-    snprintf(start_script, sizeof(start_script), "%s/bin/start-cluster.sh", flink_home);
-    snprintf(stop_script, sizeof(stop_script), "%s/bin/stop-cluster.sh", flink_home);
+    snprintf(start_script, sizeof(start_script), "%s/bin/start-cluster.sh >/dev/null 2>&1", flink_home);
+    snprintf(stop_script, sizeof(stop_script), "%s/bin/stop-cluster.sh >/dev/null 2>&1", flink_home);
 
     if (access(start_script, X_OK) != 0 || access(stop_script, X_OK) != 0) {
         fprintf(stderr,  "Missing or inaccessible Flink cluster scripts\n");
@@ -1762,7 +1795,7 @@ void zookeeper_action(Action a) {
     // Execute the appropriate action
     switch(a) {
         case START: {
-            long unsigned int ret3 = snprintf(command, sizeof(command), "\"%s\" start", zk_script);
+            long unsigned int ret3 = snprintf(command, sizeof(command), "\"%s\" start >/dev/null 2>&1", zk_script);
             if (ret3 >= sizeof(command)) {
                 fprintf(stderr,  "Error: command buffer overflow.\n");
             }
@@ -1774,7 +1807,7 @@ void zookeeper_action(Action a) {
             break;
         }
         case STOP: {
-            long unsigned int ret4 = snprintf(command, sizeof(command), "\"%s\" stop", zk_script);
+            long unsigned int ret4 = snprintf(command, sizeof(command), "\"%s\" stop >/dev/null 2>&1", zk_script);
             if (ret4 >= sizeof(command)) {
                 fprintf(stderr,  "Error: command buffer overflow.\n");
             }
@@ -1787,7 +1820,7 @@ void zookeeper_action(Action a) {
         }
         case RESTART: {
             // Stop the service
-            long unsigned int ret5 = snprintf(command, sizeof(command), "\"%s\" stop", zk_script);
+            long unsigned int ret5 = snprintf(command, sizeof(command), "\"%s\" stop >/dev/null 2>&1", zk_script);
             if (ret5 >= sizeof(command)) {
                 fprintf(stderr,  "Error: command buffer overflow.\n");
             }
@@ -1796,7 +1829,7 @@ void zookeeper_action(Action a) {
                 fprintf(stderr,  "Failed to stop Zookeeper during restart. Exit code: %d\n", ret);
             }
             // Start the service
-            long unsigned int ret9 = snprintf(command, sizeof(command), "\"%s\" start", zk_script);
+            long unsigned int ret9 = snprintf(command, sizeof(command), "\"%s\" start >/dev/null 2>&1", zk_script);
             if (ret9 >= sizeof(command)) {
                 fprintf(stderr,  "Error: command buffer overflow.\n");
             }

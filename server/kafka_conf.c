@@ -143,58 +143,58 @@ ConfigParam kafka_param_configs[] = {
     { "xasecure.policymgr.clientssl.keystore.credential.file", "^(kafka[._-])?xasecure[._-]policymgr[._-]clientssl[._-]keystore[._-]credential[._-]file$", "ranger-kafka-policymgr-ssl.xml" },
     { "xasecure.policymgr.clientssl.truststore.credential.file", "^(kafka[._-])?xasecure[._-]policymgr[._-]clientssl[._-]truststore[._-]credential[._-]file$", "ranger-kafka-policymgr-ssl.xml" },
         
-    // New Settings from kafka-log4j.properties
-    { "log4j.rootLogger", "^log4j[._-]rootLogger$", "kafka-log4j.properties" },
-    { "log4j.appender.stdout", "^log4j[._-]appender[._-]stdout$", "kafka-log4j.properties" },
-    { "log4j.appender.stdout.layout", "^log4j[._-]appender[._-]stdout[._-]layout$", "kafka-log4j.properties" },
-    { "log4j.appender.stdout.layout.ConversionPattern", "^log4j[._-]appender[._-]stdout[._-]layout[._-]ConversionPattern$", "kafka-log4j.properties" },
-    { "log4j.appender.kafkaAppender", "^log4j[._-]appender[._-]kafkaAppender$", "kafka-log4j.properties" },
-    { "log4j.appender.kafkaAppender.DatePattern", "^log4j[._-]appender[._-]kafkaAppender[._-]DatePattern$", "kafka-log4j.properties" },
-    { "log4j.appender.kafkaAppender.File", "^log4j[._-]appender[._-]kafkaAppender[._-]File$", "kafka-log4j.properties" },
-    { "log4j.appender.kafkaAppender.layout", "^log4j[._-]appender[._-]kafkaAppender[._-]layout$", "kafka-log4j.properties" },
-    { "log4j.appender.kafkaAppender.layout.ConversionPattern", "^log4j[._-]appender[._-]kafkaAppender[._-]layout[._-]ConversionPattern$", "kafka-log4j.properties" },
-    { "log4j.appender.stateChangeAppender", "^log4j[._-]appender[._-]stateChangeAppender$", "kafka-log4j.properties" },
-    { "log4j.appender.stateChangeAppender.DatePattern", "^log4j[._-]appender[._-]stateChangeAppender[._-]DatePattern$", "kafka-log4j.properties" },
-    { "log4j.appender.stateChangeAppender.File", "^log4j[._-]appender[._-]stateChangeAppender[._-]File$", "kafka-log4j.properties" },
-    { "log4j.appender.stateChangeAppender.layout", "^log4j[._-]appender[._-]stateChangeAppender[._-]layout$", "kafka-log4j.properties" },
-    { "log4j.appender.stateChangeAppender.layout.ConversionPattern", "^log4j[._-]appender[._-]stateChangeAppender[._-]layout[._-]ConversionPattern$", "kafka-log4j.properties" },
-    { "log4j.appender.requestAppender", "^log4j[._-]appender[._-]requestAppender$", "kafka-log4j.properties" },
-    { "log4j.appender.requestAppender.DatePattern", "^log4j[._-]appender[._-]requestAppender[._-]DatePattern$", "kafka-log4j.properties" },
-    { "log4j.appender.requestAppender.File", "^log4j[._-]appender[._-]requestAppender[._-]File$", "kafka-log4j.properties" },
-    { "log4j.appender.requestAppender.layout", "^log4j[._-]appender[._-]requestAppender[._-]layout$", "kafka-log4j.properties" },
-    { "log4j.appender.requestAppender.layout.ConversionPattern", "^log4j[._-]appender[._-]requestAppender[._-]layout[._-]ConversionPattern$", "kafka-log4j.properties" },
-    { "log4j.appender.cleanerAppender", "^log4j[._-]appender[._-]cleanerAppender$", "kafka-log4j.properties" },
-    { "log4j.appender.cleanerAppender.DatePattern", "^log4j[._-]appender[._-]cleanerAppender[._-]DatePattern$", "kafka-log4j.properties" },
-    { "log4j.appender.cleanerAppender.File", "^log4j[._-]appender[._-]cleanerAppender[._-]File$", "kafka-log4j.properties" },
-    { "log4j.appender.cleanerAppender.layout", "^log4j[._-]appender[._-]cleanerAppender[._-]layout$", "kafka-log4j.properties" },
-    { "log4j.appender.cleanerAppender.layout.ConversionPattern", "^log4j[._-]appender[._-]cleanerAppender[._-]layout[._-]ConversionPattern$", "kafka-log4j.properties" },
-    { "log4j.appender.controllerAppender", "^log4j[._-]appender[._-]controllerAppender$", "kafka-log4j.properties" },
-    { "log4j.appender.controllerAppender.DatePattern", "^log4j[._-]appender[._-]controllerAppender[._-]DatePattern$", "kafka-log4j.properties" },
-    { "log4j.appender.controllerAppender.File", "^log4j[._-]appender[._-]controllerAppender[._-]File$", "kafka-log4j.properties" },
-    { "log4j.appender.controllerAppender.layout", "^log4j[._-]appender[._-]controllerAppender[._-]layout$", "kafka-log4j.properties" },
-    { "log4j.appender.controllerAppender.layout.ConversionPattern", "^log4j[._-]appender[._-]controllerAppender[._-]layout[._-]ConversionPattern$", "kafka-log4j.properties" },
-    { "log4j.appender.authorizerAppender", "^log4j[._-]appender[._-]authorizerAppender$", "kafka-log4j.properties" },
-    { "log4j.appender.authorizerAppender.DatePattern", "^log4j[._-]appender[._-]authorizerAppender[._-]DatePattern$", "kafka-log4j.properties" },
-    { "log4j.appender.authorizerAppender.File", "^log4j[._-]appender[._-]authorizerAppender[._-]File$", "kafka-log4j.properties" },
-    { "log4j.appender.authorizerAppender.layout", "^log4j[._-]appender[._-]authorizerAppender[._-]layout$", "kafka-log4j.properties" },
-    { "log4j.appender.authorizerAppender.layout.ConversionPattern", "^log4j[._-]appender[._-]authorizerAppender[._-]layout[._-]ConversionPattern$", "kafka-log4j.properties" },
-    { "log4j.logger.org.apache.zookeeper", "^log4j[._-]logger[._-]org[._-]apache[._-]zookeeper$", "kafka-log4j.properties" },
-    { "log4j.logger.kafka", "^log4j[._-]logger[._-]kafka$", "kafka-log4j.properties" },
-    { "log4j.logger.org.apache.kafka", "^log4j[._-]logger[._-]org[._-]apache[._-]kafka$", "kafka-log4j.properties" },
-    { "log4j.logger.kafka.request.logger", "^log4j[._-]logger[._-]kafka[._-]request[._-]logger$", "kafka-log4j.properties" },
-    { "log4j.additivity.kafka.request.logger", "^log4j[._-]additivity[._-]kafka[._-]request[._-]logger$", "kafka-log4j.properties" },
-    { "log4j.logger.kafka.network.RequestChannel$", "^log4j[._-]logger[._-]kafka[._-]network[._-]RequestChannel\\$$", "kafka-log4j.properties" },
-    { "log4j.additivity.kafka.network.RequestChannel$", "^log4j[._-]additivity[._-]kafka[._-]network[._-]RequestChannel\\$$", "kafka-log4j.properties" },
-    { "log4j.logger.org.apache.kafka.controller", "^log4j[._-]logger[._-]org[._-]apache[._-]kafka[._-]controller$", "kafka-log4j.properties" },
-    { "log4j.additivity.org.apache.kafka.controller", "^log4j[._-]additivity[._-]org[._-]apache[._-]kafka[._-]controller$", "kafka-log4j.properties" },
-    { "log4j.logger.kafka.controller", "^log4j[._-]logger[._-]kafka[._-]controller$", "kafka-log4j.properties" },
-    { "log4j.additivity.kafka.controller", "^log4j[._-]additivity[._-]kafka[._-]controller$", "kafka-log4j.properties" },
-    { "log4j.logger.kafka.log.LogCleaner", "^log4j[._-]logger[._-]kafka[._-]log[._-]LogCleaner$", "kafka-log4j.properties" },
-    { "log4j.additivity.kafka.log.LogCleaner", "^log4j[._-]additivity[._-]kafka[._-]log[._-]LogCleaner$", "kafka-log4j.properties" },
-    { "log4j.logger.state.change.logger", "^log4j[._-]logger[._-]state[._-]change[._-]logger$", "kafka-log4j.properties" },
-    { "log4j.additivity.state.change.logger", "^log4j[._-]additivity[._-]state[._-]change[._-]logger$", "kafka-log4j.properties" },
-    { "log4j.logger.kafka.authorizer.logger", "^log4j[._-]logger[._-]kafka[._-]authorizer[._-]logger$", "kafka-log4j.properties" },
-    { "log4j.additivity.kafka.authorizer.logger", "^log4j[._-]additivity[._-]kafka[._-]authorizer[._-]logger$", "kafka-log4j.properties" },
+    // New Settings from log4j.properties
+    { "log4j.rootLogger", "^log4j[._-]rootLogger$", "log4j.properties" },
+    { "log4j.appender.stdout", "^log4j[._-]appender[._-]stdout$", "log4j.properties" },
+    { "log4j.appender.stdout.layout", "^log4j[._-]appender[._-]stdout[._-]layout$", "log4j.properties" },
+    { "log4j.appender.stdout.layout.ConversionPattern", "^log4j[._-]appender[._-]stdout[._-]layout[._-]ConversionPattern$", "log4j.properties" },
+    { "log4j.appender.kafkaAppender", "^log4j[._-]appender[._-]kafkaAppender$", "log4j.properties" },
+    { "log4j.appender.kafkaAppender.DatePattern", "^log4j[._-]appender[._-]kafkaAppender[._-]DatePattern$", "log4j.properties" },
+    { "log4j.appender.kafkaAppender.File", "^log4j[._-]appender[._-]kafkaAppender[._-]File$", "log4j.properties" },
+    { "log4j.appender.kafkaAppender.layout", "^log4j[._-]appender[._-]kafkaAppender[._-]layout$", "log4j.properties" },
+    { "log4j.appender.kafkaAppender.layout.ConversionPattern", "^log4j[._-]appender[._-]kafkaAppender[._-]layout[._-]ConversionPattern$", "log4j.properties" },
+    { "log4j.appender.stateChangeAppender", "^log4j[._-]appender[._-]stateChangeAppender$", "log4j.properties" },
+    { "log4j.appender.stateChangeAppender.DatePattern", "^log4j[._-]appender[._-]stateChangeAppender[._-]DatePattern$", "log4j.properties" },
+    { "log4j.appender.stateChangeAppender.File", "^log4j[._-]appender[._-]stateChangeAppender[._-]File$", "log4j.properties" },
+    { "log4j.appender.stateChangeAppender.layout", "^log4j[._-]appender[._-]stateChangeAppender[._-]layout$", "log4j.properties" },
+    { "log4j.appender.stateChangeAppender.layout.ConversionPattern", "^log4j[._-]appender[._-]stateChangeAppender[._-]layout[._-]ConversionPattern$", "log4j.properties" },
+    { "log4j.appender.requestAppender", "^log4j[._-]appender[._-]requestAppender$", "log4j.properties" },
+    { "log4j.appender.requestAppender.DatePattern", "^log4j[._-]appender[._-]requestAppender[._-]DatePattern$", "log4j.properties" },
+    { "log4j.appender.requestAppender.File", "^log4j[._-]appender[._-]requestAppender[._-]File$", "log4j.properties" },
+    { "log4j.appender.requestAppender.layout", "^log4j[._-]appender[._-]requestAppender[._-]layout$", "log4j.properties" },
+    { "log4j.appender.requestAppender.layout.ConversionPattern", "^log4j[._-]appender[._-]requestAppender[._-]layout[._-]ConversionPattern$", "log4j.properties" },
+    { "log4j.appender.cleanerAppender", "^log4j[._-]appender[._-]cleanerAppender$", "log4j.properties" },
+    { "log4j.appender.cleanerAppender.DatePattern", "^log4j[._-]appender[._-]cleanerAppender[._-]DatePattern$", "log4j.properties" },
+    { "log4j.appender.cleanerAppender.File", "^log4j[._-]appender[._-]cleanerAppender[._-]File$", "log4j.properties" },
+    { "log4j.appender.cleanerAppender.layout", "^log4j[._-]appender[._-]cleanerAppender[._-]layout$", "log4j.properties" },
+    { "log4j.appender.cleanerAppender.layout.ConversionPattern", "^log4j[._-]appender[._-]cleanerAppender[._-]layout[._-]ConversionPattern$", "log4j.properties" },
+    { "log4j.appender.controllerAppender", "^log4j[._-]appender[._-]controllerAppender$", "log4j.properties" },
+    { "log4j.appender.controllerAppender.DatePattern", "^log4j[._-]appender[._-]controllerAppender[._-]DatePattern$", "log4j.properties" },
+    { "log4j.appender.controllerAppender.File", "^log4j[._-]appender[._-]controllerAppender[._-]File$", "log4j.properties" },
+    { "log4j.appender.controllerAppender.layout", "^log4j[._-]appender[._-]controllerAppender[._-]layout$", "log4j.properties" },
+    { "log4j.appender.controllerAppender.layout.ConversionPattern", "^log4j[._-]appender[._-]controllerAppender[._-]layout[._-]ConversionPattern$", "log4j.properties" },
+    { "log4j.appender.authorizerAppender", "^log4j[._-]appender[._-]authorizerAppender$", "log4j.properties" },
+    { "log4j.appender.authorizerAppender.DatePattern", "^log4j[._-]appender[._-]authorizerAppender[._-]DatePattern$", "log4j.properties" },
+    { "log4j.appender.authorizerAppender.File", "^log4j[._-]appender[._-]authorizerAppender[._-]File$", "log4j.properties" },
+    { "log4j.appender.authorizerAppender.layout", "^log4j[._-]appender[._-]authorizerAppender[._-]layout$", "log4j.properties" },
+    { "log4j.appender.authorizerAppender.layout.ConversionPattern", "^log4j[._-]appender[._-]authorizerAppender[._-]layout[._-]ConversionPattern$", "log4j.properties" },
+    { "log4j.logger.org.apache.zookeeper", "^log4j[._-]logger[._-]org[._-]apache[._-]zookeeper$", "log4j.properties" },
+    { "log4j.logger.kafka", "^log4j[._-]logger[._-]kafka$", "log4j.properties" },
+    { "log4j.logger.org.apache.kafka", "^log4j[._-]logger[._-]org[._-]apache[._-]kafka$", "log4j.properties" },
+    { "log4j.logger.kafka.request.logger", "^log4j[._-]logger[._-]kafka[._-]request[._-]logger$", "log4j.properties" },
+    { "log4j.additivity.kafka.request.logger", "^log4j[._-]additivity[._-]kafka[._-]request[._-]logger$", "log4j.properties" },
+    { "log4j.logger.kafka.network.RequestChannel$", "^log4j[._-]logger[._-]kafka[._-]network[._-]RequestChannel\\$$", "log4j.properties" },
+    { "log4j.additivity.kafka.network.RequestChannel$", "^log4j[._-]additivity[._-]kafka[._-]network[._-]RequestChannel\\$$", "log4j.properties" },
+    { "log4j.logger.org.apache.kafka.controller", "^log4j[._-]logger[._-]org[._-]apache[._-]kafka[._-]controller$", "log4j.properties" },
+    { "log4j.additivity.org.apache.kafka.controller", "^log4j[._-]additivity[._-]org[._-]apache[._-]kafka[._-]controller$", "log4j.properties" },
+    { "log4j.logger.kafka.controller", "^log4j[._-]logger[._-]kafka[._-]controller$", "log4j.properties" },
+    { "log4j.additivity.kafka.controller", "^log4j[._-]additivity[._-]kafka[._-]controller$", "log4j.properties" },
+    { "log4j.logger.kafka.log.LogCleaner", "^log4j[._-]logger[._-]kafka[._-]log[._-]LogCleaner$", "log4j.properties" },
+    { "log4j.additivity.kafka.log.LogCleaner", "^log4j[._-]additivity[._-]kafka[._-]log[._-]LogCleaner$", "log4j.properties" },
+    { "log4j.logger.state.change.logger", "^log4j[._-]logger[._-]state[._-]change[._-]logger$", "log4j.properties" },
+    { "log4j.additivity.state.change.logger", "^log4j[._-]additivity[._-]state[._-]change[._-]logger$", "log4j.properties" },
+    { "log4j.logger.kafka.authorizer.logger", "^log4j[._-]logger[._-]kafka[._-]authorizer[._-]logger$", "log4j.properties" },
+    { "log4j.additivity.kafka.authorizer.logger", "^log4j[._-]additivity[._-]kafka[._-]authorizer[._-]logger$", "log4j.properties" },
 
 };
 
@@ -428,12 +428,6 @@ void free_kafka_config_result(ConfigResult *result) {
     }
 }
 ConfigStatus modify_kafka_config(const char *param, const char *value, const char *config_file) {
-    // Validate the config_file parameter
-    if (strcmp(config_file, "producer.properties") != 0 &&
-        strcmp(config_file, "server.properties") != 0 &&
-        strcmp(config_file, "consumer.properties") != 0) {
-        return FILE_NOT_FOUND;
-    }
 
     const char *kafka_home = getenv("KAFKA_HOME");
     char filepath[1024];
@@ -476,6 +470,13 @@ ConfigStatus modify_kafka_config(const char *param, const char *value, const cha
         updateHadoopConfigXML(filepath, param, value);
         return SUCCESS;
     }
+    
+    if (strcmp(config_file, "log4j.properties") ==0 ||
+    strcmp(config_file, "ranger-kafka-plugin.properties") ==0) {
+        configure_hadoop_property(filepath, param, value);
+        return SUCCESS;
+    }
+    
     // Read the entire file into memory
     FILE *file = fopen(filepath, "r");
     if (!file) {

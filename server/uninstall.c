@@ -51,7 +51,7 @@ void uninstall_hadoop() {
 	
 		// Step 2: Remove installation directory
 		char rm_cmd[PATH_MAX + 50];
-		long unsigned int ret = snprintf(rm_cmd, sizeof(rm_cmd), "sudo rm -rf \"%s\"", install_path);
+		long unsigned int ret = snprintf(rm_cmd, sizeof(rm_cmd), "sudo rm -rf \"%s\" >/dev/null 2>&1", install_path);
 		if (ret >= sizeof(rm_cmd)) {
 			fprintf(stderr, "Error: command buffer overflow\n");
 				return;
@@ -95,7 +95,7 @@ void uninstall_hadoop() {
 				if (modified) {
 					// Create backup
 					char backup_cmd[PATH_MAX + 50];
-						long unsigned int ret3 = snprintf(backup_cmd, sizeof(backup_cmd), "cp %s %s.bak", path, path);
+						long unsigned int ret3 = snprintf(backup_cmd, sizeof(backup_cmd), "cp %s %s.bak >/dev/null 2>&1", path, path);
 						if (ret3 >= sizeof(backup_cmd)) {
 							fprintf(stderr, "Error: backup command buffer overflow\n");
 								remove(temp_path);
@@ -105,7 +105,7 @@ void uninstall_hadoop() {
 						
 						// Apply changes
 						char apply_cmd[PATH_MAX + 50];
-						long unsigned int ret4 = snprintf(apply_cmd, sizeof(apply_cmd), "mv %s %s", temp_path, path);
+						long unsigned int ret4 = snprintf(apply_cmd, sizeof(apply_cmd), "mv %s %s >/dev/null 2>&1", temp_path, path);
 						if (ret4 >= sizeof(apply_cmd)) {
 							fprintf(stderr, "Error: apply command buffer overflow\n");
 								remove(temp_path);
@@ -130,7 +130,7 @@ void uninstall_Presto() {
 		
 		// 1. Stop Presto service if running
 		//printf("Stopping Presto service...\n");
-		int result = executeSystemCommand("sudo pkill -f presto-server || true");
+		int result = executeSystemCommand("sudo pkill -f presto-server || true >/dev/null 2>&1");
 		if (result != 0) {
 			printf("Command failed with return code %d\n", result);
 		}
@@ -147,7 +147,7 @@ void uninstall_Presto() {
 	
 		// 3. Remove installation directory
 		//printf("Removing installation directory...\n");
-		snprintf(command, sizeof(command), "sudo rm -rf %s", install_dir);
+		snprintf(command, sizeof(command), "sudo rm -rf %s >/dev/null 2>&1", install_dir);
 		if ((ret = !executeSystemCommand(command))) {
 			fprintf(stderr, "Warning: Failed to remove %s (error %d)\n", install_dir, ret);
 		}
@@ -163,7 +163,7 @@ void uninstall_Presto() {
 		for (size_t i = 0; i < sizeof(data_dirs)/sizeof(data_dirs[0]); i++) {
 			if (stat(data_dirs[i], &st) == 0) {
 				//printf("Removing data directory: %s\n", data_dirs[i]);
-				snprintf(command, sizeof(command), "sudo rm -rf %s", data_dirs[i]);
+				snprintf(command, sizeof(command), "sudo rm -rf %s >/dev/null 2>&1", data_dirs[i]);
 					if (!executeSystemCommand(command)) {
 						fprintf(stderr, "Warning: Failed to remove %s\n", data_dirs[i]);
 					}
@@ -179,7 +179,7 @@ void uninstall_Presto() {
 				
 				// Remove PRESTO_HOME entries
 				snprintf(command, sizeof(command),
-						"sudo sed -i.bak '/export PRESTO_HOME=/d' %s", bashrc);
+						"sudo sed -i.bak '/export PRESTO_HOME=/d' %s >/dev/null 2>&1", bashrc);
 				int result = executeSystemCommand(command);
 				if (result != 0) {
 					printf("Command failed with return code %d\n", result);
@@ -187,7 +187,7 @@ void uninstall_Presto() {
 			
 				// Remove PATH modifications
 				snprintf(command, sizeof(command),
-						"sudo sed -i.bak '/PRESTO_HOME\\/bin/d' %s", bashrc);
+						"sudo sed -i.bak '/PRESTO_HOME\\/bin/d' %s >/dev/null 2>&1", bashrc);
 				int resultcmd = executeSystemCommand(command);
 				if (resultcmd != 0) {
 					printf("Command failed with return code %d\n", resultcmd);
@@ -197,15 +197,15 @@ void uninstall_Presto() {
 		// 6. Remove systemd service if exists
 		if (stat("/etc/systemd/system/presto.service", &st) == 0) {
 			//printf("Removing systemd service...\n");
-			int resultStart = executeSystemCommand("sudo systemctl stop presto.service");
+			int resultStart = executeSystemCommand("sudo systemctl stop presto.service >/dev/null 2>&1");
 				if (resultStart != 0) {
 					printf("Command failed with return code %d\n", resultStart);
 				}
-			int resultRm = executeSystemCommand("sudo rm -f /etc/systemd/system/presto.service");
+			int resultRm = executeSystemCommand("sudo rm -f /etc/systemd/system/presto.service >/dev/null 2>&1");
 				if (resultRm != 0) {
 					printf("Command failed with return code %d\n", resultRm);
 				}
-			int resultRelod = executeSystemCommand("sudo systemctl daemon-reload");
+			int resultRelod = executeSystemCommand("sudo systemctl daemon-reload >/dev/null 2>&1");
 				if (resultRelod != 0) {
 					printf("Command failed with return code %d\n", resultRelod);
 				}
@@ -225,13 +225,13 @@ void uninstall_Presto() {
 		}
 	
 		// 8. Remove temporary files
-		int resultRm = executeSystemCommand("sudo rm -rf /tmp/presto*");
+		int resultRm = executeSystemCommand("sudo rm -rf /tmp/presto* >/dev/null 2>&1");
 		if (resultRm != 0) {
 			printf("Command failed with return code %d\n", resultRm);
 		}
 	
 		// 9. Remove cron entries
-		int resultCron = executeSystemCommand("sudo crontab -l | grep -v presto | sudo crontab -");
+		int resultCron = executeSystemCommand("sudo crontab -l | grep -v presto | sudo crontab - >/dev/null 2>&1");
 		if (resultCron != 0) {
 			printf("Command failed with return code %d\n", resultCron);
 		}
@@ -266,13 +266,13 @@ void uninstall_spark() {
 		
 		// Remove SPARK_HOME location if different from default
 		if (spark_home[0] != '\0' && strcmp(spark_home, install_path) != 0) {
-			snprintf(rm_cmd, sizeof(rm_cmd), "sudo rm -rf \"%s\"", spark_home);
+			snprintf(rm_cmd, sizeof(rm_cmd), "sudo rm -rf \"%s\" >/dev/null 2>&1", spark_home);
 				if (executeSystemCommand(rm_cmd)) paths_removed++;
 		}
 	
 		// Remove default installation path
 		if (install_path[0] != '\0') {
-			snprintf(rm_cmd, sizeof(rm_cmd), "sudo rm -rf \"%s\"", install_path);
+			snprintf(rm_cmd, sizeof(rm_cmd), "sudo rm -rf \"%s\" >/dev/null 2>&1", install_path);
 				if (executeSystemCommand(rm_cmd)) paths_removed++;
 		}
 	
@@ -322,7 +322,7 @@ void uninstall_spark() {
 									
 									if (modified) {
 										char backup_cmd[512];
-											long unsigned int written =  snprintf(backup_cmd, sizeof(backup_cmd), "cp %s %s.bak", shell_path, shell_path);
+											long unsigned int written =  snprintf(backup_cmd, sizeof(backup_cmd), "cp %s %s.bak >/dev/null 2>&1", shell_path, shell_path);
 											if (written >= sizeof(backup_cmd)) {
 												// Handle truncation
 												fprintf(stderr, "Warning: Truncated output.\n");
@@ -344,11 +344,11 @@ void uninstall_spark() {
 	
 		// 5. Remove downloaded archives
 		// printf("[5/5] Cleaning residual files...\n");
-		int resultRm =  executeSystemCommand("rm -f spark-*-bin-hadoop3.tgz");
+		int resultRm =  executeSystemCommand("rm -f spark-*-bin-hadoop3.tgz >/dev/null 2>&1");
 		if (resultRm == -1) {
 			printf("Command failed with return code %d\n", resultRm);
 		}
-	int resultRmrf =  executeSystemCommand("rm -rf /tmp/spark-*");
+	int resultRmrf =  executeSystemCommand("rm -rf /tmp/spark-* >/dev/null 2>&1");
 		if (resultRmrf == -1) {
 			printf("Command failed with return code %d\n", resultRmrf);
 		}
@@ -400,7 +400,7 @@ void uninstall_hive() {
 	
 		// Phase 2: Remove installation directory
 		char rm_cmd[512];
-		snprintf(rm_cmd, sizeof(rm_cmd), "sudo rm -rf \"%s\"", hive_install_dir);
+		snprintf(rm_cmd, sizeof(rm_cmd), "sudo rm -rf \"%s\" >/dev/null 2>&1", hive_install_dir);
 		int ret = executeSystemCommand(rm_cmd);
 		if (ret == -1) {
 			fprintf(stderr, "Error: Failed to remove installation directory '%s' (code %d)\n", 
@@ -450,7 +450,7 @@ void uninstall_hive() {
 				
 				if (modified) {
 					char backup_cmd[512];
-						written = snprintf(backup_cmd, sizeof(backup_cmd), "cp \"%s\" \"%s.bak\"", path, path);
+						written = snprintf(backup_cmd, sizeof(backup_cmd), "cp \"%s\" \"%s.bak\" >/dev/null 2>&1", path, path);
 						if (written >= (int)sizeof(backup_cmd)) {
 							fprintf(stderr, "Backup command truncated, skipping backup for %s\n", path);
 								remove(temp_path);
@@ -487,7 +487,7 @@ void uninstall_hive() {
 				if (i == 3) path = user_hive_history;
 					
 						char cleanup_cmd[256];
-						size_t ret3 = snprintf(cleanup_cmd, sizeof(cleanup_cmd), "sudo rm -rf %s", path);
+						size_t ret3 = snprintf(cleanup_cmd, sizeof(cleanup_cmd), "sudo rm -rf %s >/dev/null 2>&1", path);
 						if (ret3 >= sizeof(cleanup_cmd)) {
 							fprintf(stderr, "Warning: size error\n");
 						}
@@ -569,7 +569,7 @@ void uninstall_Zeppelin() {
 		}
 	// 3. File system cleanup
 	char cleanup_cmd[PATH_MAX + 50];
-		snprintf(cleanup_cmd, sizeof(cleanup_cmd), "sudo rm -rf %s", detected_path);
+		snprintf(cleanup_cmd, sizeof(cleanup_cmd), "sudo rm -rf %s >/dev/null 2>&1", detected_path);
 		int rm_status = executeSystemCommand(cleanup_cmd);
 		if (WEXITSTATUS(rm_status) != 0) {
 			fprintf(stderr, "Failed to remove installation directory\n");
@@ -588,7 +588,7 @@ void uninstall_Zeppelin() {
 				if (access(config_path, F_OK) == 0) {
 					char sed_cmd[PATH_MAX + 100];
 						snprintf(sed_cmd, sizeof(sed_cmd),
-								"sed -i '/ZEPPELIN_HOME/d' %s", config_path);
+								"sed -i '/ZEPPELIN_HOME/d' %s >/dev/null 2>&1", config_path);
 						int result = executeSystemCommand(sed_cmd);
 						if (result != 0) {
 							printf("Command failed with return code %d\n", result);
@@ -606,7 +606,7 @@ void uninstall_Zeppelin() {
 		for (size_t i = 0; i < sizeof(service_paths)/sizeof(service_paths[0]); i++) {
 			if (access(service_paths[i], F_OK) == 0) {
 				char rm_service[PATH_MAX + 50];
-					snprintf(rm_service, sizeof(rm_service), "sudo rm -f %s", service_paths[i]);
+					snprintf(rm_service, sizeof(rm_service), "sudo rm -f %s >/dev/null 2>&1", service_paths[i]);
 					int result = executeSystemCommand(rm_service);
 					if (result != 0) {
 						printf("Command failed with return code %d\n", result);
@@ -634,7 +634,7 @@ void uninstall_Zeppelin() {
 		for (size_t i = 0; i < sizeof(log_paths)/sizeof(log_paths[0]); i++) {
 			if (access(log_paths[i], F_OK) == 0) {
 				char rm_logs[PATH_MAX + 50];
-					snprintf(rm_logs, sizeof(rm_logs), "sudo rm -rf %s", log_paths[i]);
+					snprintf(rm_logs, sizeof(rm_logs), "sudo rm -rf %s >/dev/null 2>&1", log_paths[i]);
 					int result = executeSystemCommand(rm_logs);
 					if (result != 0) {
 						printf("Command failed with return code %d\n", result);
@@ -681,7 +681,7 @@ void uninstall_Livy() {
 	
 		if (access(stop_script, X_OK) == 0) {
 			char stop_cmd[PATH_MAX + 50];
-				long unsigned int len = snprintf(stop_cmd, sizeof(stop_cmd), "sudo %s stop", stop_script);
+				long unsigned int len = snprintf(stop_cmd, sizeof(stop_cmd), "sudo %s stop >/dev/null 2>&1", stop_script);
 				if (len >= sizeof(stop_cmd)) {
 					fprintf(stderr, "snprintf output was truncated or failed.\n");
 				}
@@ -692,7 +692,7 @@ void uninstall_Livy() {
 	
 		// 3. Remove installation files
 		char rm_cmd[PATH_MAX + 50];
-		long unsigned int len2 = snprintf(rm_cmd, sizeof(rm_cmd), "sudo rm -rf %s", livy_home);
+		long unsigned int len2 = snprintf(rm_cmd, sizeof(rm_cmd), "sudo rm -rf %s >/dev/null 2>&1", livy_home);
 		if (len2 >= sizeof(rm_cmd)) {
 			fprintf(stderr, "snprintf output was truncated or failed.\n");
 		}
@@ -710,7 +710,7 @@ void uninstall_Livy() {
 		for (size_t i = 0; i < sizeof(service_files)/sizeof(service_files[0]); i++) {
 			if (access(service_files[i], F_OK) == 0) {
 				char rm_service[PATH_MAX + 50];
-					long unsigned int len = snprintf(rm_service, sizeof(rm_service), "sudo rm -f %s", service_files[i]);
+					long unsigned int len = snprintf(rm_service, sizeof(rm_service), "sudo rm -f %s >/dev/null 2>&1", service_files[i]);
 					if (len >= sizeof(rm_service)) {
 						fprintf(stderr, "snprintf output was truncated or failed.\n");
 					}
@@ -734,7 +734,7 @@ void uninstall_Livy() {
 				// Use sed to remove LIVY_HOME from files
 				char clean_cmd[PATH_MAX + 100];
 					long unsigned int len =  snprintf(clean_cmd, sizeof(clean_cmd), 
-							"sudo sed -i '/LIVY_HOME/d' %s", env_files[i]);
+							"sudo sed -i '/LIVY_HOME/d' %s >/dev/null 2>&1", env_files[i]);
 					if (len >= sizeof(clean_cmd)) {
 						fprintf(stderr, "snprintf output was truncated or failed.\n");
 					}
@@ -755,7 +755,7 @@ void uninstall_Livy() {
 		for (size_t i = 0; i < sizeof(potential_links)/sizeof(potential_links[0]); i++) {
 			if (access(potential_links[i], F_OK) == 0) {
 				char rm_link[PATH_MAX + 50];
-					snprintf(rm_link, sizeof(rm_link), "sudo rm -f %s", potential_links[i]);
+					snprintf(rm_link, sizeof(rm_link), "sudo rm -f %s >/dev/null 2>&1", potential_links[i]);
 					int result =  executeSystemCommand(rm_link);
 					if (result != 0) {
 						printf("Command failed with return code %d\n", result);
@@ -817,7 +817,7 @@ void uninstall_pig() {
 		// Validate installation directory
 		if (install_dir[0] && stat(install_dir, &st) == 0 && S_ISDIR(st.st_mode)) {
 			// 3. Remove installation files
-			snprintf(command, sizeof(command), "rm -rf \"%s\"", install_dir);
+			snprintf(command, sizeof(command), "rm -rf \"%s\" >/dev/null 2>&1", install_dir);
 				if ((ret = !executeSystemCommand(command))) {
 					fprintf(stderr, "Failed to remove installation directory (Code %d)\n", WEXITSTATUS(ret));
 						exit(EXIT_FAILURE);
@@ -829,11 +829,11 @@ void uninstall_pig() {
 	
 		// 4. Clean residual files
 		//  printf("Cleaning residual files...\n");
-		int result = executeSystemCommand("rm -f pig-*.tar.gz");
+		int result = executeSystemCommand("rm -f pig-*.tar.gz >/dev/null 2>&1");
 		if (result == -1) {
 			printf("Command failed with return code %d\n", result);
 		}
-	int resultRM = executeSystemCommand("rm -rf pig-*");  // Remove any extracted directories in CWD
+	int resultRM = executeSystemCommand("rm -rf pig-* >/dev/null 2>&1");  // Remove any extracted directories in CWD
 	if (resultRM == -1) {
 		printf("Command failed with return code %d\n", resultRM);
 	}
@@ -843,7 +843,7 @@ void uninstall_pig() {
 			
 			// Remove PIG_HOME and PATH modifications using sed
 			long unsigned int len = snprintf(command, sizeof(command),
-					"sed -i '/PIG_HOME=/d; /export PATH.*PIG_HOME/d' %s",
+					"sed -i '/PIG_HOME=/d; /export PATH.*PIG_HOME/d' %s >/dev/null 2>&1",
 					bashrc_path);
 			if (len >= sizeof(command)) {
 				fprintf(stderr, "snprintf output was truncated or failed.\n");
@@ -929,7 +929,7 @@ void uninstall_HBase() {
 	
 		// Step 2: Remove installation directory
 		char rm_cmd[PATH_MAX + 50];
-		long unsigned int ret = snprintf(rm_cmd, sizeof(rm_cmd), "sudo rm -rf \"%s\"", install_path);
+		long unsigned int ret = snprintf(rm_cmd, sizeof(rm_cmd), "sudo rm -rf \"%s\" >/dev/null 2>&1", install_path);
 		if (ret >= sizeof(rm_cmd)) {
 			fprintf(stderr, "Error: command buffer overflow\n");
 				return;
@@ -973,7 +973,7 @@ void uninstall_HBase() {
 				if (modified) {
 					// Create backup
 					char backup_cmd[PATH_MAX + 50];
-						long unsigned int ret3 = snprintf(backup_cmd, sizeof(backup_cmd), "cp %s %s.bak", path, path);
+						long unsigned int ret3 = snprintf(backup_cmd, sizeof(backup_cmd), "cp %s %s.bak >/dev/null 2>&1", path, path);
 						if (ret3 >= sizeof(backup_cmd)) {
 							fprintf(stderr, "Error: backup command buffer overflow\n");
 								remove(temp_path);
@@ -983,7 +983,7 @@ void uninstall_HBase() {
 						
 						// Apply changes
 						char apply_cmd[PATH_MAX + 50];
-						long unsigned int ret4 = snprintf(apply_cmd, sizeof(apply_cmd), "mv %s %s", temp_path, path);
+						long unsigned int ret4 = snprintf(apply_cmd, sizeof(apply_cmd), "mv %s %s >/dev/null 2>&1", temp_path, path);
 						if (ret4 >= sizeof(apply_cmd)) {
 							fprintf(stderr, "Error: apply command buffer overflow\n");
 								remove(temp_path);
@@ -1039,7 +1039,7 @@ void uninstall_Tez() {
 		//printf("Removing installation files...\n");
 		for (int i = 0; i < path_count; i++) {
 			char cmd[1024];
-				snprintf(cmd, sizeof(cmd), "sudo rm -rf \"%s\"", install_paths[i]);
+				snprintf(cmd, sizeof(cmd), "sudo rm -rf \"%s\" >/dev/null 2>&1", install_paths[i]);
 				if (!executeSystemCommand(cmd)) {
 					fprintf(stderr, "Failed to remove: %s\n", install_paths[i]);
 				}
@@ -1083,7 +1083,7 @@ void uninstall_Tez() {
 					// Replace original file if changes were made
 					if (modified) {
 						char backup[1024];
-							long unsigned int len = snprintf(backup, sizeof(backup), "cp %s %s.bak", rc_file, rc_file);
+							long unsigned int len = snprintf(backup, sizeof(backup), "cp %s %s.bak >/dev/null 2>&1", rc_file, rc_file);
 							if (len >= sizeof(backup)) {
 								fprintf(stderr, "snprintf output was truncated or failed.\n");
 							}
@@ -1092,7 +1092,7 @@ void uninstall_Tez() {
 								printf("Command failed with return code %d\n", result);
 							}
 						char move_cmd[1024];
-							long unsigned int len2 =  snprintf(move_cmd, sizeof(move_cmd), "mv %s %s", temp_file, rc_file);
+							long unsigned int len2 =  snprintf(move_cmd, sizeof(move_cmd), "mv %s %s >/dev/null 2>&1", temp_file, rc_file);
 							if (len2 >= sizeof(move_cmd)) {
 								fprintf(stderr, "snprintf output was truncated or failed.\n");
 							}
@@ -1117,7 +1117,7 @@ void uninstall_Tez() {
 		for (size_t i = 0; i < sizeof(system_configs)/sizeof(char*); i++) {
 			if (access(system_configs[i], F_OK) == 0) {
 				char cmd[1024];
-					snprintf(cmd, sizeof(cmd), "sudo rm -f %s", system_configs[i]);
+					snprintf(cmd, sizeof(cmd), "sudo rm -f %s >/dev/null 2>&1", system_configs[i]);
 					int result = executeSystemCommand(cmd);
 					if (result != 0) {
 						printf("Command failed with return code %d\n", result);
@@ -1140,7 +1140,7 @@ void uninstall_Tez() {
 		}
 	
 		// Step 7: Remove cache and temp files
-		int resultRm = executeSystemCommand("sudo rm -rf /var/log/tez /var/cache/tez /tmp/tez*");
+		int resultRm = executeSystemCommand("sudo rm -rf /var/log/tez /var/cache/tez /tmp/tez* >/dev/null 2>&1");
 		if (resultRm != 0) {
 			printf("Command failed with return code %d\n", resultRm);
 		}
@@ -1183,7 +1183,7 @@ void uninstall_kafka() {
 	
 		// Step 2: Remove installation directory
 		char rm_cmd[PATH_MAX + 50];
-		long unsigned int ret = snprintf(rm_cmd, sizeof(rm_cmd), "sudo rm -rf \"%s\"", install_path);
+		long unsigned int ret = snprintf(rm_cmd, sizeof(rm_cmd), "sudo rm -rf \"%s\" >/dev/null 2>&1", install_path);
 		if (ret >= sizeof(rm_cmd)) {
 			fprintf(stderr, "Error: command buffer overflow\n");
 				return;
@@ -1228,7 +1228,7 @@ void uninstall_kafka() {
 				if (modified) {
 					// Create backup
 					char backup_cmd[PATH_MAX + 50];
-						long unsigned int ret3 = snprintf(backup_cmd, sizeof(backup_cmd), "cp %s %s.bak", path, path);
+						long unsigned int ret3 = snprintf(backup_cmd, sizeof(backup_cmd), "cp %s %s.bak >/dev/null 2>&1", path, path);
 						if (ret3 >= sizeof(backup_cmd)) {
 							fprintf(stderr, "Error: backup command buffer overflow\n");
 								remove(temp_path);
@@ -1238,7 +1238,7 @@ void uninstall_kafka() {
 						
 						// Apply changes
 						char apply_cmd[PATH_MAX + 50];
-						long unsigned int ret4 = snprintf(apply_cmd, sizeof(apply_cmd), "mv %s %s", temp_path, path);
+						long unsigned int ret4 = snprintf(apply_cmd, sizeof(apply_cmd), "mv %s %s >/dev/null 2>&1", temp_path, path);
 						if (ret4 >= sizeof(apply_cmd)) {
 							fprintf(stderr, "Error: apply command buffer overflow\n");
 								remove(temp_path);
@@ -1282,7 +1282,7 @@ void uninstall_Solr() {
 		// 3. Remove installation directory
 		if (access(install_dir, F_OK) == 0) {
 			//printf("Removing installation directory: %s\n", install_dir);
-			snprintf(command, sizeof(command), "sudo rm -rf %s", install_dir);
+			snprintf(command, sizeof(command), "sudo rm -rf %s >/dev/null 2>&1", install_dir);
 				if (!executeSystemCommand(command)) {
 					fprintf(stderr, "Failed to remove installation directory\n");
 				}
@@ -1291,7 +1291,7 @@ void uninstall_Solr() {
 		// 4. Remove data directory
 		if (access(data_dir, F_OK) == 0) {
 			//printf("Removing data directory: %s\n", data_dir);
-			snprintf(command, sizeof(command), "sudo rm -rf %s", data_dir);
+			snprintf(command, sizeof(command), "sudo rm -rf %s >/dev/null 2>&1", data_dir);
 				if (!executeSystemCommand(command)) {
 					fprintf(stderr, "Failed to remove data directory\n");
 				}
@@ -1300,7 +1300,7 @@ void uninstall_Solr() {
 		// 5. Remove log directory
 		if (access(log_dir, F_OK) == 0) {
 			//printf("Removing log directory: %s\n", log_dir);
-			snprintf(command, sizeof(command), "sudo rm -rf %s", log_dir);
+			snprintf(command, sizeof(command), "sudo rm -rf %s >/dev/null 2>&1", log_dir);
 				if (!executeSystemCommand(command)) {
 					fprintf(stderr, "Failed to remove log directory\n");
 				}
@@ -1334,7 +1334,7 @@ void uninstall_Solr() {
 						
 						if (found_solr_vars) {
 							// Replace original .bashrc
-							snprintf(command, sizeof(command), "mv %s %s", temp_file, bashrc_path);
+							snprintf(command, sizeof(command), "mv %s %s >/dev/null 2>&1", temp_file, bashrc_path);
 								int result = executeSystemCommand(command);
 								if (result != 0) {
 									printf("Command failed with return code %d\n", result);
@@ -1401,7 +1401,7 @@ void uninstall_phoenix() {
 	
 		// Remove installation directory (requires elevated privileges)
 		char command[1024];
-		snprintf(command, sizeof(command), "sudo rm -rf \"%s\"", install_dir);
+		snprintf(command, sizeof(command), "sudo rm -rf \"%s\" >/dev/null 2>&1", install_dir);
 		int ret = executeSystemCommand(command);
 		if (ret != 0) {
 			fprintf(stderr, "Error: Failed to remove directory (code %d). Check permissions.\n", ret);
@@ -1461,7 +1461,7 @@ void uninstall_phoenix() {
 				
 				// Replace original file if changes were made
 				if (modified) {
-					snprintf(command, sizeof(command), "mv \"%s\" \"%s\"", temp_path, profile_path);
+					snprintf(command, sizeof(command), "mv \"%s\" \"%s\" >/dev/null 2>&1", temp_path, profile_path);
 						ret = executeSystemCommand(command);
 						if (ret != 0) {
 							fprintf(stderr, "Error updating %s\n", shell_files[i]);
@@ -1477,7 +1477,7 @@ void uninstall_phoenix() {
 		// Remove system-wide environment settings (if any)
 		char etc_profile[] = "/etc/profile.d/phoenix.sh";
 		if (access(etc_profile, F_OK) == 0) {
-			snprintf(command, sizeof(command), "sudo rm -f %s", etc_profile);
+			snprintf(command, sizeof(command), "sudo rm -f %s >/dev/null 2>&1", etc_profile);
 				ret = executeSystemCommand(command);
 				if (ret == 0) {
 					//printf("Removed system-wide Phoenix profile\n");
@@ -1528,7 +1528,7 @@ void uninstall_ranger() {
 	
 		// 2. Remove installation directory
 		//printf("Removing installation directory: %s\n", install_dir);
-		snprintf(command, sizeof(command), "sudo rm -rf \"%s\"", install_dir);
+		snprintf(command, sizeof(command), "sudo rm -rf \"%s\" >/dev/null 2>&1", install_dir);
 		if (!executeSystemCommand(command)) {
 			fprintf(stderr, "Error: Failed to remove installation directory\n");
 		}
@@ -1568,7 +1568,7 @@ void uninstall_ranger() {
 		};
 	
 		for (int i = 0; artifacts[i]; i++) {
-			snprintf(command, sizeof(command), "sudo rm -rf %s", artifacts[i]);
+			snprintf(command, sizeof(command), "sudo rm -rf %s >/dev/null 2>&1", artifacts[i]);
 				executeSystemCommand(command);
 		}
 	
@@ -1619,7 +1619,7 @@ void uninstall_livy() {
 			struct stat st;
 				if(stat(path, &st) == 0 && S_ISDIR(st.st_mode)) {
 					//printf("Removing %s...\n", path);
-					long unsigned int len =  snprintf(command, sizeof(command), "sudo rm -rf \"%s\"", path);
+					long unsigned int len =  snprintf(command, sizeof(command), "sudo rm -rf \"%s\" >/dev/null 2>&1", path);
 						if (len >= sizeof(path)) {
 							fprintf(stderr, "snprintf output was truncated or failed.\n");
 						}
@@ -1646,7 +1646,7 @@ void uninstall_livy() {
 				long unsigned int len = snprintf(command, sizeof(command),
 						"cp \"%s\" \"%s.bak\" && "
 						"grep -v 'LIVY_HOME\\|apache-livy' \"%s\" > \"%s.tmp\" && "
-						"mv \"%s.tmp\" \"%s\"",
+						"mv \"%s.tmp\" \"%s\" >/dev/null 2>&1",
 						shell_path, shell_path, shell_path, shell_path, shell_path, shell_path);
 					if (len >= sizeof(command)) {
 						fprintf(stderr, "snprintf output was truncated or failed.\n");
@@ -1670,7 +1670,7 @@ void uninstall_livy() {
 		for(int i = 0; service_files[i]; i++) {
 			if(access(service_files[i], F_OK) == 0) {
 				//printf("Removing systemd service: %s\n", service_files[i]);
-				snprintf(command, sizeof(command), "sudo rm -f \"%s\"", service_files[i]);
+				snprintf(command, sizeof(command), "sudo rm -f \"%s\" >/dev/null 2>&1", service_files[i]);
 					int result = executeSystemCommand(command);
 					if (result != 0) {
 						printf("Command failed with return code %d\n", result);
@@ -1680,11 +1680,11 @@ void uninstall_livy() {
 	
 		// 6. Kill any remaining processes
 		//printf("\nChecking for remaining processes:\n");
-		int resultGrep=  executeSystemCommand("pgrep -af livy-server");
+		int resultGrep=  executeSystemCommand("pgrep -af livy-server >/dev/null 2>&1");
 		if (resultGrep != 0) {
 			printf("Command failed with return code %d\n", resultGrep);
 		}
-	int resultKill = executeSystemCommand("sudo pkill -9 -f livy-server");
+	int resultKill = executeSystemCommand("sudo pkill -9 -f livy-server >/dev/null 2>&1");
 		if (resultKill != 0) {
 			printf("Command failed with return code %d\n", resultKill);
 		}
@@ -1700,7 +1700,7 @@ void uninstall_livy() {
 	
 		for(int i = 0; cache_paths[i]; i++) {
 			//printf("Removing %s...\n", cache_paths[i]);
-			snprintf(command, sizeof(command), "sudo rm -rf %s", cache_paths[i]);
+			snprintf(command, sizeof(command), "sudo rm -rf %s >/dev/null 2>&1", cache_paths[i]);
 				int result = executeSystemCommand(command);
 				if (result != 0) {
 					printf("Command failed with return code %d\n", result);
@@ -1710,7 +1710,7 @@ void uninstall_livy() {
 		// 8. Refresh shell environment
 		//printf("\nRefreshing shell environment...\n");
 		unsetenv("LIVY_HOME");
-		int resultHash = executeSystemCommand("hash -r");
+		int resultHash = executeSystemCommand("hash -r >/dev/null 2>&1");
 		if (resultHash != 0) {
 			printf("Command failed with return code %d\n", resultKill);
 		}
@@ -1810,7 +1810,7 @@ void uninstall_Atlas() {
 	
 		// 3. Remove downloaded archives
 		//printf("Cleaning up downloaded packages...\n");
-		int resultFind = executeSystemCommand("find . -maxdepth 1 -name 'apache-atlas-*-bin.tar.gz' -exec rm -f {} \\;");
+		int resultFind = executeSystemCommand("find . -maxdepth 1 -name 'apache-atlas-*-bin.tar.gz' -exec rm -f {} \\; >/dev/null 2>&1");
 		if (resultFind == -1) {
 			printf("Command failed with return code %d\n", resultFind);
 		}
@@ -1888,12 +1888,12 @@ void uninstall_Atlas() {
 		// 7. Package manager cleanup
 #if defined(__linux__)
 		if (access("/etc/redhat-release", F_OK) == 0) {
-			int result =executeSystemCommand("sudo rpm -qa | grep atlas | xargs -r sudo rpm -e");
+			int result =executeSystemCommand("sudo rpm -qa | grep atlas | xargs -r sudo rpm -e >/dev/null 2>&1");
 				if (result == -1) {
 					printf("Command failed with return code %d\n", result);
 				}
 		} else if (access("/etc/debian_version", F_OK) == 0) {
-			int result = executeSystemCommand("sudo dpkg -l | grep atlas | awk '{print $2}' | xargs -r sudo dpkg -r");
+			int result = executeSystemCommand("sudo dpkg -l | grep atlas | awk '{print $2}' | xargs -r sudo dpkg -r >/dev/null 2>&1");
 				if (result == -1) {
 					printf("Command failed with return code %d\n", result);
 				}
@@ -2092,7 +2092,7 @@ void uninstall_flink() {
 		snprintf(stop_script, sizeof(stop_script), "%s/bin/stop-cluster.sh", flink_dir);
 		if (access(stop_script, X_OK) == 0) {
 			//printf("Stopping Flink services...\n");
-			snprintf(cmd, sizeof(cmd), "%s", stop_script);
+			snprintf(cmd, sizeof(cmd), "%s >/dev/null 2>&1", stop_script);
 				ret = executeSystemCommand(cmd);
 				if (WEXITSTATUS(ret) != 0) {
 					fprintf(stderr, "Warning: Failed to stop services (exit code %d)\n", WEXITSTATUS(ret));
@@ -2101,7 +2101,7 @@ void uninstall_flink() {
 	
 		// 4. Remove installation directory
 		//printf("Removing installation directory...\n");
-		snprintf(cmd, sizeof(cmd), "sudo rm -rf \"%s\"", flink_dir);
+		snprintf(cmd, sizeof(cmd), "sudo rm -rf \"%s\" >/dev/null 2>&1", flink_dir);
 		ret = executeSystemCommand(cmd);
 		if (ret == -1) {
 			fprintf(stderr, "Failed to remove installation directory\n");
@@ -2172,8 +2172,8 @@ void uninstall_flink() {
 		// 7. Optional: Package manager cleanup
 		//printf("Checking package manager artifacts...\n");
 		const char* pkg_commands[] = {
-			"dpkg -l | grep -i flink && echo 'Warning: Potential debian packages found'",
-				"rpm -qa | grep -i flink && echo 'Warning: Potential RPM packages found'"
+			"dpkg -l | grep -i flink && echo 'Warning: Potential debian packages found' >/dev/null 2>&1",
+				"rpm -qa | grep -i flink && echo 'Warning: Potential RPM packages found' >/dev/null 2>&1"
 		};
 	for (size_t i = 0; i < sizeof(pkg_commands)/sizeof(pkg_commands[0]); i++) {
 		int result = executeSystemCommand(pkg_commands[i]);
@@ -2215,7 +2215,7 @@ void uninstall_zookeeper() {
 		// Phase 2: Installation directory removal
 		//   printf("[2/5] Removing installation directories...\n");
 		if (zk_home) {
-			snprintf(command, sizeof(command), "sudo rm -rf \"%s\"", zk_home);
+			snprintf(command, sizeof(command), "sudo rm -rf \"%s\" >/dev/null 2>&1", zk_home);
 				int result = executeSystemCommand(command);
 				if (result == -1) {
 					printf("Command failed with return code %d\n", result);
@@ -2223,7 +2223,7 @@ void uninstall_zookeeper() {
 		} else {
 			for (char **path = install_paths; *path; path++) {
 				if (access(*path, F_OK) == 0) {
-					snprintf(command, sizeof(command), "sudo rm -rf \"%s\"", *path);
+					snprintf(command, sizeof(command), "sudo rm -rf \"%s\" >/dev/null 2>&1", *path);
 						int result = executeSystemCommand(command);
 						if (result == -1) {
 							printf("Command failed with return code %d\n", result);
@@ -2234,7 +2234,7 @@ void uninstall_zookeeper() {
 	
 		// Phase 3: Data directory cleanup
 		//printf("[3/5] Removing data directories...\n");
-		snprintf(command, sizeof(command), "sudo rm -rf %s", data_dir);
+		snprintf(command, sizeof(command), "sudo rm -rf %s >/dev/null 2>&1", data_dir);
 		int result = executeSystemCommand(command);
 		if (result == -1) {
 			printf("Command failed with return code %d\n", result);
@@ -2266,7 +2266,7 @@ void uninstall_zookeeper() {
 								
 								// Replace original if modified
 								if (modified) {
-									long unsigned int len =   snprintf(command, sizeof(command), "cp %s %s && rm %s",
+									long unsigned int len =   snprintf(command, sizeof(command), "cp %s %s && rm %s >/dev/null 2>&1",
 											temp_file, bashrc_path, temp_file);
 										if (len >= sizeof(command)) {
 											fprintf(stderr, "snprintf output was truncated or failed.\n");
@@ -2283,11 +2283,11 @@ void uninstall_zookeeper() {
 	
 		// Phase 5: Dependency cleanup
 		//printf("[5/5] Checking for Java dependencies...\n");
-		int resuultGrep = executeSystemCommand("dpkg -l | grep -q 'openjdk' && echo 'Consider removing Java: sudo apt remove openjdk-*'");
+		int resuultGrep = executeSystemCommand("dpkg -l | grep -q 'openjdk' && echo 'Consider removing Java: sudo apt remove openjdk-*' >/dev/null 2>&1");
 		if (resuultGrep == -1) {
 			printf("Command failed with return code %d\n", resuultGrep);
 		}
-	int resultQa = executeSystemCommand("rpm -qa | grep -q 'java' && echo 'Consider removing Java: sudo yum remove java-*'");
+	int resultQa = executeSystemCommand("rpm -qa | grep -q 'java' && echo 'Consider removing Java: sudo yum remove java-*' >/dev/null 2>&1");
 		if (resultQa == -1) {
 			printf("Command failed with return code %d\n", resultQa);
 		}

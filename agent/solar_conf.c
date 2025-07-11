@@ -110,7 +110,7 @@ ConfigResult* validate_solr_parameter(const char *param_name, const char *param_
         if (reti) {
             char error_message[1024];
             regerror(reti, &regex, error_message, sizeof(error_message));
-            fprintf(stderr, "Regex compilation failed: %s\n", error_message);
+            FPRINTF(global_client_socket, "Regex compilation failed: %s\n", error_message);
             continue;
         }
 

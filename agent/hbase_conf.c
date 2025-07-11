@@ -157,6 +157,29 @@ ConfigResult* process_hbase_config(const char *param_name, const char *param_val
         {"log4j.org.apache.hadoop.util", "^log4j[._-]org[._-]apache[._-]hadoop[._-]util$", "hbase-log4j.properties"},
         {"log4j.logger.org.apache.hadoop.fs.s3a", "^log4j[._-]logger[._-]org[._-]apache[._-]hadoop[._-]fs[._-]s3a$", "hbase-log4j.properties"},
         {"log4j.logger.org.apache.hadoop.hbase.oss", "^log4j[._-]logger[._-]org[._-]apache[._-]hadoop[._-]hbase[._-]oss$", "hbase-log4j.properties"},
+        {"hbase.root.logger", "^hbase[._-]root[._-]logger$", "hbase-log4j.properties"},
+        {"hbase.security.logger", "^hbase[._-]security[._-]logger$", "hbase-log4j.properties"},
+        {"hbase.log.dir", "^hbase[._-]log[._-]dir$", "hbase-log4j.properties"},
+        {"hbase.log.file", "^hbase[._-]log[._-]file$", "hbase-log4j.properties"},
+        {"log4j.rootLogger", "^log4j[._-]rootLogger$", "hbase-log4j.properties"},
+        {"log4j.threshold", "^log4j[._-]threshold$", "hbase-log4j.properties"},
+        {"log4j.appender.DRFA", "^log4j[._-]appender[._-]DRFA$", "hbase-log4j.properties"},
+    // ... (all other log4j properties from calls) ...
+    
+    // HBase Site Parameters
+        {"hbase_log_maxfilesize", "^hbase[._-]log[._-]maxfilesize$", "hbase-site.xml"},
+        {"hbase_log_maxbackupindex", "^hbase[._-]log[._-]maxbackupindex$", "hbase-site.xml"},
+        {"hbase_security_log_maxfilesize", "^hbase[._-]security[._-]log[._-]maxfilesize$", "hbase-site.xml"},
+        {"hbase_security_log_maxbackupindex", "^hbase[._-]security[._-]log[._-]maxbackupindex$", "hbase-site.xml"},
+        {"hbase.master.port", "^hbase[._-]master[._-]port$", "hbase-site.xml"},
+        {"phoenix.rpc.index.handler.count", "^phoenix[._-]rpc[._-]index[._-]handler[._-]count$", "hbase-site.xml"},
+    // ... (all other missing hbase-site params) ...
+    
+    // Ranger Plugin Properties
+        {"common.name.for.certificate", "^common[._-]name[._-]for[._-]certificate$", "ranger-hbase-plugin.properties"},
+        {"policy_user", "^policy[._-]user$", "ranger-hbase-plugin.properties"},
+        {"ranger-hbase-plugin-enabled", "^ranger[._-]hbase[._-]plugin[._-]enabled$", "ranger-hbase-plugin.properties"},
+        {"REPOSITORY_CONFIG_USERNAME", "^REPOSITORY[._-]CONFIG[._-]USERNAME$", "ranger-hbase-plugin.properties"},
 
     };
 
@@ -169,7 +192,7 @@ ConfigResult* process_hbase_config(const char *param_name, const char *param_val
         if (reti) {
             char error_msg[1024];
             regerror(reti, &regex, error_msg, sizeof(error_msg));
-            fprintf(stderr, "Regex compilation error for %s: %s\n", 
+            FPRINTF(global_client_socket, "Regex compilation error for %s: %s\n", 
                     hbase_predefined_params[i].canonicalName, error_msg);
             continue;
         }
@@ -201,7 +224,7 @@ ConfigResult* process_hbase_config(const char *param_name, const char *param_val
         } else if (reti != REG_NOMATCH) {
             char error_msg[1024];
             regerror(reti, &regex, error_msg, sizeof(error_msg));
-            fprintf(stderr, "Regex execution error for %s: %s\n", 
+            FPRINTF(global_client_socket, "Regex execution error for %s: %s\n", 
                     hbase_predefined_params[i].canonicalName, error_msg);
         }
     }
@@ -576,7 +599,7 @@ ConfigStatus update_hbase_config(const char* param, const char* value , const ch
         }
     }
 
-    if (strcmp(filename, "hbase-log4j.properties") == 0) 
+    if (strcmp(filename, "log4j2.properties") == 0) 
     {
         configure_hadoop_property(file_path, param, value);
         return SUCCESS;

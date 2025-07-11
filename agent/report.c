@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 #include <stdbool.h>
 #include <limits.h>
+#include "utiles.h"
 
 
 
@@ -290,7 +291,7 @@ char *report_livy() {
     if (sock < 0) {
         char *msg;
         if (asprintf(&msg, "Apache Livy is installed at %s but is not started.", found_path) == -1)
-            fprintf(stderr, "Error: Failed to allocate memory for the message.\n");
+            FPRINTF(global_client_socket, "Error: Failed to allocate memory for the message.\n");
 
         return msg;
     }
@@ -305,7 +306,7 @@ char *report_livy() {
         close(sock);
         char *msg;
         if (asprintf(&msg, "Apache Livy is installed at %s but is not started.", found_path) == -1)
-                fprintf(stderr, "Error: Failed to allocate memory for the message.\n");
+                FPRINTF(global_client_socket, "Error: Failed to allocate memory for the message.\n");
         
         return msg;
     }
@@ -316,7 +317,7 @@ char *report_livy() {
     if (!curl) {
         char *msg;
         if (asprintf(&msg, "Apache Livy is running at %s, but failed to execute curl command.", found_path) == -1)
-            fprintf(stderr, "Error: Failed to allocate memory for the message.\n");
+            FPRINTF(global_client_socket, "Error: Failed to allocate memory for the message.\n");
         return msg;
     }
 

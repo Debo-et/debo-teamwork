@@ -76,19 +76,19 @@ ConfigParam zeppelin_predefined_params[] = {
     // External Systems Integration
     {"zeppelin.config.fs.dir", "zeppelin-config-fs-dir", "zeppelin-site.xml"},
     {"zeppelin.credentials.file", "zeppelin-credentials-file", "zeppelin-site.xml"},
-        // New Configuration Parameters (from zeppelin-log4j.properties)
-    {"log4j.rootLogger", "log4j-rootLogger", "zeppelin-log4j.properties"},
-    {"log4j.appender.stdout", "log4j-appender-stdout", "zeppelin-log4j.properties"},
-    {"log4j.appender.stdout.layout", "log4j-appender-stdout-layout", "zeppelin-log4j.properties"},
-    {"log4j.appender.stdout.layout.ConversionPattern", "log4j-appender-stdout-layout-ConversionPattern", "zeppelin-log4j.properties"},
-    {"log4j.appender.dailyfile.DatePattern", "log4j-appender-dailyfile-DatePattern", "zeppelin-log4j.properties"},
-    {"log4j.appender.dailyfile.DEBUG", "log4j-appender-dailyfile-DEBUG", "zeppelin-log4j.properties"},
-    {"log4j.appender.dailyfile", "log4j-appender-dailyfile", "zeppelin-log4j.properties"},
-    {"log4j.appender.dailyfile.File", "log4j-appender-dailyfile-File", "zeppelin-log4j.properties"},
-    {"log4j.appender.dailyfile.layout", "log4j-appender-dailyfile-layout", "zeppelin-log4j.properties"},
-    {"log4j.appender.dailyfile.layout.ConversionPattern", "log4j-appender-dailyfile-layout-ConversionPattern", "zeppelin-log4j.properties"},
-    {"log4j.logger.org.apache.zeppelin.python", "log4j-logger-org-apache-zeppelin-python", "zeppelin-log4j.properties"},
-    {"log4j.logger.org.apache.zeppelin.spark", "log4j-logger-org-apache-zeppelin-spark", "zeppelin-log4j.properties"},
+        // New Configuration Parameters (from log4j.properties)
+    {"log4j.rootLogger", "log4j-rootLogger", "log4j.properties"},
+    {"log4j.appender.stdout", "log4j-appender-stdout", "log4j.properties"},
+    {"log4j.appender.stdout.layout", "log4j-appender-stdout-layout", "log4j.properties"},
+    {"log4j.appender.stdout.layout.ConversionPattern", "log4j-appender-stdout-layout-ConversionPattern", "log4j.properties"},
+    {"log4j.appender.dailyfile.DatePattern", "log4j-appender-dailyfile-DatePattern", "log4j.properties"},
+    {"log4j.appender.dailyfile.DEBUG", "log4j-appender-dailyfile-DEBUG", "log4j.properties"},
+    {"log4j.appender.dailyfile", "log4j-appender-dailyfile", "log4j.properties"},
+    {"log4j.appender.dailyfile.File", "log4j-appender-dailyfile-File", "log4j.properties"},
+    {"log4j.appender.dailyfile.layout", "log4j-appender-dailyfile-layout", "log4j.properties"},
+    {"log4j.appender.dailyfile.layout.ConversionPattern", "log4j-appender-dailyfile-layout-ConversionPattern", "log4j.properties"},
+    {"log4j.logger.org.apache.zeppelin.python", "log4j-logger-org-apache-zeppelin-python", "log4j.properties"},
+    {"log4j.logger.org.apache.zeppelin.spark", "log4j-logger-org-apache-zeppelin-spark", "log4j.properties"},
         // New entries from shiro.ini
     // [users] section
     {"shiro.user.user1", "password2, role1, role2", "shiro.ini"},
@@ -254,7 +254,7 @@ ConfigStatus set_zeppelin_config(const char *config_file, const char *param, con
 
     /* Check if config_file is allowed */
     if (strcmp(config_file, "zeppelin-site.xml") != 0 && strcmp(config_file, "shiro.ini") != 0
-    && strcmp(config_file, "zeppelin-log4j.properties") != 0) {
+    && strcmp(config_file, "log4j.properties") != 0) {
         return INVALID_CONFIG_FILE;
     }
 
@@ -305,11 +305,16 @@ ConfigStatus set_zeppelin_config(const char *config_file, const char *param, con
         }
     }
     
-    if (strcmp(config_file, "zeppelin-log4j.properties") == 0 ||
-        strcmp(config_file, "shiro.ini") == 0 ) {
+    if (strcmp(config_file, "log4j.properties") == 0) {
         configure_hadoop_property(config_path, param, value);
         return SUCCESS;
     }
+    
+    if (strcmp(config_file, "zeppelin-shiro.ini") == 0 ) {
+        configure_hadoop_property(config_path, param, value);
+        return SUCCESS;
+    }
+    
     /* Determine if handling XML or INI */
     bool is_xml = strcmp(config_file, "zeppelin-site.xml") == 0;
 

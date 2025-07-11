@@ -526,6 +526,28 @@ static const ConfigParam hdfs_configs[] = {
     {"mapreduce.output.fileoutputformat.compress", "^mapreduce\\.output\\.fileoutputformat\\.compress$", "mapred-site.xml"},
     {"mapreduce.jobhistory.http.policy", "^mapreduce\\.jobhistory\\.http\\.policy$", "mapred-site.xml"},
     {"mapreduce.job.queuename", "^mapreduce\\.job\\.queuename$", "mapred-site.xml"},
+    
+    { "REPOSITORY_CONFIG_USERNAME", "^REPOSITORY_CONFIG_USERNAME$", "ranger-hdfs-plugin.properties" },
+    { "REPOSITORY_CONFIG_PASSWORD", "^REPOSITORY_CONFIG_PASSWORD$", "ranger-hdfs-plugin.properties" },
+    { "REPOSITORY_CONFIG_USER_PASSWORD", "^REPOSITORY_CONFIG_USER_PASSWORD$", "ranger-hdfs-plugin.properties" },
+    { "REPOSITORY_TYPE", "^REPOSITORY_TYPE$", "ranger-hdfs-plugin.properties" },
+    { "POLICY_DOWNLOAD_AUTH_USERS", "^POLICY_DOWNLOAD_AUTH_USERS$", "ranger-hdfs-plugin.properties" },
+    { "REPOSITORY_CONFIG_BASE_URL", "^REPOSITORY_CONFIG_BASE_URL$", "ranger-hdfs-plugin.properties" },
+    { "REPOSITORY_CONFIG_COMMON_NAME_FOR_CERTIFICATE", "^REPOSITORY_CONFIG_COMMON_NAME_FOR_CERTIFICATE$", "ranger-hdfs-plugin.properties" },
+    { "REPOSITORY_CONFIG_POLICY_MGR_SSL_CERTIFICATE", "^REPOSITORY_CONFIG_POLICY_MGR_SSL_CERTIFICATE$", "ranger-hdfs-plugin.properties" },
+    { "content.property-file-name", "^content\\.property-file-name$", "container-executor.cfg" },
+    { "xasecure.audit.destination.db.jdbc.url", "^xasecure\\.audit\\.destination\\.db\\.jdbc\\.url$", "ranger-yarn-audit.xml" },
+    { "REPOSITORY_CONFIG_USERNAME", "^REPOSITORY_CONFIG_USERNAME$", "ranger-hdfs-plugin.properties" },
+    { "REPOSITORY_CONFIG_PASSWORD", "^REPOSITORY_CONFIG_PASSWORD$", "ranger-hdfs-plugin.properties" },
+    { "REPOSITORY_CONFIG_USER_PASSWORD", "^REPOSITORY_CONFIG_USER_PASSWORD$", "ranger-hdfs-plugin.properties" },
+    { "REPOSITORY_TYPE", "^REPOSITORY_TYPE$", "ranger-hdfs-plugin.properties" },
+    { "POLICY_DOWNLOAD_AUTH_USERS", "^POLICY_DOWNLOAD_AUTH_USERS$", "ranger-hdfs-plugin.properties" },
+    { "REPOSITORY_CONFIG_BASE_URL", "^REPOSITORY_CONFIG_BASE_URL$", "ranger-hdfs-plugin.properties" },
+    { "REPOSITORY_CONFIG_COMMON_NAME_FOR_CERTIFICATE", "^REPOSITORY_CONFIG_COMMON_NAME_FOR_CERTIFICATE$", "ranger-hdfs-plugin.properties" },
+    { "REPOSITORY_CONFIG_POLICY_MGR_SSL_CERTIFICATE", "^REPOSITORY_CONFIG_POLICY_MGR_SSL_CERTIFICATE$", "ranger-hdfs-plugin.properties" },
+
+
+
 };
 
 ValidationResult validateHdfsConfigParam(const char *param_name, const char *value) {
@@ -766,9 +788,7 @@ ConfigResult* find_hdfs_config(const char *param) {
 }
 
 
-
 ConfigStatus modify_hdfs_config(const char* config_param, const char* value, const char *filename) {
-
     char *file_path = NULL;
     char candidate_path[PATH_MAX];
 
@@ -809,8 +829,18 @@ ConfigStatus modify_hdfs_config(const char* config_param, const char* value, con
     }
 
     if (strcmp(filename, "hdfs-log4j.properties") == 0 ||
-        strcmp(filename, "log4j.properties") == 0) {
+        strcmp(filename, "log4j.properties") == 0 ||
+        strcmp(filename, "ranger-hdfs-plugin.properties") == 0 ||
+        strcmp(filename, "yarnservice-log4j.properties") == 0 ||
+        strcmp(filename, "ranger-yarn-plugin.properties") == 0) {
         configure_hadoop_property(file_path, config_param, value);
+        free(file_path);
+        return SUCCESS;
+    }
+    
+    if (strcmp(filename, "container-executor.cfg") == 0) {
+        update_config( config_param, value, file_path);
+        free(file_path);
         return SUCCESS;
     }
 
@@ -879,8 +909,17 @@ ConfigStatus modify_hdfs_config(const char* config_param, const char* value, con
         xmlAddChild(root, new_prop);
     }
 
-    // Save the XML document
-    if (xmlSaveFormatFileEnc(file_path, doc, "UTF-8", 1) < 0) {
+    // Enable XML output indentation
+    int oldIndent = xmlIndentTreeOutput;
+    xmlIndentTreeOutput = 1;
+
+    // Save the XML document with formatting
+    int save_result = xmlSaveFormatFileEnc(file_path, doc, "UTF-8", 1);
+    
+    // Restore original indentation setting
+    xmlIndentTreeOutput = oldIndent;
+
+    if (save_result < 0) {
         xmlFreeDoc(doc);
         free(file_path);
         return SAVE_FAILED;

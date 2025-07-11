@@ -10,8 +10,9 @@
 
 #include <libxml/parser.h>
 #include <libxml/tree.h>
-
-#define MAX_LINE_LENGTH 1024
+ 
+ 
+extern bool dependency;
 
 static char *
 simple_prompt_extended(const char *prompt, bool echo,
@@ -357,6 +358,124 @@ apache_strdup(const char *in)
         return tmp;
 }
 
+static int saved_stdout = -1;
+static int pipefd[2] = {-1, -1};
+static pthread_t capture_thread;
+static bool capturing = false;
+static char *config_abs_path = NULL;
+
+static void* output_thread() {
+    // Get current working directory for absolute path
+    char cwd[PATH_MAX];
+    if (getcwd(cwd, sizeof(cwd))) {
+        config_abs_path = malloc(strlen(cwd) + strlen("/configuration.txt") + 1);
+        sprintf(config_abs_path, "%s/configuration.txt", cwd);
+    } else {
+        perror("getcwd() failed");
+        config_abs_path = strdup("configuration.txt");
+    }
+
+    FILE *log_file = fopen(config_abs_path, "w");
+    if (!log_file) {
+        char error[512];
+        snprintf(error, sizeof(error), "Error: Failed to create %s\n", config_abs_path);
+        write(saved_stdout, error, strlen(error));
+    }
+
+    char buffer[4096];
+    while (1) {
+        ssize_t count = read(pipefd[0], buffer, sizeof(buffer));
+        if (count <= 0) {
+            if (count == -1 && errno == EINTR) continue;
+            break;
+        }
+        
+        // Write to original terminal
+        write(saved_stdout, buffer, count);
+        
+        // Write to log file
+        if (log_file) {
+            fwrite(buffer, 1, count, log_file);
+            fflush(log_file);
+        }
+    }
+
+    if (log_file) fclose(log_file);
+    close(pipefd[0]);
+    return NULL;
+}
+
+int start_stdout_capture(void) {
+    if (capturing) {
+        fprintf(stderr, "Error: stdout capture already active\n");
+        return -1;
+    }
+
+    fflush(stdout);
+
+    if (pipe(pipefd) == -1) {
+        perror("pipe() failed");
+        return -1;
+    }
+
+    saved_stdout = dup(STDOUT_FILENO);
+    if (saved_stdout == -1) {
+        perror("dup() failed");
+        close(pipefd[0]);
+        close(pipefd[1]);
+        return -1;
+    }
+
+    if (dup2(pipefd[1], STDOUT_FILENO) == -1) {
+        perror("dup2() failed");
+        close(pipefd[0]);
+        close(pipefd[1]);
+        close(saved_stdout);
+        return -1;
+    }
+    close(pipefd[1]);
+
+    if (pthread_create(&capture_thread, NULL, output_thread, NULL)) {
+        perror("pthread_create() failed");
+        dup2(saved_stdout, STDOUT_FILENO);
+        close(saved_stdout);
+        close(pipefd[0]);
+        return -1;
+    }
+
+    capturing = true;
+    return 0;
+}
+
+int stop_stdout_capture(void) {
+    if (!capturing) return 0;
+
+    fflush(stdout);
+    dup2(saved_stdout, STDOUT_FILENO);
+    close(saved_stdout);
+    saved_stdout = -1;
+
+    close(pipefd[0]);
+    pthread_join(capture_thread, NULL);
+    
+    // Print absolute path if available
+    if (config_abs_path) {
+        // Verify file was created
+        if (access(config_abs_path, F_OK) == 0) {
+            printf("Configuration data saved to: %s\n", config_abs_path);
+        } else {
+            fprintf(stderr, "Warning: Expected output file not found: %s\n", config_abs_path);
+        }
+        free(config_abs_path);
+        config_abs_path = NULL;
+    } else {
+        fprintf(stderr, "Error: Could not determine output file path\n");
+    }
+
+    capturing = false;
+    return 0;
+}
+
 bool is_version_format(const char *version) {
     int num_count = 0, dot_count = 0;
     
@@ -395,28 +514,53 @@ void printBorder(const char *start, const char *end, const char *color) {
 
 void printTextBlock(const char *text, const char *textColor, const char *borderColor) {
     const char *start = text;
-    const char *end;
+    const int maxLineLength = BOX_WIDTH - 4;  // Maximum text per line
+    char lineBuffer[BOX_WIDTH - 2];          // Buffer for each line (+ null terminator)
 
     while (*start) {
-        end = strchr(start, '\n');
-        if (end == NULL) end = start + strlen(start);
-        
+        const char *end = start;
+        const char *lastSpace = NULL;
+        int remaining = maxLineLength;
+
+        // Find next break point (newline, space, or max length)
+        while (*end && *end != '\n' && remaining > 0) {
+            if (*end == ' ') {
+                lastSpace = end;  // Track last space for word wrapping
+            }
+            end++;
+            remaining--;
+        }
+
+        // Handle breaks: newline takes priority, then space, then forced break
+        if (*end == '\n') {
+            // Break at newline
+        } else if (lastSpace && remaining == 0) {
+            end = lastSpace;  // Break at last space to avoid splitting words
+        } else if (*end == '\0') {
+            // Reached end of string
+        }
+
+        // Calculate segment length and copy to buffer
         int length = end - start;
-        int maxLength = BOX_WIDTH - 4;  // Reserve space for null terminator
-        if (length > maxLength) length = maxLength;  // Prevent overflow
+        strncpy(lineBuffer, start, length);
+        lineBuffer[length] = '\0';
 
-        char line[BOX_WIDTH - 3];
-        strncpy(line, start, length);
-        line[length] = '\0';  // Ensure null termination
+        // Print formatted line within borders
+        printf("%s│%s %s%-*s%s %s│%s\n", 
+               borderColor, RESET, 
+               textColor, maxLineLength, lineBuffer, RESET,
+               borderColor, RESET);
 
-        printf("%s│%s", borderColor, RESET);
-        printf(" %s%-*s%s ", textColor, maxLength, line, RESET);
-        printf("%s│%s\n", borderColor, RESET);
-
-        start = (*end == '\n') ? end + 1 : end;
+        // Update start position (skip break characters)
+        if (*end == '\n') {
+            start = end + 1;  // Skip newline
+        } else if (lastSpace && end == lastSpace) {
+            start = end + 1;  // Skip space
+        } else {
+            start = end;      // No skip (mid-word break)
+        }
     }
 }
-
 
 char *concatenate_strings(const char *s1, const char *s2) {
     // Handle case where both parameters are NULL
@@ -720,43 +864,43 @@ unsigned char get_protocol_code(Component comp, Action action, const char* versi
 const char* component_to_string(Component comp) {
     switch(comp) {
         // Flink
-        case FLINK: return "flink";
+        case FLINK: return "Flink";
 
         // Hadoop
         case HDFS: return "hdfs";
         // HBase
-        case HBASE: return "hbase";
+        case HBASE: return "Hbase";
 
         // Hive
-        case HIVE: return "hive";
+        case HIVE: return "Hive";
         case HIVE_METASTORE: return "hive-metastore";
         // Kafka
-        case KAFKA: return "kafka";
+        case KAFKA: return "Kafka";
 
         // Livy
-        case LIVY: return "livy";
+        case LIVY: return "Livy";
 
         // Phoenix
-        case PHOENIX: return "phoenix";
+        case PHOENIX: return "Phoenix";
 
         // Ranger
-        case RANGER: return "ranger";
+        case RANGER: return "Ranger";
 
         // Solr
-        case SOLR: return "solr";
+        case SOLR: return "Solr";
         // Tez
-        case TEZ: return "tez";
-        case ATLAS: return "atlas";
-        case STORM: return "storm";
-        case PIG: return "pig";
-        case SPARK: return "spark";
-        case PRESTO: return "presto";
+        case TEZ: return "Tez";
+        case ATLAS: return "Atlas";
+        case STORM: return "Storm";
+        case PIG: return "Pig";
+        case SPARK: return "Spark";
+        case PRESTO: return "Presto";
 
         // Zeppelin
-        case ZEPPELIN: return "zeppelin";
+        case ZEPPELIN: return "Zeppelin";
 
         // Zookeeper
-        case ZOOKEEPER: return "zookeeper";
+        case ZOOKEEPER: return "Zookeeper";
         default: return NULL;
     }
 }
@@ -806,8 +950,8 @@ const char * action_to_string(Action action) {
             return "Restarting...";
         case INSTALL: 
             return "Installing...";
-        case UPGRADE:
-            return "Upgrading...";
+        case VERSION_SWITCH:
+            return "switching...";
         case UNINSTALL: 
             return "Uninstalling...";
         case CONFIGURE:
@@ -827,147 +971,9 @@ char* trim_leading(char* str) {
     return str;
 }
 
-int update_component_version(const char* component, const char* new_version) {
-    FILE* file = fopen("bigtop-master/bigtop.bom", "r");
-    if (!file) {
-        perror("Error opening file");
-        return -1;
-    }
-
-    // Read all lines into memory
-    char** lines = NULL;
-    size_t line_count = 0;
-    char buffer[MAX_LINE_LENGTH];
-    while (fgets(buffer, MAX_LINE_LENGTH, file)) {
-        char* line = strdup(buffer);
-        if (!line) {
-            fclose(file);
-            return -1;
-        }
-        lines = realloc(lines, sizeof(char*) * (line_count + 1));
-        if (!lines) {
-            free(line);
-            fclose(file);
-            return -1;
-        }
-        lines[line_count++] = line;
-    }
-    fclose(file);
-
-    int component_found = 0;
-    int component_braces = 0;
-    int version_braces = 0;
-    int result = -1; // Default to error
-
-    char component_pattern[MAX_LINE_LENGTH];
-    snprintf(component_pattern, sizeof(component_pattern), "'%s' {", component);
-
-    for (size_t i = 0; i < line_count; i++) {
-        if (!component_found) {
-            char* trimmed = trim_leading(lines[i]);
-            if (strncmp(trimmed, component_pattern, strlen(component_pattern)) == 0) {
-                component_found = 1;
-                component_braces = 1;
-                // Check the rest of the line for braces
-                for (char* c = lines[i]; *c; c++) {
-                    if (*c == '{') component_braces++;
-                    else if (*c == '}') component_braces--;
-                }
-                continue;
-            }
-        } else {
-            // Track component braces
-            for (char* c = lines[i]; *c; c++) {
-                if (*c == '{') component_braces++;
-                else if (*c == '}') component_braces--;
-            }
-
-            // Check if we are outside the component block
-            if (component_braces <= 0) {
-                component_found = 0;
-                continue;
-            }
-
-            // Check if entering version block
-            char* trimmed = trim_leading(lines[i]);
-            if (strncmp(trimmed, "version {", 9) == 0) {
-                version_braces = 1;
-                // Check the rest of the line for braces
-                for (char* c = lines[i]; *c; c++) {
-                    if (*c == '{') version_braces++;
-                    else if (*c == '}') version_braces--;
-                }
-
-                // Search for base line within version block
-                for (size_t j = i; j < line_count; j++) {
-                    // Update version_braces for current line
-                    if (j > i) {
-                        version_braces = 1;
-                        for (char* c = lines[j]; *c; c++) {
-                            if (*c == '{') version_braces++;
-                            else if (*c == '}') version_braces--;
-                        }
-                    }
-
-                    // Look for base line
-                    char* base_ptr = strstr(lines[j], "base =");
-                    if (base_ptr) {
-                        char* start = strchr(base_ptr, '\'');
-                        if (!start) continue;
-                        start++;
-                        char* end = strchr(start, '\'');
-                        if (!end) continue;
-
-                        // Replace the version
-                        size_t prefix_len = start - lines[j];
-                        char* new_line = malloc(prefix_len + strlen(new_version) + (strlen(end + 1) + 2));
-                        if (!new_line) {
-                            result = -1;
-                            goto cleanup;
-                        }
-                        snprintf(new_line, prefix_len + strlen(new_version) + strlen(end + 1) + 2, 
-                                 "%.*s'%s'%s", (int)prefix_len, lines[j], new_version, end + 1);
-                        free(lines[j]);
-                        lines[j] = new_line;
-                       // base_line = j;
-                        result = 0;
-                        goto write_back;
-                    }
-
-                    // Exit version block if braces are closed
-                    if (version_braces <= 0) {
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-write_back:
-    if (result == 0) {
-        file = fopen("bigtop-master/bigtop.bom", "w");
-        if (!file) {
-            perror("Error opening file for writing");
-            result = -1;
-            goto cleanup;
-        }
-        for (size_t i = 0; i < line_count; i++) {
-            fputs(lines[i], file);
-        }
-        fclose(file);
-    }
-
-cleanup:
-    for (size_t i = 0; i < line_count; i++) {
-        free(lines[i]);
-    }
-    free(lines);
-
-    return result;
-}
 
 
-Conn* connect_to_postgres(const char* host, const char* port) {
+Conn* connect_to_debo(const char* host, const char* port) {
     const char* keywords[5] = {NULL};  // Connection parameters + NULL terminator
     const char* values[5] = {NULL};
     int param_index = 0;
@@ -1023,35 +1029,173 @@ void reset_connection_buffers(Conn *conn) {
     conn->outMsgStart = -1;  /* Indicates no incomplete message */
     conn->outMsgEnd = 0;
 }
+
+Component* get_dependencies(Component comp, int *count) {
+    static Component hbase_deps[] = {HDFS, ZOOKEEPER};
+    static Component kafka_deps[] = {ZOOKEEPER};
+    static Component hive_deps[] = {HDFS, TEZ}; // Added YARN/TEZ
+    static Component phoenix_deps[] = {HBASE};
+    static Component storm_deps[] = {ZOOKEEPER};
+    static Component spark_deps[] = {HDFS};    // Added YARN
+    static Component tez_deps[] = {HDFS};      // Added YARN
+    static Component livy_deps[] = {SPARK};
+    static Component ranger_deps[] = {SOLR, HDFS};   // Added HDFS
+    static Component atlas_deps[] = {HBASE, KAFKA, SOLR}; 
+    static Component pig_deps[] = {HDFS};
+    static Component solr_deps[] = {ZOOKEEPER};
+    static Component yarn_deps[] = {HDFS};
+    static Component flink_deps[] = {HDFS, YARN};
+
+    switch (comp) {
+        case HBASE: *count = 2; return hbase_deps;
+        case KAFKA: *count = 1; return kafka_deps;
+        case HIVE: *count = 3; return hive_deps;          // Updated count
+        case PHOENIX: *count = 1; return phoenix_deps;
+        case STORM: *count = 1; return storm_deps;
+        case SPARK: *count = 2; return spark_deps;        // Updated count
+        case TEZ: *count = 2; return tez_deps;            // Updated count
+        case LIVY: *count = 1; return livy_deps;
+        case RANGER: *count = 2; return ranger_deps;      // Updated count
+        // New cases for previously missing components
+        case ATLAS: *count = 3; return atlas_deps;
+        case PIG: *count = 2; return pig_deps;
+        case SOLR: *count = 1; return solr_deps;
+        case YARN: *count = 1; return yarn_deps;
+        case FLINK: *count = 2; return flink_deps;
+        // Components with no dependencies
+        case PRESTO: 
+        case ZEPPELIN: 
+        case ZOOKEEPER: 
+        case HDFS: 
+        default: *count = 0; return NULL;
+    }
+}
+
+
+/**
+ * Sends a command message based on the specified protocol.
+ * 
+ * @param component The target component for the action.
+ * @param action The action to be performed.
+ * @param version Version string for installation (nullable).
+ * @param location Location string for installation (nullable).
+ * @param param_name Parameter name for configuration (nullable).
+ * @param param_value Parameter value for configuration (nullable).
+ * @param conn The connection object for network operations.
+ * @return 1 on success, 0 on failure.
+ */
+void SendComponentActionCommand(Component component, Action action,
+                              const char* version,
+                              const char* param_name, const char* param_value,
+                              Conn* conn) {
+    if (!conn) {
+        fprintf(stderr, "Invalid connection object\n");
+        return;
+    }
+    int dep_count;
+
+    if (action == VERSION_SWITCH) // Only for INSTALL action
+    {
+            SendComponentActionCommand(component, UNINSTALL, NULL, NULL, NULL, conn);
+            SendComponentActionCommand(component, INSTALL, version, NULL, NULL, conn);
+         //   configure_dependency_for_remote_component(component, deps[i], conn);
+    }
+
+    if (dependency && (action == INSTALL || action == UNINSTALL)) // Only for INSTALL action
+    {
+        Component *deps = get_dependencies(component, &dep_count);
+      //  printTextBlock("Installing dependency ...\n", CYAN, YELLOW);
+        for (int i = 0; i < dep_count; i++) {
+          //  char buffer[256];
+           // const char* compStr = component_to_string(deps[i]);
+         //   snprintf(buffer, sizeof(buffer),
+           //     "Installing dependency ...\n");
+            //printTextBlock("Installing dependency ...\n", CYAN, YELLOW);
+            
+            // Send dependency command
+            SendComponentActionCommand(deps[i], action, NULL, NULL, NULL, conn);
+         //   configure_dependency_for_remote_component(component, deps[i], conn);
+
+        }
+    }
+    // Convert enums to protocol codes
+    unsigned char comp_code = get_protocol_code(component, action, version);
+
+    // Send component and action codes
+    if (PutMsgStart(comp_code, conn) < 0) {
+        fprintf(stderr, "Failed to send component/action\n");
+        return;
+    }
+    // Handle action-specific parameters
+    switch (action) {
+        case START:
+        PutMsgEnd(conn);
+        break;
+        case STOP:
+        PutMsgEnd(conn);
+        break;
+        case RESTART:
+        PutMsgEnd(conn);
+        break;
+        case UNINSTALL:
+        PutMsgEnd(conn);
+        break;
+
+        case CONFIGURE:
+            if (!param_name || !param_value) {
+                fprintf(stderr, "Invalid configuration parameters\n");
+                return;
+            }
+            char *result = concatenate_strings(param_name, param_value);
+
+            if (Putnchar(result, strlen(result), conn) < 0) {
+                fprintf(stderr, "Failed to send configuration parameters\n");
+                return;
+            }
+            PutMsgEnd(conn);
+            break;
+
+        case INSTALL:
+            // Send version if provided
+            
+            if (version) {
+                if (Putnchar(version, strlen(version), conn) < 0) {
+                    fprintf(stderr, "Failed to send version\n");
+                    return;
+                }
+            }
+            PutMsgEnd(conn);
+            break;
+
+        case NONE:
+        PutMsgEnd(conn);
+            // No additional parameters needed
+            break;
+        default:
+            return;
+            return;
+    }
+ (void) Flush(conn);
+
+}
+
 bool executeSystemCommand(const char *cmd) {
     int ret = system(cmd);
-
-#ifdef _WIN32
-    /* Windows-specific return value handling */
-    if (ret >= 0) {
-        return true;
-    } else {
-        fprintf(stderr, "System command execution failed with error code: %d\n", ret);
-        return false;
-    }
-#else
-    /* POSIX-compliant return value handling */
+    
     if (ret == -1) {
+        // Only report system() execution failures
         perror("system() execution failed");
         return false;
-    } else {
-        if (WIFEXITED(ret)) {
-            int exit_status = WEXITSTATUS(ret);
-            if (exit_status != 0) {
-                fprintf(stderr, "Command exited with non-zero status: %d\n", exit_status);
-            }
-        } else {
-            fprintf(stderr, "Command terminated abnormally (signal %d)\n", WTERMSIG(ret));
-        }
-        return true;
     }
-#endif
+
+    // Handle command execution results without reporting non-zero exits
+    if (WIFSIGNALED(ret)) {
+        fprintf(stderr, "Command terminated abnormally (signal %d)\n", WTERMSIG(ret));
+    }
+    
+    return true;
 }
+
 
 
 
@@ -1137,51 +1281,249 @@ bool isComponentVersionSupported(Component component, const char *version) {
     return false;
 }
 
+static bool is_directory(const char* path) {
+    if (path == NULL) return false;
+    struct stat st;
+    if (stat(path, &st) != 0) return false;
+    return S_ISDIR(st.st_mode);
+}
 
-void handle_result(ConfigStatus status) {
+
+static const char* get_default_base_path() {
+    FILE* f = fopen("/etc/os-release", "r");
+    if (f == NULL) return NULL;
+
+    char line[256];
+    const char* base_path = NULL;
+    while (fgets(line, sizeof(line), f) != NULL) {
+        if (strncmp(line, "ID=", 3) == 0) {
+            char* id_value = line + 3;
+            char* end = strchr(id_value, '\n');
+            if (end) *end = '\0';
+
+            if (*id_value == '"') {
+                memmove(id_value, id_value + 1, strlen(id_value));
+                end = strchr(id_value, '"');
+                if (end) *end = '\0';
+            }
+
+            if (strcmp(id_value, "ubuntu") == 0 || strcmp(id_value, "debian") == 0) {
+                base_path = "/usr/local";
+                break;
+            } else if (strcmp(id_value, "centos") == 0 || strcmp(id_value, "rhel") == 0 ||
+                       strcmp(id_value, "fedora") == 0 || strcmp(id_value, "rocky") == 0) {
+                base_path = "/opt";
+                break;
+            }
+        }
+    }
+    fclose(f);
+    return base_path;
+}
+
+static void get_component_info(Component comp, const char **env_var, const char **fallback_dir, const char **conf_subdir) {
+    *env_var = NULL;
+    *fallback_dir = NULL;
+    *conf_subdir = NULL;
+
+    switch (comp) {
+        case HDFS:
+        case YARN:
+            *env_var = "HADOOP_HOME";
+            *fallback_dir = "hadoop";
+            *conf_subdir = "etc/hadoop";
+            break;
+        case HBASE:
+            *env_var = "HBASE_HOME";
+            *fallback_dir = "hbase";
+            *conf_subdir = "conf";
+            break;
+        case HIVE:
+        case HIVE_METASTORE:
+            *env_var = "HIVE_HOME";
+            *fallback_dir = "hive";
+            *conf_subdir = "conf";
+            break;
+        case KAFKA:
+            *env_var = "KAFKA_HOME";
+            *fallback_dir = "kafka";
+            *conf_subdir = "config";
+            break;
+        case LIVY:
+            *env_var = "LIVY_HOME";
+            *fallback_dir = "livy";
+            *conf_subdir = "conf";
+            break;
+        case PHOENIX:
+            *env_var = "PHOENIX_HOME";
+            *fallback_dir = "phoenix";
+            *conf_subdir = "conf";
+            break;
+        case STORM:
+            *env_var = "STORM_HOME";
+            *fallback_dir = "storm";
+            *conf_subdir = "conf";
+            break;
+        case HUE:
+            *env_var = "HUE_HOME";
+            *fallback_dir = "hue";
+            *conf_subdir = "desktop/conf";
+            break;
+        case PIG:
+            *env_var = "PIG_HOME";
+            *fallback_dir = "pig";
+            *conf_subdir = "conf";
+            break;
+        case OOZIE:
+            *env_var = "OOZIE_HOME";
+            *fallback_dir = "oozie";
+            *conf_subdir = "conf";
+            break;
+        case PRESTO:
+            *env_var = "PRESTO_HOME";
+            *fallback_dir = "presto";
+            *conf_subdir = "etc";
+            break;
+        case ATLAS:
+            *env_var = "ATLAS_HOME";
+            *fallback_dir = "atlas";
+            *conf_subdir = "conf";
+            break;
+        case RANGER:
+            *env_var = "RANGER_HOME";
+            *fallback_dir = "ranger";
+            *conf_subdir = "conf";
+            break;
+        case SOLR:
+            *env_var = "SOLR_HOME";
+            *fallback_dir = "solr";
+            *conf_subdir = "etc";
+            break;
+        case SPARK:
+            *env_var = "SPARK_HOME";
+            *fallback_dir = "spark";
+            *conf_subdir = "conf";
+            break;
+        case TEZ:
+            *env_var = "TEZ_HOME";
+            *fallback_dir = "tez";
+            *conf_subdir = "conf";
+            break;
+        case ZEPPELIN:
+            *env_var = "ZEPPELIN_HOME";
+            *fallback_dir = "zeppelin";
+            *conf_subdir = "conf";
+            break;
+        case ZOOKEEPER:
+            *env_var = "ZOOKEEPER_HOME";
+            *fallback_dir = "zookeeper";
+            *conf_subdir = "conf";
+            break;
+        case FLINK:
+            *env_var = "FLINK_HOME";
+            *fallback_dir = "flink";
+            *conf_subdir = "conf";
+            break;
+        default:
+            break;
+    }
+}
+
+char* get_component_config_path(Component comp, const char* config_filename) {
+    if (comp == NONE || config_filename == NULL) return NULL;
+
+    const char *env_var = NULL;
+    const char *fallback_dir = NULL;
+    const char *conf_subdir = NULL;
+    get_component_info(comp, &env_var, &fallback_dir, &conf_subdir);
+
+    if (env_var == NULL || fallback_dir == NULL || conf_subdir == NULL) return NULL;
+
+    const char* env_value = getenv(env_var);
+    char* base_path = NULL;
+
+    if (env_value != NULL && is_directory(env_value)) {
+        base_path = strdup(env_value);
+    }
+
+    if (base_path == NULL) {
+        const char* default_base = get_default_base_path();
+        if (default_base == NULL) default_base = "/opt";
+
+        size_t len = strlen(default_base) + strlen(fallback_dir) + 2;
+        base_path = malloc(len);
+        if (base_path == NULL) return NULL;
+        snprintf(base_path, len, "%s/%s", default_base, fallback_dir);
+    }
+
+    size_t conf_dir_len = strlen(base_path) + strlen(conf_subdir) + 2;
+    char* conf_dir = malloc(conf_dir_len);
+    if (conf_dir == NULL) {
+        free(base_path);
+        return NULL;
+    }
+    snprintf(conf_dir, conf_dir_len, "%s/%s", base_path, conf_subdir);
+    free(base_path);
+
+    size_t full_len = strlen(conf_dir) + strlen(config_filename) + 2;
+    char* full_path = malloc(full_len);
+    if (full_path == NULL) {
+        free(conf_dir);
+        return NULL;
+    }
+    snprintf(full_path, full_len, "%s/%s", conf_dir, config_filename);
+    free(conf_dir);
+
+    return full_path;
+}
+
+
+void handle_result(ConfigStatus status, const char *config_param, const char *config_value, const char *config_file) {
     switch(status) {
         case SUCCESS:
-            printf("Operation completed successfully\n");
+            printf("Successfully configure '%s' to '%s' in %s\n", 
+                   config_param, config_value, config_file);
             break;
             
         case INVALID_FILE_TYPE:
-            fprintf(stderr, "Error: Invalid file type provided\n");
+            fprintf(stderr, "Error: File '%s' has invalid type (must be .xml)\n", config_file);
             break;
             
         case FILE_NOT_FOUND:
-            fprintf(stderr, "Error: Configuration file not found\n");
+            fprintf(stderr, "Error: Configuration file '%s' not found\n", config_file);
             break;
             
         case XML_PARSE_ERROR:
-            fprintf(stderr, "Error: Failed to parse XML content\n");
+            fprintf(stderr, "Error: Failed to parse XML in '%s'\n", config_file);
             break;
             
         case INVALID_CONFIG_FILE:
-            fprintf(stderr, "Error: Invalid configuration file format\n");
+            fprintf(stderr, "Error: Invalid XML structure in '%s'\n", config_file);
             break;
             
         case XML_UPDATE_ERROR:
-            fprintf(stderr, "Error: Failed to update XML configuration\n");
+            fprintf(stderr, "Error: Failed to update parameter '%s' in '%s'\n", 
+                   config_param, config_file);
             break;
             
         case FILE_WRITE_ERROR:
-            fprintf(stderr, "Error: Could not write to file\n");
+            fprintf(stderr, "Error: Could not write changes to '%s'\n", config_file);
             break;
             
         case FILE_READ_ERROR:
-            fprintf(stderr, "Error: Could not read from file\n");
+            fprintf(stderr, "Error: Could not read from '%s'\n", config_file);
             break;
             
         case XML_INVALID_ROOT:
-            fprintf(stderr, "Error: XML root element is invalid or missing\n");
+            fprintf(stderr, "Error: Invalid/missing root element in '%s'\n", config_file);
             break;
             
         case SAVE_FAILED:
-            fprintf(stderr, "Error: Failed to save configuration changes\n");
+            fprintf(stderr, "Error: Failed to save configuration changes to '%s'\n", config_file);
             break;
             
         default:
-            fprintf(stderr, "Unknown error occurred\n");
+            fprintf(stderr, "Unknown error occurred (status code: %d)\n", status);
             break;
     }
 }
@@ -1466,6 +1808,426 @@ int updateHadoopConfigXML(const char *filePath, const char *parameterName, const
     xmlCleanupParser();
     return retCode;
 }
+
+
+
+#define BUFFER_SIZE 1024
+
+int update_config(const char *param, const char *value, const char *file_path) {
+    // Open file for reading
+    FILE *file = fopen(file_path, "r");
+    if (file == NULL) {
+        // File doesn't exist - create and write new key-value pair
+        FILE *new_file = fopen(file_path, "w");
+        if (new_file == NULL) {
+            fprintf(stderr, "Error creating file: %s\n", strerror(errno));
+            return -1;
+        }
+        fprintf(new_file, "%s=%s\n", param, value);
+        fclose(new_file);
+        return 0;
+    }
+
+    // Read file into memory
+    char **lines = NULL;
+    size_t line_count = 0;
+    char buffer[BUFFER_SIZE];
+    int found = 0;
+
+    while (fgets(buffer, sizeof(buffer), file) != NULL) {
+        size_t len = strlen(buffer);
+        if (len > 0 && buffer[len-1] == '\n') {
+            buffer[len-1] = '\0'; // Strip newline for processing
+        }
+
+        // Allocate space for line pointer
+        char **temp = realloc(lines, (line_count + 1) * sizeof(char *));
+        if (!temp) {
+            perror("Memory allocation failed");
+            fclose(file);
+            for (size_t i = 0; i < line_count; i++) free(lines[i]);
+            free(lines);
+            return -1;
+        }
+        lines = temp;
+        lines[line_count] = strdup(buffer);
+        if (!lines[line_count]) {
+            perror("Memory allocation failed");
+            fclose(file);
+            for (size_t i = 0; i < line_count; i++) free(lines[i]);
+            free(lines);
+            return -1;
+        }
+        line_count++;
+    }
+    fclose(file);
+
+    // Search for parameter and update if found
+    for (size_t i = 0; i < line_count; i++) {
+        char *line = lines[i];
+        char *p = line;
+
+        // Skip leading whitespace
+        while (isspace((unsigned char)*p)) p++;
+
+        // Skip comments and empty lines
+        if (*p == '#' || *p == '\0') continue;
+
+        // Split into key and value
+        char *delim = strchr(p, '=');
+        if (!delim) continue;
+
+        // Extract key and trim trailing whitespace
+        *delim = '\0';
+        char *key = p;
+        char *key_end = delim - 1;
+        while (key_end >= key && isspace((unsigned char)*key_end)) {
+            *key_end = '\0';
+            key_end--;
+        }
+
+        // Check if key matches
+        if (strcmp(key, param) == 0) {
+            found = 1;
+            // Create new line: key=value
+            char new_line[BUFFER_SIZE];
+            snprintf(new_line, sizeof(new_line), "%s=%s", param, value);
+            free(lines[i]);
+            lines[i] = strdup(new_line);
+            if (!lines[i]) {
+                perror("Memory allocation failed");
+                for (size_t j = 0; j < line_count; j++) free(lines[j]);
+                free(lines);
+                return -1;
+            }
+            break;
+        }
+    }
+
+    // Append if not found
+    if (!found) {
+        // Add new line
+        char **temp = realloc(lines, (line_count + 1) * sizeof(char *));
+        if (!temp) {
+            perror("Memory allocation failed");
+            for (size_t i = 0; i < line_count; i++) free(lines[i]);
+            free(lines);
+            return -1;
+        }
+        lines = temp;
+        char new_line[BUFFER_SIZE];
+        snprintf(new_line, sizeof(new_line), "%s=%s", param, value);
+        lines[line_count] = strdup(new_line);
+        if (!lines[line_count]) {
+            perror("Memory allocation failed");
+            for (size_t i = 0; i < line_count; i++) free(lines[i]);
+            free(lines);
+            return -1;
+        }
+        line_count++;
+    }
+
+    // Write updated content back to file
+    FILE *out = fopen(file_path, "w");
+    if (!out) {
+        fprintf(stderr, "Error opening file for writing: %s\n", strerror(errno));
+        for (size_t i = 0; i < line_count; i++) free(lines[i]);
+        free(lines);
+        return -1;
+    }
+
+    for (size_t i = 0; i < line_count; i++) {
+        fprintf(out, "%s\n", lines[i]); // Write with newline
+        free(lines[i]);
+    }
+    free(lines);
+    fclose(out);
+    return 0;
+}
+
+
+
+#define MAX_PATH_LENGTH 4096
+
+int create_xml_file(const char *directory_path, const char *xml_file_name) {
+    // Validate input parameters
+    if (!directory_path || !xml_file_name) {
+        fprintf(stderr, "Error: Null input parameters\n");
+        return -1;
+    }
+
+    // Check directory path validity
+    size_t dir_len = strlen(directory_path);
+    if (dir_len == 0 || dir_len > MAX_PATH_LENGTH - 1) {
+        fprintf(stderr, "Error: Invalid directory path length\n");
+        return -1;
+    }
+
+    // Check filename validity
+    size_t file_len = strlen(xml_file_name);
+    if (file_len == 0 || file_len > 255 || 
+        strstr(xml_file_name, "..") != NULL || 
+        strchr(xml_file_name, '/') != NULL || 
+        strchr(xml_file_name, '\\') != NULL) {
+        fprintf(stderr, "Error: Invalid XML file name\n");
+        return -1;
+    }
+
+    // Construct full file path
+    char full_path[MAX_PATH_LENGTH];
+    int path_len = snprintf(full_path, sizeof(full_path), "%s/%s", directory_path, xml_file_name);
+    if (path_len < 0 || path_len >= (int)sizeof(full_path)) {
+        fprintf(stderr, "Error: Path construction failed\n");
+        return -1;
+    }
+
+    // Create directory with proper permissions
+    if (mkdir(directory_path, 0755) != 0 && errno != EEXIST) {
+        fprintf(stderr, "Error creating directory '%s': %s\n", 
+                directory_path, strerror(errno));
+        return -1;
+    }
+
+    // Open file for writing
+    FILE *file = fopen(full_path, "wx");
+    if (!file) {
+        fprintf(stderr, "Error opening file '%s': %s\n", 
+                full_path, strerror(errno));
+        return -1;
+    }
+
+    // Define XML content with required structure
+    const char *xml_content = 
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        "<?xml-stylesheet type=\"text/xsl\" href=\"configuration.xsl\"?>\n"
+        "<configuration xmlns:xi=\"http://www.w3.org/2001/XInclude\">\n"
+        "</configuration>\n";
+
+    // Write content to file
+    size_t content_length = strlen(xml_content);
+    size_t written = fwrite(xml_content, 1, content_length, file);
+    
+    // Handle write errors
+    if (written != content_length) {
+        fprintf(stderr, "Error writing to file: %s\n", 
+                ferror(file) ? "Write failure" : "Unknown error");
+        fclose(file);
+        remove(full_path);
+        return -1;
+    }
+
+    // Finalize file operations
+    if (fclose(file) != 0) {
+        fprintf(stderr, "Error closing file: %s\n", strerror(errno));
+        remove(full_path);
+        return -1;
+    }
+
+    return 0;
+}
+
+
+int create_properties_file(const char *directory_path, const char *properties_file_name) {
+    // Validate input parameters
+    if (directory_path == NULL || properties_file_name == NULL) {
+        fprintf(stderr,  "Error: Null input parameters\n");
+        return -1;
+    }
+
+    // Check directory path length
+    size_t dir_len = strlen(directory_path);
+    if (dir_len == 0 || dir_len >= MAX_PATH_LENGTH) {
+        fprintf(stderr, "Error: Invalid directory path length\n");
+        return -1;
+    }
+
+    // Validate filename
+    size_t file_len = strlen(properties_file_name);
+    const char *ext_properties = ".properties";
+    const char *ext_ini = ".ini";
+    size_t ext_properties_len = strlen(ext_properties);
+    size_t ext_ini_len = strlen(ext_ini);
+    
+    int valid_extension = 0;
+    // Check for .properties extension
+    if (file_len >= ext_properties_len && 
+        strcmp(properties_file_name + file_len - ext_properties_len, ext_properties) == 0) {
+        valid_extension = 1;
+    }
+    // Check for .ini extension
+    else if (file_len >= ext_ini_len && 
+             strcmp(properties_file_name + file_len - ext_ini_len, ext_ini) == 0) {
+        valid_extension = 1;
+    }
+
+    // Validate filename length and extension
+    if (file_len == 0 || 
+        file_len > 255 || 
+        !valid_extension) {
+        fprintf(stderr,  "Error: File name must end with '.properties' or '.ini'\n");
+        return -1;
+    }
+
+    // Check for path traversal attempts
+    if (strstr(properties_file_name, "..") != NULL || 
+        strchr(properties_file_name, '/') != NULL || 
+        strchr(properties_file_name, '\\') != NULL) {
+        fprintf(stderr,  "Error: Invalid characters in file name\n");
+        return -1;
+    }
+
+    // Construct full path
+    char full_path[MAX_PATH_LENGTH];
+    int path_len = snprintf(full_path, sizeof(full_path), "%s/%s", directory_path, properties_file_name);
+    if (path_len < 0 || path_len >= (int)sizeof(full_path)) {
+        fprintf(stderr, "Error: Path construction failed. Path too long\n");
+        return -1;
+    }
+
+    // Create directory if needed (with secure permissions)
+    if (mkdir(directory_path, 0755) != 0) {
+        if (errno != EEXIST) {
+            fprintf(stderr,  "Error creating directory '%s': %s\n", 
+                    directory_path, strerror(errno));
+            return -1;
+        }
+        // Directory already exists - verify it's actually a directory
+        else {
+            struct stat dir_stat;
+            if (stat(directory_path, &dir_stat) != 0 || !S_ISDIR(dir_stat.st_mode)) {
+                fprintf(stderr,  "Error: Path exists but is not a directory\n");
+                return -1;
+            }
+        }
+    }
+
+    // Create file with exclusive mode (fails if file exists)
+    FILE *file = fopen(full_path, "wx");
+    if (file == NULL) {
+        fprintf(stderr,  "Error creating file '%s': %s\n", 
+                full_path, strerror(errno));
+        return -1;
+    }
+
+    // Close file handle (no content written per requirements)
+    if (fclose(file) != 0) {
+        fprintf(stderr,  "Error closing file: %s\n", strerror(errno));
+        remove(full_path);  // Clean up partially created file
+        return -1;
+    }
+
+    return 0;  // Success
+}
+
+#define MAX_FILENAME_LENGTH 256
+
+int create_conf_file(const char *directory_path, const char *conf_file_name) {
+    // Validate input parameters
+    if (directory_path == NULL || conf_file_name == NULL) {
+        fprintf(stderr, "Error: Null input parameters\n");
+        return -1;
+    }
+
+    // Check directory path length
+    size_t dir_len = strlen(directory_path);
+    if (dir_len == 0 || dir_len >= MAX_PATH_LENGTH) {
+        fprintf(stderr, "Error: Invalid directory path length (0-%d allowed)\n", MAX_PATH_LENGTH-1);
+        return -1;
+    }
+
+    // Validate filename
+    size_t file_len = strlen(conf_file_name);
+    const char *extension = ".conf";
+    size_t ext_len = strlen(extension);
+    
+    if (file_len == 0 || file_len >= MAX_FILENAME_LENGTH) {
+        fprintf(stderr, "Error: Invalid filename length (1-%d allowed)\n", MAX_FILENAME_LENGTH-1);
+        return -1;
+    }
+    
+    // Ensure filename ends with .conf extension
+    if (file_len < ext_len || strcmp(conf_file_name + file_len - ext_len, extension) != 0) {
+        fprintf(stderr, "Error: Filename must end with '.conf' extension\n");
+        return -1;
+    }
+
+    // Check for invalid characters in filename
+    if (strstr(conf_file_name, "..") != NULL || 
+        strchr(conf_file_name, '/') != NULL || 
+        strchr(conf_file_name, '\\') != NULL ||
+        strchr(conf_file_name, ':') != NULL ||
+        strchr(conf_file_name, '*') != NULL ||
+        strchr(conf_file_name, '?') != NULL ||
+        strchr(conf_file_name, '"') != NULL ||
+        strchr(conf_file_name, '<') != NULL ||
+        strchr(conf_file_name, '>') != NULL ||
+        strchr(conf_file_name, '|') != NULL) {
+        fprintf(stderr, "Error: Invalid characters in filename\n");
+        return -1;
+    }
+
+    // Construct full path safely
+    char full_path[MAX_PATH_LENGTH];
+    int path_len = snprintf(full_path, sizeof(full_path), "%s/%s", directory_path, conf_file_name);
+    if (path_len < 0 || path_len >= (int)sizeof(full_path)) {
+        fprintf(stderr, "Error: Path construction failed (max %d chars)\n", MAX_PATH_LENGTH-1);
+        return -1;
+    }
+
+    // Create directory if needed (with secure permissions)
+    if (mkdir(directory_path, 0755) != 0) {
+        if (errno != EEXIST) {
+            fprintf(stderr, "Error creating directory '%s': %s\n", 
+                    directory_path, strerror(errno));
+            return -1;
+        }
+        
+        // Verify existing path is a directory
+        struct stat path_stat;
+        if (stat(directory_path, &path_stat) != 0) {
+            fprintf(stderr, "Error accessing directory '%s': %s\n",
+                    directory_path, strerror(errno));
+            return -1;
+        }
+        
+        if (!S_ISDIR(path_stat.st_mode)) {
+            fprintf(stderr, "Error: Path exists but is not a directory\n");
+            return -1;
+        }
+    }
+
+    // Create file exclusively (fails if exists)
+    FILE *file = fopen(full_path, "wx");
+    if (file == NULL) {
+        // Provide specific error for file existence
+        if (errno == EEXIST) {
+            fprintf(stderr, "Error: File '%s' already exists\n", full_path);
+        } else {
+            fprintf(stderr, "Error creating file '%s': %s\n", 
+                    full_path, strerror(errno));
+        }
+        return -1;
+    }
+
+    // Close file handle (creating empty file)
+    if (fclose(file) != 0) {
+        fprintf(stderr, "Error closing file '%s': %s\n", 
+                full_path, strerror(errno));
+        remove(full_path);  // Clean up empty file
+        return -1;
+    }
+
+    // Set restrictive permissions (owner read/write only)
+    if (chmod(full_path, 0600) != 0) {
+        fprintf(stderr, "Warning: Failed to set permissions on '%s': %s\n",
+                full_path, strerror(errno));
+        // Not fatal, but warn about potential permission issues
+    }
+
+    return 0;  // Success
+}
+
+
 
 
 /* Helper functions to detect OS */

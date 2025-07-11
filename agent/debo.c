@@ -79,9 +79,6 @@ char *ListenAddresses = "0.0.0.0,::";  /* IPv4 + IPv6 wildcards */
 static int NumListenSockets = 0;
 static int ListenSockets[MAXLISTEN];
 
-/* Event types */
-#define WL_SOCKET_ACCEPT 0x01
-#define WL_SOCKET_READABLE 0x02
 
 ClientSocket *global_client_socket = NULL;
 
@@ -845,8 +842,8 @@ static void handle_command(ClientSocket *client_socket) {
             ConfigResult *hdfsResult= find_hdfs_config(result[0]);
             if (hdfsResult == NULL)
                     FPRINTF(global_client_socket,"configuration parameter not supported yet");
-            ConfigStatus hdfsStatus =  modify_hdfs_config(hdfsResult->canonical_name,result[1],hdfsResult->config_file);
-            handle_result(hdfsStatus);
+            ConfigStatus hdfsStatus =  modify_hdfs_config(hdfsResult->canonical_name,hdfsResult->value,hdfsResult->config_file);
+            handle_result(hdfsStatus, hdfsResult->canonical_name,result[1],hdfsResult->config_file);
             break;
         case CliMsg_HBase_Configure:
             ValidationResult validationHbase = validateHBaseConfigParam(result[0], result[1]);
@@ -856,7 +853,7 @@ static void handle_command(ClientSocket *client_socket) {
             if (hbaseResult == NULL)
                     FPRINTF(global_client_socket,"configuration parameter not supported yet");
             ConfigStatus hbaseStatus =  update_hbase_config(hbaseResult->canonical_name, hbaseResult->value, hbaseResult->config_file);
-            handle_result(hbaseStatus);
+            handle_result(hbaseStatus, hbaseResult->canonical_name, hbaseResult->value, hbaseResult->config_file);
             break;
         case CliMsg_Spark_Configure:
             ValidationResult validationSpark = validateSparkConfigParam(result[0], result[1]);
@@ -866,7 +863,7 @@ static void handle_command(ClientSocket *client_socket) {
             if (sparkResult == NULL)
                     FPRINTF(global_client_socket,"configuration parameter not supported yet");
             ConfigStatus sparkStatus = update_spark_config(sparkResult->canonical_name, sparkResult->value);
-            handle_result(sparkStatus);
+            handle_result(sparkStatus, sparkResult->canonical_name, sparkResult->value, sparkResult->config_file);
             break;
         case CliMsg_Kafka_Configure:
             ValidationResult validationKafka = validateKafkaConfigParam(result[0], result[1]);
@@ -874,9 +871,9 @@ static void handle_command(ClientSocket *client_socket) {
                 break;
             ConfigResult *kafkaResult = validate_kafka_config_param(result[0],result[1]);
             if (kafkaResult == NULL)
-                    FPRINTF(global_client_socket,"configuration parameter not supported yet");
+                    PRINTF(global_client_socket,"configuration parameter not supported yet");
             ConfigStatus kafkaStatus = modify_kafka_config(kafkaResult->canonical_name,kafkaResult->value,kafkaResult->config_file);
-            handle_result(kafkaStatus);
+            handle_result(kafkaStatus, kafkaResult->canonical_name,kafkaResult->value,kafkaResult->config_file);
             break;
         case CliMsg_Flink_Configure:
               ValidationResult validationflink = validateFlinkConfigParam(result[0], result[1]);
@@ -886,7 +883,7 @@ static void handle_command(ClientSocket *client_socket) {
             if (flinkResult ==NULL)
                     FPRINTF(global_client_socket,"configuration parameter not supported yet");
             ConfigStatus flinkStatus = update_flink_config(flinkResult->canonical_name,flinkResult->value, flinkResult->config_file);
-            handle_result(flinkStatus);
+            handle_result(flinkStatus, flinkResult->canonical_name,flinkResult->value, flinkResult->config_file);
             break;
         case CliMsg_ZooKeeper_Configure:
             ValidationResult validationZookeeper = validateZooKeeperConfigParam(result[0], result[1]);
@@ -896,7 +893,7 @@ static void handle_command(ClientSocket *client_socket) {
             if (zookeperResult == NULL)
                     FPRINTF(global_client_socket,"configuration parameter not supported yet");
             ConfigStatus zookeeperStatus = modify_zookeeper_config(zookeperResult->canonical_name, zookeperResult->value, zookeperResult->config_file);
-            handle_result(zookeeperStatus);
+            handle_result(zookeeperStatus, zookeperResult->canonical_name, zookeperResult->value, zookeperResult->config_file);
             break;
         case CliMsg_Storm_Configure:
             ValidationResult validationStorm = validateStormConfigParam(result[0], result[1]);
@@ -906,7 +903,7 @@ static void handle_command(ClientSocket *client_socket) {
             if (conf == NULL)
                     FPRINTF(global_client_socket,"configuration parameter not supported yet");
             ConfigStatus stormStatus = modify_storm_config(conf->canonical_name, conf->value, conf->config_file);
-            handle_result(stormStatus);
+            handle_result(stormStatus, conf->canonical_name, conf->value, conf->config_file);
             break;
         case CliMsg_Hive_Configure:
             ValidationResult validationHive = validateHiveConfigParam(result[0], result[1]);
@@ -916,7 +913,7 @@ static void handle_command(ClientSocket *client_socket) {
             if (hiveConf == NULL)
                     FPRINTF(global_client_socket,"configuration parameter not supported yet");
             ConfigStatus hiveStatus = modify_hive_config(hiveConf->canonical_name, hiveConf->value, hiveConf->config_file);
-            handle_result(hiveStatus);
+            handle_result(hiveStatus, hiveConf->canonical_name, hiveConf->value, hiveConf->config_file);
             break;
         case CliMsg_Pig_Configure:
             ValidationResult validationPig = validatePigConfigParam(result[0], result[1]);
@@ -926,7 +923,7 @@ static void handle_command(ClientSocket *client_socket) {
         if (pigConf == NULL)
                     FPRINTF(global_client_socket,"configuration parameter not supported yet");
             ConfigStatus pigStatus = update_pig_config(pigConf->canonical_name, pigConf->value);
-            handle_result(pigStatus);
+            handle_result(pigStatus, pigConf->canonical_name, pigConf->value,pigConf->config_file);
             break;
       //  case CliMsg_Presto_Configure:
         //    return modify_oozie_config(result[0],result[1]);
@@ -937,7 +934,7 @@ static void handle_command(ClientSocket *client_socket) {
             if (rangerConf == NULL)
                     FPRINTF(global_client_socket,"configuration parameter not supported yet");
             ConfigStatus rangerStatus =  set_ranger_config(rangerConf->canonical_name, rangerConf->value, rangerConf->config_file);
-            handle_result(rangerStatus);
+            handle_result(rangerStatus, rangerConf->canonical_name, rangerConf->value, rangerConf->config_file);
             break;
         case CliMsg_Livy_Configure:
             ValidationResult validationLivy = validateLivyConfigParam(result[0], result[1]);
@@ -947,7 +944,7 @@ static void handle_command(ClientSocket *client_socket) {
             if (livyConf == NULL)
                     FPRINTF(global_client_socket,"configuration parameter not supported yet");
             ConfigStatus livyStatus = set_livy_config(livyConf->canonical_name, livyConf->value);
-            handle_result(livyStatus);
+            handle_result(livyStatus, livyConf->canonical_name, livyConf->value,livyConf->config_file);
             break;
        // case CliMsg_Phoenix_Configure:
          //   ConfigStatus phoenixStatus = update_phoenix_config(result[0],result[1]);
@@ -961,7 +958,7 @@ static void handle_command(ClientSocket *client_socket) {
             if (solrConf == NULL)
                     FPRINTF(global_client_socket,"configuration parameter not supported yet");
             ConfigStatus solrStatus =  update_solr_config(solrConf->canonical_name, solrConf->value, solrConf->config_file);
-            handle_result(solrStatus);
+            handle_result(solrStatus, solrConf->canonical_name, solrConf->value, solrConf->config_file);
             break;
         case CliMsg_Zeppelin_Configure:
             ValidationResult validationZeppelin = validateZeppelinConfigParam(result[0], result[1]);
@@ -971,7 +968,7 @@ static void handle_command(ClientSocket *client_socket) {
             if (zeppelinConf == NULL)
                     FPRINTF(global_client_socket,"configuration parameter not supported yet");
             ConfigStatus zeppStatus =  set_zeppelin_config(zeppelinConf->config_file , zeppelinConf->canonical_name, zeppelinConf->value);
-            handle_result(zeppStatus);
+            handle_result(zeppStatus, zeppelinConf->canonical_name, zeppelinConf->value,zeppelinConf->config_file);
             break;
         case CliMsg_Tez_Configure:
             ValidationResult validationTez = validateTezConfigParam(result[0], result[1]);
@@ -981,7 +978,7 @@ static void handle_command(ClientSocket *client_socket) {
             if (tezConf == NULL)
                     FPRINTF(global_client_socket,"configuration parameter not supported yet");
             ConfigStatus tezStatus =   modify_tez_config(tezConf->canonical_name, tezConf->value, "tez-site.xml");
-            handle_result(tezStatus);
+            handle_result(tezStatus, tezConf->canonical_name, tezConf->value, "tez-site.xml");
             break;
             /* =================== Error Handling ===================== */
             default:

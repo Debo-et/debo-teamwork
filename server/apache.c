@@ -51,7 +51,7 @@ OS_TYPE detect_os() {
 
 
 static bool all = false;
-static bool dependency = false;
+bool dependency = false;
 
 
 const char *port = NULL;
@@ -165,7 +165,7 @@ main(int argc, char *argv[])
 		{"start", no_argument, NULL, 'T'},
 		{"stop", no_argument, NULL, 'O'},
 		{"restart", no_argument, NULL, 'R'},
-		{"upgrade", no_argument, NULL, 'U'},
+		{"verswitch", no_argument, NULL, 'U'},
 		{"uninstall", no_argument, NULL, 'u'},
 		{"configure", required_argument, NULL, 'c'},
 		{"hdfs", no_argument, NULL, 'h'},
@@ -282,7 +282,7 @@ main(int argc, char *argv[])
 				action = RESTART;
 				break;
 			case 'U':
-				action = UPGRADE;
+				action = VERSION_SWITCH;
 				break;
 			case 'u':
 				action = UNINSTALL;
@@ -402,7 +402,7 @@ help(const char *progname)
     printf("  --stop              Stop the specified component/service\n");
     printf("  --restart           Restart the specified component/service\n");
     printf("  --install           Install the component\n");
-    printf("  --upgrade           Upgrade the component\n");
+    printf("  --verswitch           switch between version\n");
     printf("  --uninstall         Remove the component\n");
     printf("  --configure         Apply configuration changes\n\n");
 
@@ -520,28 +520,255 @@ bool is_component_installed(Component comp) {
     return found;
 }
 
-Component* get_dependencies(Component comp, int *count) {
-    static Component hbase_deps[] = {HDFS, ZOOKEEPER};
-    static Component kafka_deps[] = {ZOOKEEPER};
-    static Component hive_metastore_deps[] = {HDFS};
-    static Component phoenix_deps[] = {HBASE};
-    static Component storm_deps[] = {ZOOKEEPER};
-    static Component spark_deps[] = {HDFS};
-    static Component tez_deps[] = {HDFS};
-    static Component livy_deps[] = {SPARK};
-    static Component ranger_deps[] = {SOLR};
 
-    switch (comp) {
-        case HBASE: *count = 2; return hbase_deps;
-        case KAFKA: *count = 1; return kafka_deps;
-        case HIVE: *count = 1; return hive_metastore_deps;
-        case PHOENIX: *count = 1; return phoenix_deps;
-        case STORM: *count = 1; return storm_deps;
-        case SPARK: *count = 1; return spark_deps;
-        case TEZ: *count = 1; return tez_deps;
-        case LIVY: *count = 1; return livy_deps;
-        case RANGER: *count = 1; return ranger_deps;
-        default: *count = 0; return NULL;
+void configure_dependency_for_component(Component target, Component dependency) {
+    ConfigStatus status;
+    
+    switch(target) {
+        case HBASE:
+            switch(dependency) {
+                case HDFS:
+                    status = modify_hdfs_config("dfs.datanode.handler.count", "30", "hdfs-site.xml");
+                    handle_result(status, "dfs.datanode.handler.count", "30", "hdfs-site.xml");
+                    status = modify_hdfs_config("dfs.replication", "3", "hdfs-site.xml");
+                    handle_result(status, "dfs.replication", "3", "hdfs-site.xml");
+                    status = modify_hdfs_config("dfs.socket.timeout", "180000", "hdfs-site.xml");
+                    handle_result(status, "dfs.socket.timeout", "180000", "hdfs-site.xml");
+                    break;
+                    
+                case ZOOKEEPER:
+                    status = modify_zookeeper_config("maxClientCnxns", "200", "zoo.cfg");
+                    handle_result(status, "maxClientCnxns", "200", "zoo.cfg");
+                    status = modify_zookeeper_config("tickTime", "2000", "zoo.cfg");
+                    handle_result(status, "tickTime", "2000", "zoo.cfg");
+                    status = modify_zookeeper_config("initLimit", "10", "zoo.cfg");
+                    handle_result(status, "initLimit", "10", "zoo.cfg");
+                    break;
+                default: break;
+            }
+            break;
+            
+        case KAFKA:
+            if (dependency == ZOOKEEPER) {
+                status = modify_zookeeper_config("maxSessionTimeout", "60000", "zoo.cfg");
+                handle_result(status, "maxSessionTimeout", "60000", "zoo.cfg");
+                status = modify_zookeeper_config("minSessionTimeout", "6000", "zoo.cfg");
+                handle_result(status, "minSessionTimeout", "6000", "zoo.cfg");
+                status = modify_zookeeper_config("jute.maxbuffer", "4194304", "zoo.cfg");
+                handle_result(status, "jute.maxbuffer", "4194304", "zoo.cfg");
+            }
+            break;
+            
+        case HIVE:
+            switch(dependency) {
+                case HDFS:
+                    status = modify_hdfs_config("dfs.blocksize", "268435456", "hdfs-site.xml");
+                    handle_result(status, "dfs.blocksize", "268435456", "hdfs-site.xml");
+                    status = modify_hdfs_config("dfs.client.read.shortcircuit", "true", "hdfs-site.xml");
+                    handle_result(status, "dfs.client.read.shortcircuit", "true", "hdfs-site.xml");
+                    status = modify_hdfs_config("yarn.scheduler.maximum-allocation-mb", "16384", "yarn-site.xml");
+                    handle_result(status, "yarn.scheduler.maximum-allocation-mb", "16384", "yarn-site.xml");
+                    status = modify_hdfs_config("yarn.nodemanager.resource.memory-mb", "16384", "yarn-site.xml");
+                    handle_result(status, "yarn.nodemanager.resource.memory-mb", "16384", "yarn-site.xml");
+                    break;
+                    
+                case TEZ:
+                    status = modify_tez_config("tez.am.resource.memory.mb", "4096", "tez-site.xml");
+                    handle_result(status, "tez.am.resource.memory.mb", "4096", "tez-site.xml");
+                    status = modify_tez_config("tez.task.resource.memory.mb", "2048", "tez-site.xml");
+                    handle_result(status, "tez.task.resource.memory.mb", "2048", "tez-site.xml");
+                    break;
+              default: break;
+            }
+            break;
+            
+        case PHOENIX:
+            if (dependency == HBASE) {
+                status = update_hbase_config("hbase.regionserver.wal.codec", 
+                                           "org.apache.hadoop.hbase.regionserver.wal.IndexedWALEditCodec", 
+                                           "hbase-site.xml");
+                handle_result(status, "hbase.regionserver.wal.codec", 
+                           "org.apache.hadoop.hbase.regionserver.wal.IndexedWALEditCodec", 
+                           "hbase-site.xml");
+                status = update_hbase_config("phoenix.schema.isNamespaceMappingEnabled", 
+                                           "true", 
+                                           "hbase-site.xml");
+                handle_result(status, "phoenix.schema.isNamespaceMappingEnabled", "true", "hbase-site.xml");
+            }
+            break;
+            
+        case STORM:
+            if (dependency == ZOOKEEPER) {
+                status = modify_zookeeper_config("autopurge.snapRetainCount", "10", "zoo.cfg");
+                handle_result(status, "autopurge.snapRetainCount", "10", "zoo.cfg");
+                status = modify_zookeeper_config("autopurge.purgeInterval", "24", "zoo.cfg");
+                handle_result(status, "autopurge.purgeInterval", "24", "zoo.cfg");
+            }
+            break;
+            
+        case SPARK:
+            switch(dependency) {
+                case HDFS:
+                    status = modify_hdfs_config("dfs.datanode.max.transfer.threads", "4096", "hdfs-site.xml");
+                    handle_result(status, "dfs.datanode.max.transfer.threads", "4096", "hdfs-site.xml");
+                    status = modify_hdfs_config("dfs.client.read.shortcircuit", "true", "hdfs-site.xml");
+                    handle_result(status, "dfs.client.read.shortcircuit", "true", "hdfs-site.xml");
+                    status = modify_hdfs_config("yarn.scheduler.maximum-allocation-mb", "16384", "yarn-site.xml");
+                    handle_result(status, "yarn.scheduler.maximum-allocation-mb", "16384", "yarn-site.xml");
+                    status = modify_hdfs_config("yarn.nodemanager.resource.memory-mb", "16384", "yarn-site.xml");
+                    handle_result(status, "yarn.nodemanager.resource.memory-mb", "16384", "yarn-site.xml");
+                    break;
+            default: break;
+            }
+            break;
+            
+        case TEZ:
+            switch(dependency) {
+                case HDFS:
+                    status = modify_hdfs_config("dfs.replication", "2", "hdfs-site.xml");
+                    handle_result(status, "dfs.replication", "2", "hdfs-site.xml");
+                    status = modify_hdfs_config("dfs.blocksize", "268435456", "hdfs-site.xml");
+                    handle_result(status, "dfs.blocksize", "268435456", "hdfs-site.xml");
+                    status = modify_hdfs_config("yarn.nodemanager.resource.cpu-vcores", "8", "yarn-site.xml");
+                    handle_result(status, "yarn.nodemanager.resource.cpu-vcores", "8", "yarn-site.xml");
+                    status = modify_hdfs_config("yarn.scheduler.minimum-allocation-mb", "1024", "yarn-site.xml");
+                    handle_result(status, "yarn.scheduler.minimum-allocation-mb", "1024", "yarn-site.xml");
+                    break;
+              default: break;
+            }
+            break;
+            
+        case LIVY:
+            if (dependency == SPARK) {
+                status = update_spark_config("spark.sql.shuffle.partitions", "100", "spark-defaults.conf");
+                handle_result(status, "spark.sql.shuffle.partitions", "100", "spark-defaults.conf");
+                status = update_spark_config("spark.driver.memory", "4g", "spark-defaults.conf");
+                handle_result(status, "spark.driver.memory", "4g", "spark-defaults.conf");
+            }
+            break;
+            
+        case RANGER:
+            switch(dependency) {
+                case SOLR:
+                    status = update_solr_config("solr.autoSoftCommit.maxTime", "1000", "solrconfig.xml");
+                    handle_result(status, "solr.autoSoftCommit.maxTime", "1000", "solrconfig.xml");
+                    status = update_solr_config("solr.autoCommit.maxTime", "15000", "solrconfig.xml");
+                    handle_result(status, "solr.autoCommit.maxTime", "15000", "solrconfig.xml");
+                    break;
+                    
+                case HDFS:
+                    status = modify_hdfs_config("dfs.permissions.enabled", "true", "hdfs-site.xml");
+                    handle_result(status, "dfs.permissions.enabled", "true", "hdfs-site.xml");
+                    status = modify_hdfs_config("dfs.namenode.acls.enabled", "true", "hdfs-site.xml");
+                    handle_result(status, "dfs.namenode.acls.enabled", "true", "hdfs-site.xml");
+                    break;
+              default: break;
+            }
+            break;
+            
+        case ATLAS:
+            switch(dependency) {
+                case HBASE:
+                    status = update_hbase_config("hbase.regionserver.wal.codec", 
+                                               "org.apache.hadoop.hbase.regionserver.wal.IndexedWALEditCodec", 
+                                               "hbase-site.xml");
+                    handle_result(status, "hbase.regionserver.wal.codec", 
+                               "org.apache.hadoop.hbase.regionserver.wal.IndexedWALEditCodec", 
+                               "hbase-site.xml");
+                    status = update_hbase_config("hbase.regionserver.handler.count", "60", "hbase-site.xml");
+                    handle_result(status, "hbase.regionserver.handler.count", "60", "hbase-site.xml");
+                    break;
+                    
+                case KAFKA:
+                    status = modify_kafka_config("delete.topic.enable", "true", "server.properties");
+                    handle_result(status, "delete.topic.enable", "true", "server.properties");
+                    status = modify_kafka_config("log.retention.hours", "8760", "server.properties");
+                    handle_result(status, "log.retention.hours", "8760", "server.properties");
+                    break;
+                    
+                case SOLR:
+                    status = update_solr_config("solr.autoCommit.maxDocs", "10000", "solrconfig.xml");
+                    handle_result(status, "solr.autoCommit.maxDocs", "10000", "solrconfig.xml");
+                    status = update_solr_config("solr.autoCommit.maxTime", "15000", "solrconfig.xml");
+                    handle_result(status, "solr.autoCommit.maxTime", "15000", "solrconfig.xml");
+                    break;
+              default: break;
+            }
+            break;
+            
+        case PIG:
+            switch(dependency) {
+                case HDFS:
+                    status = modify_hdfs_config("dfs.blocksize", "268435456", "hdfs-site.xml");
+                    handle_result(status, "dfs.blocksize", "268435456", "hdfs-site.xml");
+                    status = modify_hdfs_config("dfs.replication", "2", "hdfs-site.xml");
+                    handle_result(status, "dfs.replication", "2", "hdfs-site.xml");
+                    status = modify_hdfs_config("mapreduce.reduce.memory.mb", "4096" , "yarn-site.xml");
+                    handle_result(status, "mapreduce.reduce.memory.mb", "4096", "yarn-site.xml");
+                    status = modify_hdfs_config("mapreduce.map.memory.mb", "2048", "yarn-site.xml");
+                    handle_result(status, "mapreduce.map.memory.mb", "2048", "yarn-site.xml");
+                    break;
+              default: break;
+            }
+            break;
+            
+        case SOLR:
+            if (dependency == ZOOKEEPER) {
+                status = modify_zookeeper_config("maxClientCnxns", "100", "zoo.cfg");
+                handle_result(status, "maxClientCnxns", "100", "zoo.cfg");
+                status = modify_zookeeper_config("tickTime", "2000", "zoo.cfg");
+                handle_result(status, "tickTime", "2000", "zoo.cfg");
+            }
+            break;
+            
+        case YARN:
+            if (dependency == HDFS) {
+                status = modify_hdfs_config("dfs.datanode.data.dir.perm", "750", "hdfs-site.xml");
+                handle_result(status, "dfs.datanode.data.dir.perm", "750", "hdfs-site.xml");
+                status = modify_hdfs_config("dfs.namenode.name.dir.perm", "700", "hdfs-site.xml");
+                handle_result(status, "dfs.namenode.name.dir.perm", "700", "hdfs-site.xml");
+            }
+            break;
+            
+        case FLINK:
+            switch(dependency) {
+                case HDFS:
+                    status = modify_hdfs_config("dfs.stream-buffer-size", "4096", "hdfs-site.xml");
+                    handle_result(status, "dfs.stream-buffer-size", "4096", "hdfs-site.xml");
+                    status = modify_hdfs_config("dfs.client-write-packet-size", "65536", "hdfs-site.xml");
+                    handle_result(status, "dfs.client-write-packet-size", "65536", "hdfs-site.xml");
+                    status = modify_hdfs_config("yarn.application.classpath", 
+                                              "$HADOOP_CONF_DIR,$HADOOP_COMMON_HOME/*,$HADOOP_COMMON_HOME/lib/*,...", 
+                                              "yarn-site.xml");
+                    handle_result(status, "yarn.application.classpath", 
+                               "$HADOOP_CONF_DIR,$HADOOP_COMMON_HOME/*,$HADOOP_COMMON_HOME/lib/*,...", 
+                               "yarn-site.xml");
+                    status = modify_hdfs_config("yarn.nodemanager.vmem-check-enabled", "false", "yarn-site.xml");
+                    handle_result(status, "yarn.nodemanager.vmem-check-enabled", "false", "yarn-site.xml");
+                    break;
+              default: break;
+            }
+            break;
+            
+        case PRESTO:
+            switch(dependency) {
+                case HIVE:
+                    status = modify_hive_config("hive.metastore.uri", "thrift://localhost:9083", "hive-site.xml");
+                    handle_result(status, "hive.metastore.uri", "thrift://localhost:9083", "hive-site.xml");
+                    status = modify_hive_config("hive.allow-drop-table", "true", "hive-site.xml");
+                    handle_result(status, "hive.allow-drop-table", "true", "hive-site.xml");
+                    break;
+                    
+                case HDFS:
+                    status = modify_hdfs_config("dfs.client.use.datanode.hostname", "true", "hdfs-site.xml");
+                    handle_result(status, "dfs.client.use.datanode.hostname", "true", "hdfs-site.xml");
+                    status = modify_hdfs_config("dfs.datanode.use.datanode.hostname", "true", "hdfs-site.xml");
+                    handle_result(status, "dfs.datanode.use.datanode.hostname", "true", "hdfs-site.xml");
+                    break;
+                default: break;
+            }
+            break;
+        default: break;
     }
 }
 
@@ -560,7 +787,14 @@ static void install_component(Component comp, char *version) {
         {
             Component *deps = get_dependencies(comp, &dep_count);
             for (int i = 0; i < dep_count; i++) {
+            char buffer[256];
+            const char* compStr = component_to_string(deps[i]);
+            snprintf(buffer, sizeof(buffer),
+             "Installing dependency %s [%d of %d]\n",
+             compStr, i+1, dep_count);
+             printTextBlock(buffer, CYAN, YELLOW);
             install_component(deps[i], version);
+            configure_dependency_for_component(comp, deps[i]);
         }
 }
     switch (comp) {
@@ -619,6 +853,7 @@ static void install_component(Component comp, char *version) {
             fprintf(stderr, "Error: Unknown component %s.\n", component_to_string(comp));
             return;
     }
+    configure_target_component(comp);
 } ////////////////////////////////////////// action start stop restart ///////////////
 
 
@@ -690,55 +925,17 @@ static bool component_action(Component comp, Action action) {
 return false;
 }
 
-/////////////////upgrade //////////////////////////////////////////////////////
-/* Function to retrieve the current version of a component */
-char* get_current_version(Component comp) {
-    const ComponentInfo *info = NULL;
-    
-    // Search for the component in the info array
-    for (size_t i = 0; i < sizeof(COMPONENT_INFO_MAP)/sizeof(COMPONENT_INFO_MAP[0]); i++) {
-        if (COMPONENT_INFO_MAP[i].component == comp) {
-            info = &COMPONENT_INFO_MAP[i];
-            break;
-        }
-    }
-    if (!info) return NULL;
+/////////////////switch //////////////////////////////////////////////////////
 
-    // Execute the command to get the version
-    FILE *fp = popen(info->version_cmd, "r");
-    if (!fp) return NULL;
 
-    char *version = NULL;
-    size_t len = 0;
-    
-    // Read the version output
-    if (getline(&version, &len, fp) != -1) {
-        version[strcspn(version, "\n")] = 0; // Remove newline character
-    }
-    pclose(fp);
-    
-    return version;
-}
-
-/* Function to upgrade a component to a specified version */
-static bool upgrade_component(Component comp, char *version) {
-    const char *component_name = component_to_string(comp);
+/* Function to switch a component to a specified version */
+static bool switch_component(Component comp, char *version) {
     OS_TYPE os = detect_os();
     if (os == OS_UNSUPPORTED) return "Unsupported operating system";
 
-    // Get current version of the component
-    char *current_version = get_current_version(comp);
-    if (!current_version) return false;
 
-    // Check if the component is already at the desired version
-    if (strcmp(current_version, version) == 0) {
-        free(current_version);
-        printf("Already at version %s", version);
-        return true;
-    }
-    free(current_version);
-    if (!update_component_version(component_name, version))
-        return false;
+    uninstall_component(comp);
+
     install_component(comp, version);
     return true;
     
@@ -747,6 +944,22 @@ static bool upgrade_component(Component comp, char *version) {
 
 //////////////////////////////////uninstall////////////////////////////////
 static bool uninstall_component(Component comp) {
+
+    int dep_count;
+  
+    if (dependency)
+        {
+            Component *deps = get_dependencies(comp, &dep_count);
+            for (int i = 0; i < dep_count; i++) {
+            char buffer[256];
+            const char* compStr = component_to_string(deps[i]);
+            snprintf(buffer, sizeof(buffer),
+             "Uninstalling dependency %s [%d of %d]\n",
+             compStr, i+1, dep_count);
+             printTextBlock(buffer, CYAN, YELLOW);
+            uninstall_component(deps[i]);
+        }
+}
     switch (comp) {
         case HDFS:
              uninstall_hadoop();
@@ -821,7 +1034,7 @@ ConfigStatus configure(Component component, char* param, char* value) {
             if (hdfsResult == NULL)
                     fprintf(stderr,"configuration parameter not supported yet");
             ConfigStatus hdfsStatus =  modify_hdfs_config(hdfsResult->canonical_name,value,hdfsResult->config_file);
-            handle_result(hdfsStatus);
+            handle_result(hdfsStatus, hdfsResult->canonical_name,value,hdfsResult->config_file);
             break;
         case HBASE:
             ValidationResult validationHbase = validateHBaseConfigParam(param, value);
@@ -831,7 +1044,7 @@ ConfigStatus configure(Component component, char* param, char* value) {
             if (hbaseResult == NULL)
                     fprintf(stderr,"configuration parameter not supported yet");
             ConfigStatus hbaseStatus =  update_hbase_config(hbaseResult->canonical_name, hbaseResult->value, hbaseResult->config_file);
-            handle_result(hbaseStatus);
+            handle_result(hbaseStatus, hbaseResult->canonical_name, hbaseResult->value, hbaseResult->config_file);
             break;
         case SPARK:
             ValidationResult validationSpark = validateSparkConfigParam(param, value);
@@ -840,8 +1053,8 @@ ConfigStatus configure(Component component, char* param, char* value) {
             ConfigResult *sparkResult= get_spark_config(param,value);
             if (sparkResult == NULL)
                     fprintf(stderr,"configuration parameter not supported yet");
-            ConfigStatus sparkStatus = update_spark_config(sparkResult->canonical_name, sparkResult->value);
-            handle_result(sparkStatus);
+            ConfigStatus sparkStatus = update_spark_config(sparkResult->canonical_name, sparkResult->value, sparkResult->config_file);
+            handle_result(sparkStatus, sparkResult->canonical_name, sparkResult->value, sparkResult->config_file);
             break;
         case KAFKA:
             ValidationResult validationKafka = validateKafkaConfigParam(param, value);
@@ -851,7 +1064,7 @@ ConfigStatus configure(Component component, char* param, char* value) {
             if (kafkaResult == NULL)
                     fprintf(stderr,"configuration parameter not supported yet");
             ConfigStatus kafkaStatus = modify_kafka_config(kafkaResult->canonical_name,kafkaResult->value,kafkaResult->config_file);
-            handle_result(kafkaStatus);
+            handle_result(kafkaStatus, kafkaResult->canonical_name,kafkaResult->value,kafkaResult->config_file);
             break;
         case FLINK:
               ValidationResult validationflink = validateFlinkConfigParam(param, value);
@@ -860,8 +1073,8 @@ ConfigStatus configure(Component component, char* param, char* value) {
             ConfigResult *flinkResult = set_flink_config(param,value);
             if (flinkResult ==NULL)
                     fprintf(stderr,"configuration parameter not supported yet");
-            ConfigStatus flinkStatus = update_flink_config(flinkResult->canonical_name,flinkResult->value);
-            handle_result(flinkStatus);
+            ConfigStatus flinkStatus = update_flink_config(flinkResult->canonical_name,flinkResult->value , flinkResult->config_file);
+            handle_result(flinkStatus, flinkResult->canonical_name,flinkResult->value, flinkResult->config_file);
             break;
         case ZOOKEEPER:
             ValidationResult validationZookeeper = validateZooKeeperConfigParam(param, value);
@@ -870,8 +1083,8 @@ ConfigStatus configure(Component component, char* param, char* value) {
             ConfigResult *zookeperResult = parse_zookeeper_param(param,value);
             if (zookeperResult == NULL)
                     fprintf(stderr,"configuration parameter not supported yet");
-            ConfigStatus zookeeperStatus = modify_zookeeper_config(zookeperResult->canonical_name, zookeperResult->value);
-            handle_result(zookeeperStatus);
+            ConfigStatus zookeeperStatus = modify_zookeeper_config(zookeperResult->canonical_name, zookeperResult->value, zookeperResult->config_file);
+            handle_result(zookeeperStatus, zookeperResult->canonical_name, zookeperResult->value, zookeperResult->config_file);
             break;
         case STORM:
             ValidationResult validationStorm = validateStormConfigParam(param, value);
@@ -881,7 +1094,7 @@ ConfigStatus configure(Component component, char* param, char* value) {
             if (conf == NULL)
                     fprintf(stderr,"configuration parameter not supported yet");
             ConfigStatus stormStatus = modify_storm_config(conf->canonical_name, conf->value, conf->config_file);
-            handle_result(stormStatus);
+            handle_result(stormStatus, conf->canonical_name, conf->value, conf->config_file);
             break;
         case HIVE:
             ValidationResult validationHive = validateHiveConfigParam(param, value);
@@ -891,7 +1104,7 @@ ConfigStatus configure(Component component, char* param, char* value) {
             if (hiveConf == NULL)
                     fprintf(stderr,"configuration parameter not supported yet");
             ConfigStatus hiveStatus = modify_hive_config(hiveConf->canonical_name, hiveConf->value, hiveConf->config_file);
-            handle_result(hiveStatus);
+            handle_result(hiveStatus, hiveConf->canonical_name, hiveConf->value, hiveConf->config_file);
             break;
         case PIG:
             ValidationResult validationPig = validatePigConfigParam(param, value);
@@ -901,7 +1114,7 @@ ConfigStatus configure(Component component, char* param, char* value) {
         if (pigConf == NULL)
                     fprintf(stderr,"configuration parameter not supported yet");
             ConfigStatus pigStatus = update_pig_config(pigConf->canonical_name, pigConf->value);
-            handle_result(pigStatus);
+            handle_result(pigStatus, pigConf->canonical_name, pigConf->value, pigConf->config_file);
             break;
        // case PRESTO:
          //   return modify_oozie_config(param,value);
@@ -912,7 +1125,7 @@ ConfigStatus configure(Component component, char* param, char* value) {
             if (rangerConf == NULL)
                     fprintf(stderr,"configuration parameter not supported yet");
             ConfigStatus rangerStatus =  set_ranger_config(rangerConf->canonical_name, rangerConf->value, rangerConf->config_file);
-            handle_result(rangerStatus);
+            handle_result(rangerStatus, rangerConf->canonical_name, rangerConf->value, rangerConf->config_file);
             break;
         case LIVY:
             ValidationResult validationLivy = validateLivyConfigParam(param, value);
@@ -921,8 +1134,8 @@ ConfigStatus configure(Component component, char* param, char* value) {
             ConfigResult *livyConf = parse_livy_config_param(param,value);
             if (livyConf == NULL)
                     fprintf(stderr,"configuration parameter not supported yet");
-            ConfigStatus livyStatus = set_livy_config(livyConf->canonical_name, livyConf->value);
-            handle_result(livyStatus);
+            ConfigStatus livyStatus = set_livy_config(livyConf->canonical_name, livyConf->value, livyConf->config_file);
+            handle_result(livyStatus , livyConf->canonical_name, livyConf->value, livyConf->config_file);
             break;
         case PHOENIX:
       //      ConfigStatus phoenixStatus = update_phoenix_config(param,value);
@@ -936,7 +1149,7 @@ ConfigStatus configure(Component component, char* param, char* value) {
             if (solrConf == NULL)
                     fprintf(stderr,"configuration parameter not supported yet");
             ConfigStatus solrStatus =  update_solr_config(solrConf->canonical_name, solrConf->value, solrConf->config_file);
-            handle_result(solrStatus);
+            handle_result(solrStatus, solrConf->canonical_name, solrConf->value, solrConf->config_file);
             break;
         case ZEPPELIN:
             ValidationResult validationZeppelin = validateZeppelinConfigParam(param, value);
@@ -946,7 +1159,7 @@ ConfigStatus configure(Component component, char* param, char* value) {
             if (zeppelinConf == NULL)
                     fprintf(stderr,"configuration parameter not supported yet");
             ConfigStatus zeppStatus =  set_zeppelin_config(zeppelinConf->config_file , zeppelinConf->canonical_name, zeppelinConf->value);
-            handle_result(zeppStatus);
+            handle_result(zeppStatus, zeppelinConf->config_file , zeppelinConf->canonical_name, zeppelinConf->value);
             break;
         case TEZ:
             ValidationResult validationTez = validateTezConfigParam(param, value);
@@ -956,7 +1169,7 @@ ConfigStatus configure(Component component, char* param, char* value) {
             if (tezConf == NULL)
                     fprintf(stderr,"configuration parameter not supported yet");
             ConfigStatus tezStatus =   modify_tez_config(tezConf->canonical_name, tezConf->value, "tez-site.xml");
-            handle_result(tezStatus);
+            handle_result(tezStatus, tezConf->canonical_name, tezConf->value, "tez-site.xml");
             break;
          default:
             fprintf(stderr, "Error: Unknown Hadoop component provided.\n");
@@ -1204,10 +1417,10 @@ void perform(Component comp, Action action, char *version , char *config_param ,
         case INSTALL: 
             install_component(comp, version);
              break;
-        case UPGRADE:
-            if (upgrade_component(comp, version))
+        case VERSION_SWITCH:
+            if (switch_component(comp, version))
                 {
-                    act = "  upgraded";
+                    act = "  switching version";
                     message = (char*)malloc(strlen(compStr) + strlen(act) + 1);
                         if (message == NULL) 
                                 printf("Memory allocation failed\n");
@@ -1222,7 +1435,7 @@ void perform(Component comp, Action action, char *version , char *config_param ,
                 }
               else
                 {
-                    act = "  can't be upgraded";
+                    act = "  can't be switching";
                     message = (char*)malloc(strlen(compStr) + strlen(act) + 1);
                         if (message == NULL) 
                                 printf("Memory allocation failed\n");
@@ -1352,86 +1565,7 @@ char *version , char *config_param , char *value) {
 
 
 
-/**
- * Sends a command message based on the specified protocol.
- * 
- * @param component The target component for the action.
- * @param action The action to be performed.
- * @param version Version string for installation (nullable).
- * @param location Location string for installation (nullable).
- * @param param_name Parameter name for configuration (nullable).
- * @param param_value Parameter value for configuration (nullable).
- * @param conn The connection object for network operations.
- * @return 1 on success, 0 on failure.
- */
-void SendComponentActionCommand(Component component, Action action,
-                              const char* version,
-                              const char* param_name, const char* param_value,
-                              Conn* conn) {
-    if (!conn) {
-        fprintf(stderr, "Invalid connection object\n");
-        return;
-    }
 
-    // Convert enums to protocol codes
-    unsigned char comp_code = get_protocol_code(component, action, version);
-
-    // Send component and action codes
-    if (PutMsgStart(comp_code, conn) < 0) {
-        fprintf(stderr, "Failed to send component/action\n");
-        return;
-    }
-
-    // Handle action-specific parameters
-    switch (action) {
-        case START:
-        PutMsgEnd(conn);
-        break;
-        case STOP:
-        PutMsgEnd(conn);
-        break;
-        case RESTART:
-        PutMsgEnd(conn);
-        break;
-        case UNINSTALL:
-        PutMsgEnd(conn);
-        break;
-
-        case CONFIGURE:
-            if (!param_name || !param_value) {
-                fprintf(stderr, "Invalid configuration parameters\n");
-                return;
-            }
-            char *result = concatenate_strings(param_name, param_value);
-
-            if (Putnchar(result, strlen(result), conn) < 0) {
-                fprintf(stderr, "Failed to send configuration parameters\n");
-                return;
-            }
-            PutMsgEnd(conn);
-            break;
-
-        case INSTALL:
-            // Send version if provided
-            if (version) {
-                if (Putnchar(version, strlen(version), conn) < 0) {
-                    fprintf(stderr, "Failed to send version\n");
-                    return;
-                }
-            }
-            PutMsgEnd(conn);
-            break;
-
-        case NONE:
-        PutMsgEnd(conn);
-            // No additional parameters needed
-            break;
-        default:
-            return;
-            return;
-    }
- (void) Flush(conn);
-}
 
 
 void
@@ -1481,37 +1615,21 @@ print_inBuffer(const Conn *conn)
 
 static void handle_remote_components(bool ALL, Component component, Action action,
 char *version , char *config_param , char *value) {
-Conn* conn = connect_to_postgres(host, port);
-if (conn == NULL)
-fprintf(stderr, "Failed to connect to Debo\n");
+    Conn* conn = connect_to_debo(host, port);
+    if (conn == NULL)
+        fprintf(stderr, "Failed to connect to Debo\n");
 
     if (ALL) {
         // Handle all components (skip NONE)
         for (Component c = HDFS; c <= RANGER; c++) {
-                printBorder("┌", "┐", YELLOW);
-                printTextBlock(component_to_string(c), BOLD GREEN, YELLOW);
-                printBorder("├", "┤", YELLOW);
-                if (strcmp(action_to_string(action), "Installing...") == 0)
-                    printTextBlock("Installing might take several minutes", BOLD GREEN, YELLOW);
-                printTextBlock(action_to_string(action), CYAN, YELLOW);
-                SendComponentActionCommand(c, action, version , config_param, value, conn);
-                reset_connection_buffers(conn);
-                    int dataResult;
-                    do {
-                        dataResult = ReadData(conn);
-                        if (dataResult < 0) {
-                            fprintf(stderr, "Failed to read from socket\n");
-                            break; // Exit loop on error
-                        }
-                    } while (dataResult <= 0); // Continue looping if result is 0 or negative                printf("Received data: %s\n", conn->inBuffer+ conn->inStart);
-                print_inBuffer(conn);
-                        //printTextBlock(pqTraceOutputMessage(conn, conn->inBuffer + conn->inStart, false), BOLD GREEN, YELLOW);
-                if (PutMsgStart(CliMsg_Finish, conn) < 0) {
-                      fprintf(stderr, "Failed to send component/action\n");
-                      return;
-                }
-                (void) Flush(conn);
-              //  PutMsgEnd(conn);
+            printBorder("┌", "┐", YELLOW);
+            printTextBlock(component_to_string(c), BOLD GREEN, YELLOW);
+            printBorder("├", "┤", YELLOW);
+            if (strcmp(action_to_string(action), "Installing...") == 0)
+                printTextBlock("Installing might take several minutes", BOLD GREEN, YELLOW);
+            printTextBlock(action_to_string(action), CYAN, YELLOW);
+            SendComponentActionCommand(c, action, version , config_param, value, conn);
+            //  PutMsgEnd(conn);
         }
     } else {
         // Handle single component
@@ -1519,33 +1637,43 @@ fprintf(stderr, "Failed to connect to Debo\n");
             fprintf(stderr, "Component must be specified when ALL=false\n");
             return;
         }
-            printBorder("┌", "┐", YELLOW);
-            printTextBlock(component_to_string(component), BOLD GREEN, YELLOW);
-            printBorder("├", "┤", YELLOW);
-                if (strcmp(action_to_string(action), "Installing...") == 0)
-                    printTextBlock("Installing might take several minutes", BOLD GREEN, YELLOW);
-            printTextBlock(action_to_string(action), CYAN, YELLOW);
-            SendComponentActionCommand(component, action, version, config_param, value, conn);
-            reset_connection_buffers(conn);
-               // if (Wait(true, false, conn)) {
-                    int dataResult;
-                    do {
-                        dataResult = ReadData(conn);
-                        if (dataResult < 0) {
-                            fprintf(stderr, "Failed to read from socket\n");
-                            break; // Exit loop on error
-                        }
-                    } while (dataResult <= 0); // Continue looping if result is 0 or negative
-                //}
-                        printTextBlock(conn->inBuffer+ conn->inStart, BOLD GREEN, YELLOW);
-                      // printf("Received data: %s\n", conn->inBuffer+ conn->inStart);
-                       //print_inBuffer(conn);
-                    }
-                    if (PutMsgStart(CliMsg_Finish, conn) < 0) {
-                      fprintf(stderr, "Failed to send component/action\n");
-                      return;
-                    }
-                PutMsgEnd(conn);
-             (void) Flush(conn);
-}
+        int dep_count = 0;
+        
+        // Get dependencies if applicable
+        if (dependency && (action == INSTALL) && (action == UNINSTALL)) {
+            (void) get_dependencies(component, &dep_count);
+        }
 
+        
+        printBorder("┌", "┐", YELLOW);
+        printTextBlock(component_to_string(component), BOLD GREEN, YELLOW);
+        printBorder("├", "┤", YELLOW);
+        if (strcmp(action_to_string(action), "Installing...") == 0)
+            printTextBlock("Installing might take several minutes", BOLD GREEN, YELLOW);
+        printTextBlock(action_to_string(action), CYAN, YELLOW);
+        SendComponentActionCommand(component, action, version, config_param, value, conn);
+          // Single read for non-INSTALL actions
+            reset_connection_buffers(conn);
+            int dataResult;
+            do {
+                dataResult = ReadData(conn);
+                if (dataResult < 0) {
+                    fprintf(stderr, "Failed to read from socket\n");
+                    break;
+                }
+            } while (dataResult <= 0);
+            printTextBlock(conn->inBuffer + conn->inStart, BOLD GREEN, YELLOW);
+        if (action == INSTALL)
+        {
+            configure_target_remote_component(component, host, port);
+        }
+ 
+        if (PutMsgStart(CliMsg_Finish, conn) < 0) {
+            fprintf(stderr, "Failed to send finish message\n");
+            return;
+        }
+
+        PutMsgEnd(conn);
+        (void) Flush(conn);
+    }
+}

@@ -258,17 +258,6 @@ void install_hadoop(const char *version, char *location) {
         return;
     }
 
-    // Update Hadoop configs
- // Update HDFS configuration files
-    (void)modify_hdfs_config("fs.defaultFS", "hdfs://localhost:9000", "core-site.xml");
-    //handle_result(defaultFS);
-    (void)modify_hdfs_config("dfs.replication", "1", "hdfs-site.xml");
-    //handle_result(replication);
-    (void)modify_hdfs_config("dfs.namenode.name.dir", nameNode, "hdfs-site.xml");
-    //handle_result(namenode);
-    (void)modify_hdfs_config("dfs.datanode.data.dir", dataNode, "hdfs-site.xml");
-    //handle_result(datanode);
-
     // Format NameNode
     char format_cmd[512];
     snprintf(format_cmd, sizeof(format_cmd), "%s/bin/hdfs namenode -format -force", install_dir);
@@ -276,7 +265,52 @@ void install_hadoop(const char *version, char *location) {
         FPRINTF(global_client_socket,  "Error: NameNode format failed. Check HDFS config.\n");
         return;
     }
+   
+      char candidate_path[PATH_MAX];
+      snprintf(candidate_path, sizeof(candidate_path), "%s/etc/hadoop/", install_dir);
+      
+    if (create_xml_file(candidate_path, "ranger-hdfs-audit.xml") !=0)
+        FPRINTF(global_client_socket,  "Failed to create XML file\n");
+        
+    
+    if (create_xml_file(candidate_path, "ranger-policymgr-ssl.xml") !=0)
+        FPRINTF(global_client_socket,  "Failed to create XML file\n");
 
+    if (create_xml_file(candidate_path, "ranger-hdfs-policymgr-ssl.xml") !=0)
+        FPRINTF(global_client_socket,  "Failed to create XML file\n");
+        
+    if (create_xml_file(candidate_path, "ssl-server.xml") !=0)
+        FPRINTF(global_client_socket,  "Failed to create XML file\n");
+
+    
+    if (create_xml_file(candidate_path, "ranger-hdfs-security.xml") !=0)
+        FPRINTF(global_client_socket,  "Failed to create XML file\n");
+        
+      
+    if (create_xml_file(candidate_path, "ssl-client.xml") !=0)
+        FPRINTF(global_client_socket,  "Failed to create XML file\n");
+        
+      
+    if (create_xml_file(candidate_path, "ranger-yarn-audit.xml") !=0)
+        FPRINTF(global_client_socket,  "Failed to create XML file\n");
+
+    if (create_xml_file(candidate_path, "ranger-yarn-policymgr-ssl.xml") !=0)
+        FPRINTF(global_client_socket,  "Failed to create XML file\n");
+
+    if (create_xml_file(candidate_path, "ranger-yarn-security.xml") !=0)
+        FPRINTF(global_client_socket,  "Failed to create XML file\n");
+
+    if (create_xml_file(candidate_path, "resource-types.xml") !=0)
+        FPRINTF(global_client_socket,  "Failed to create XML file\n");
+        
+    if (create_properties_file(candidate_path, "ranger-hdfs-plugin.properties") !=0)
+        FPRINTF(global_client_socket,   "Failed to create XML file\n");
+        
+    if (create_properties_file(candidate_path, "ranger-yarn-plugin.properties") !=0)
+        FPRINTF(global_client_socket,   "Failed to create XML file\n");
+ 
+
+      
     PRINTF(global_client_socket, "Hadoop installed successfully to %s\n", install_dir);
 }
 
@@ -410,18 +444,6 @@ void install_Atlas(char *version, char *location) {
     if (sourceBashrc() != 0) {
         FPRINTF(global_client_socket, "Sourcing .bashrc failed\n");
     }
-
-    // Update Atlas configuration
-    (void)update_atlas_config("atlas.graph.storage.backend", "hbase", "atlas-application.properties");
-   // handle_result(backend);
-    (void)update_atlas_config("atlas.graph.storage.hostname", "localhost:2181", "atlas-application.properties");
-    //handle_result(hostname);
-    (void)update_atlas_config("atlas.graph.index.search.backend", "solr", "atlas-application.properties");
-    //handle_result(index);
-    (void)update_atlas_config("atlas.graph.index.search.solr.mode", "cloud", "atlas-application.properties");
-    //handle_result(search);   
-    (void)update_atlas_config("atlas.graph.index.search.solr.zookeeper-url", "localhost:2181/solr", "atlas-application.properties");
-    //handle_result(zookeeper);
 
     // Initialize HBase schema
     snprintf(command, sizeof(command),
@@ -565,17 +587,6 @@ void install_Storm(char *version, char *location) {
     // Configure Storm settings with sudo if needed
     char sudo_cmd[256];
     snprintf(sudo_cmd, sizeof(sudo_cmd), "%s", is_root ? "" : "sudo ");
-
-    // Modify configurations
-   // PRINTF(global_client_socket, "Configuring Storm settings...\n");
-    (void)modify_storm_config("storm.zookeeper.servers", "127.0.0.1", "storm.yaml");
-  //  handle_result(servers);
-    (void)modify_storm_config("nimbus.seeds", "[\"localhost\"]", "storm.yaml");
-    //handle_result(seeds);
-    (void)modify_storm_config("storm.local.dir", "/var/lib/storm-data", "storm.yaml");
-    //handle_result(local);
-    (void)modify_storm_config("supervisor.slots.ports", "6700", "storm.yaml"); 
-    //handle_result(datanode);
 
     // Create Storm data directory with proper permissions
     //PRINTF(global_client_socket, "Creating Storm data directory...\n");
@@ -1107,6 +1118,26 @@ void install_kafka(char* version, char *location) {
     fprintf(bashrc, "export KAFKA_HOME=%s\n", install_dir);
     fprintf(bashrc, "export PATH=\"$KAFKA_HOME/bin:$PATH\"\n");
     fclose(bashrc);
+    
+    
+      char candidate_path[PATH_MAX];
+      snprintf(candidate_path, sizeof(candidate_path), "%s/config", install_dir);
+      
+    if (create_xml_file(candidate_path, "ranger-kafka-audit.xml") !=0)
+        FPRINTF(global_client_socket,  "Failed to create XML file\n");
+
+
+    if (create_xml_file(candidate_path, "ranger-kafka-policymgr-ssl.xml") !=0)
+        FPRINTF(global_client_socket,  "Failed to create XML file\n");
+
+    
+    if (create_xml_file(candidate_path, "ranger-kafka-security.xml") !=0)
+        FPRINTF(global_client_socket,  "Failed to create XML file\n");
+    
+        
+    if (create_properties_file(candidate_path, "ranger-kafka-plugin.properties") !=0)
+        FPRINTF(global_client_socket,   "Failed to create XML file\n");
+ 
 
     PRINTF(global_client_socket, "\nKafka installed successfully to %s\n", install_dir);
 
@@ -1376,14 +1407,6 @@ void install_HBase(char *version, char *location) {
     }
     free(java_home);
 
-    // Configure HBase settings
-   (void)update_hbase_config("hbase.rootdir", "hdfs://localhost:9000/hbase", "hbase-site.xml");
-   // handle_result(result);
-    (void)update_hbase_config("hbase.cluster.distributed", "true", "hbase-site.xml");
-    //handle_result(result);
-    (void)update_hbase_config("hbase.zookeeper.property.clientPort", "2181", "hbase-site.xml");
-    //handle_result(result);
-
     FPRINTF(global_client_socket, "HBase successfully installed to %s/hbase\n", target_dir);
 }
 
@@ -1494,11 +1517,7 @@ void install_Tez(char* version, char *location) {
         FPRINTF(global_client_socket,  "bashing failed.\n");
         return;
     }
-      (void)modify_tez_config("tez.lib.uris", "${fs.defaultFS}/tez/tez.tar.gz" , "tez-site.xml");
-      //handle_result(defaultFS);
-      (void)modify_tez_config("tez.use.cluster.hadoop-libs", "true", "tez-site.xml");
-      //handle_result(lib);
-    PRINTF(global_client_socket, "Apache Tez installed successfully at %s\n", install_dir);
+
 }
 
 void install_flink(char* version, char *location) {
@@ -1752,6 +1771,8 @@ void install_zookeeper(char *version, char *location) {
         FPRINTF(global_client_socket,  "bashing failed.\n");
         return;
     }
+      char candidate_path[PATH_MAX];
+      snprintf(candidate_path, sizeof(candidate_path), "%s/zookeeper/conf", install_dir);
     FPRINTF(global_client_socket,  "Zookeeper installed successfully\n");
     
 }
@@ -1995,6 +2016,38 @@ void install_hive(char* version, char *location) {
         return;
     }
     
+          char candidate_path[PATH_MAX];
+      snprintf(candidate_path, sizeof(candidate_path), "%s/hive/conf", installation_dir);
+        
+    if (create_properties_file(candidate_path, "beeline-log4j2.properties") !=0)
+        FPRINTF(global_client_socket,   "Failed to create XML file\n");
+  
+    if (create_properties_file(candidate_path, "atlas-application.properties") !=0)
+        FPRINTF(global_client_socket,   "Failed to create XML file\n");
+
+    if (create_properties_file(candidate_path, "hive-exec-log4j2.properties") !=0)
+        FPRINTF(global_client_socket,  "Failed to create XML file\n");
+        
+    if (create_properties_file(candidate_path, "llap-cli-log4j2.properties") !=0)
+        FPRINTF(global_client_socket,   "Failed to create XML file\n");
+        
+        
+      
+    if (create_properties_file(candidate_path, "hive-log4j2.properties") !=0)
+        FPRINTF(global_client_socket,  "Failed to create XML file\n");
+      
+    if (create_properties_file(candidate_path, "llap-daemon-log4j2.properties") !=0)
+        FPRINTF(global_client_socket,  "Failed to create XML file\n");
+        
+    if (create_xml_file(candidate_path, "hive-site.xml") !=0)
+        FPRINTF(global_client_socket, "Failed to create XML file\n");
+
+    if (create_xml_file(candidate_path, "hivemetastore-site.xml") !=0)
+        FPRINTF(global_client_socket,  "Failed to create XML file\n");
+        
+    if (create_xml_file(candidate_path, "hiveserver2-site.xml") !=0)
+        FPRINTF(global_client_socket,   "Failed to create XML file\n");
+        
     PRINTF(global_client_socket, "Hive has been successfully installed to %s.\n", installation_dir);
 }
 
@@ -2219,6 +2272,13 @@ void install_Zeppelin(char *version, char *location) {
         FPRINTF(global_client_socket,  "bashing failed.\n");
         return;
     }
+          
+      char candidate_path[PATH_MAX];
+      snprintf(candidate_path, sizeof(candidate_path), "%s/config", target_dir);
+
+      
+    if (create_properties_file(candidate_path, "zeppelin-shiro.ini") !=0)
+        FPRINTF(global_client_socket,    "Failed to create properties file\n");
     PRINTF(global_client_socket, "Apache Zeppelin installed successfully at %s\n", target_dir);
 }
 
@@ -2346,5 +2406,12 @@ void install_Livy(char* version, char *location) {
         FPRINTF(global_client_socket,  "bashing failed.\n");
         return;
     }
+    
+     char candidate_path[PATH_MAX];
+      snprintf(candidate_path, sizeof(candidate_path), "%s/conf", install_dir); 
+    
+        if (create_conf_file(candidate_path, "livy.conf") !=0)
+        FPRINTF(global_client_socket,   "Failed to create XML file\n");
+        
     PRINTF(global_client_socket, "Livy  installed successfully to %s/livy\n", install_dir);
 }

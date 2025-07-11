@@ -522,7 +522,7 @@ void livy_action(Action a) {
              access("/etc/system-release", F_OK) == 0) {
         livy_home = "/opt/livy";
     } else {
-        fprintf(stderr,  "Error: Unsupported Linux distribution\n");
+        FPRINTF(global_client_socket,  "Error: Unsupported Linux distribution\n");
         return;
     }
     // Construct and validate server script path
@@ -1458,25 +1458,56 @@ static int start_services(const char *storm_cmd, const char **services, size_t n
     int all_started = 1;
     for (size_t i = 0; i < num_services; i++) {
         char cmd[PATH_MAX * 2];
-        int ret = snprintf(cmd, sizeof(cmd), "%s %s", storm_cmd, services[i]);
+        // Include stderr redirection to capture all output
+        int ret = snprintf(cmd, sizeof(cmd), "%s %s 2>&1", storm_cmd, services[i]);
         if (ret >= (int)sizeof(cmd)) {
-            FPRINTF(global_client_socket,  "Command buffer overflow for service %s\n", services[i]);
+            FPRINTF(global_client_socket, "Command buffer overflow for service %s\n", services[i]);
             all_started = 0;
             continue;
         }
 
-        int status = executeSystemCommand(cmd);
-        if (status != 0) {
-            FPRINTF(global_client_socket,  "Failed to start %s (exit code %d)\n", services[i], WEXITSTATUS(status));
+        FILE *fp = popen(cmd, "r");
+        if (!fp) {
+            FPRINTF(global_client_socket, "Failed to run command for service %s\n", services[i]);
             all_started = 0;
+            continue;
+        }
+
+        char buffer[256];
+        int found_python_error = 0;
+
+        // Read and process command output line by line
+        while (fgets(buffer, sizeof(buffer), fp) != NULL) {
+            // Display command output to user
+            PRINTF(global_client_socket, "%s", buffer);
+            
+            // Check for Python version requirement message
+            if (strstr(buffer, "Need python version > 2.6") != NULL) {
+                found_python_error = 1;
+            }
+        }
+
+        int status = pclose(fp);
+        if (WIFEXITED(status)) {
+            int exit_code = WEXITSTATUS(status);
+            if (exit_code == 0) {
+                if (found_python_error) {
+                    FPRINTF(global_client_socket, "Failed to start %s: Python version > 2.6 is required.\n", services[i]);
+                    all_started = 0;
+                } else {
+                    PRINTF(global_client_socket, "Successfully started %s\n", services[i]);
+                }
+            } else {
+                FPRINTF(global_client_socket, "Failed to start %s (exit code %d)\n", services[i], exit_code);
+                all_started = 0;
+            }
         } else {
-            PRINTF(global_client_socket, "Successfully started %s\n", services[i]);
+            FPRINTF(global_client_socket, "Process termination error for %s\n", services[i]);
+            all_started = 0;
         }
     }
     return all_started;
 }
-
-
 void storm_action(Action a) {
     const char *services[] = {"nimbus", "supervisor", "ui"};
     size_t num_services = sizeof(services) / sizeof(services[0]);
@@ -1573,6 +1604,7 @@ void storm_action(Action a) {
             FPRINTF(global_client_socket,  "Invalid action specified\n");
     }
 }
+
 void flink_action(Action action) {
     const char* flink_home = getenv("FLINK_HOME");
     struct stat dir_info;

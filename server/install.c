@@ -117,7 +117,7 @@ void install_hadoop(const char *version, char *location) {
 
     // Download archive
     char wget_cmd[512];
-        size_t ret = snprintf(wget_cmd, sizeof(wget_cmd), "wget -q %s", url); // -q for quiet mode
+        size_t ret = snprintf(wget_cmd, sizeof(wget_cmd), "wget -q %s >/dev/null 2>&1", url); // -q for quiet mode
     if (ret >= sizeof(wget_cmd)) {
         fprintf(stderr,   "Error: size error  sizeof(wget_cmd)\n");
         return;
@@ -129,7 +129,7 @@ void install_hadoop(const char *version, char *location) {
 
     // Extract archive
     char tar_cmd[512];
-    snprintf(tar_cmd, sizeof(tar_cmd), "tar -xvzf hadoop-%s.tar.gz", hadoop_version);
+    snprintf(tar_cmd, sizeof(tar_cmd), "tar -xvzf hadoop-%s.tar.gz >/dev/null 2>&1", hadoop_version);
     if (!executeSystemCommand(tar_cmd)) {
         fprintf(stderr,   "Error: Extraction failed. Corrupted download?\n");
         return;
@@ -143,7 +143,7 @@ void install_hadoop(const char *version, char *location) {
 
     // Create installation directory
     char mkdir_cmd[512];
-    snprintf(mkdir_cmd, sizeof(mkdir_cmd), "sudo mkdir -p %s", install_dir);
+    snprintf(mkdir_cmd, sizeof(mkdir_cmd), "sudo mkdir -p %s >/dev/null 2>&1", install_dir);
     if (!executeSystemCommand(mkdir_cmd)) {
         fprintf(stderr,   "Error: Failed to create %s. Check permissions.\n", install_dir);
         return;
@@ -152,7 +152,7 @@ void install_hadoop(const char *version, char *location) {
     // Move extracted files
     char mv_cmd[512];
     snprintf(mv_cmd, sizeof(mv_cmd),
-             "sudo mv hadoop-%s/* %s && sudo rm -rf hadoop-%s && sudo rm -f hadoop-%s.tar.gz",
+             "sudo mv hadoop-%s/* %s && sudo rm -rf hadoop-%s && sudo rm -f hadoop-%s.tar.gz >/dev/null 2>&1",
              hadoop_version, install_dir, hadoop_version, hadoop_version);
     if (!executeSystemCommand(mv_cmd)) {
         fprintf(stderr,   "Error: Failed to move files to %s\n", install_dir);
@@ -166,7 +166,7 @@ void install_hadoop(const char *version, char *location) {
         return;
     }
     char chown_cmd[512];
-    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s", pwd->pw_name, pwd->pw_name, install_dir);
+    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s >/dev/null 2>&1", pwd->pw_name, pwd->pw_name, install_dir);
     if (!executeSystemCommand(chown_cmd)) {
         fprintf(stderr,   "Error: Failed to set ownership of %s\n", install_dir);
         return;
@@ -249,7 +249,7 @@ void install_hadoop(const char *version, char *location) {
     snprintf(nameNode, sizeof(nameNode), "%s/hdfs/namenode", home);
     snprintf(dataNode, sizeof(dataNode), "%s/hdfs/datanode", home);
     char mkdir_hdfs_cmd[512];
-   size_t ret2 =  snprintf(mkdir_hdfs_cmd, sizeof(mkdir_hdfs_cmd), "mkdir -p %s %s", nameNode, dataNode);
+   size_t ret2 =  snprintf(mkdir_hdfs_cmd, sizeof(mkdir_hdfs_cmd), "mkdir -p %s %s >/dev/null 2>&1", nameNode, dataNode);
    if (ret2 >= sizeof(mkdir_hdfs_cmd)) {
     fprintf(stderr,   "Error: size error  \n");
     }
@@ -258,24 +258,62 @@ void install_hadoop(const char *version, char *location) {
         return;
     }
 
-    // Update Hadoop configs
- // Update HDFS configuration files
-    ConfigStatus defaultFS = modify_hdfs_config("fs.defaultFS", "hdfs://localhost:9000", "core-site.xml");
-    handle_result(defaultFS);
-    ConfigStatus replication = modify_hdfs_config("dfs.replication", "1", "hdfs-site.xml");
-    handle_result(replication);
-    ConfigStatus namenode = modify_hdfs_config("dfs.namenode.name.dir", nameNode, "hdfs-site.xml");
-    handle_result(namenode);
-    ConfigStatus datanode = modify_hdfs_config("dfs.datanode.data.dir", dataNode, "hdfs-site.xml");
-    handle_result(datanode);
 
     // Format NameNode
     char format_cmd[512];
-    snprintf(format_cmd, sizeof(format_cmd), "%s/bin/hdfs namenode -format -force", install_dir);
+    snprintf(format_cmd, sizeof(format_cmd), "%s/bin/hdfs namenode -format -force >/dev/null 2>&1", install_dir);
     if (!executeSystemCommand(format_cmd)) {
         fprintf(stderr,   "Error: NameNode format failed. Check HDFS config.\n");
         return;
     }
+    
+      char candidate_path[PATH_MAX];
+      snprintf(candidate_path, sizeof(candidate_path), "%s/etc/hadoop/", install_dir); 
+        
+    if (create_xml_file(candidate_path, "ranger-hdfs-audit.xml") !=0)
+        fprintf(stderr,  "Failed to create XML file\n");
+        
+    
+    if (create_xml_file(candidate_path, "ranger-policymgr-ssl.xml") !=0)
+        fprintf(stderr,     "Failed to create XML file\n");
+        
+    if (create_xml_file(candidate_path, "ranger-hdfs-policymgr-ssl.xml") !=0)
+        fprintf(stderr,     "Failed to create XML file\n");
+        
+    if (create_xml_file(candidate_path, "ssl-server.xml") !=0)
+        fprintf(stderr,     "Failed to create XML file\n");
+
+    
+    if (create_xml_file(candidate_path, "ranger-hdfs-security.xml") !=0)
+        fprintf(stderr,   "Failed to create XML file\n");
+  
+    if (create_xml_file(candidate_path, "ssl-client.xml") !=0)
+        fprintf(stderr,   "Failed to create XML file\n");
+        
+      
+    if (create_xml_file(candidate_path, "ranger-yarn-audit.xml") !=0)
+        fprintf(stderr,  "Failed to create XML file\n");
+
+    if (create_xml_file(candidate_path, "ranger-yarn-policymgr-ssl.xml") !=0)
+        fprintf(stderr,  "Failed to create XML file\n");
+
+    if (create_xml_file(candidate_path, "ranger-yarn-security.xml") !=0)
+        fprintf(stderr,  "Failed to create XML file\n");
+
+    if (create_xml_file(candidate_path, "resource-types.xml") !=0)
+        fprintf(stderr,  "Failed to create XML file\n");
+    
+    if (create_xml_file(candidate_path, "container-executor.xml") !=0)
+        fprintf(stderr,  "Failed to create XML file\n");
+
+    
+    if (create_properties_file(candidate_path, "ranger-yarn-plugin.properties") !=0)
+        fprintf(stderr,   "Failed to create XML file\n");
+
+    
+    if (create_properties_file(candidate_path, "ranger-hdfs-plugin.properties") !=0)
+        fprintf(stderr,   "Failed to create XML file\n");
+        
 
     printf( "Hadoop installed successfully to %s\n", install_dir);
 }
@@ -294,27 +332,27 @@ void install_Atlas(char *version, char *location) {
     snprintf(filename, sizeof(filename), "apache-atlas-%s-sources.tar.gz", actual_version);
 
     // Download using wget
-    snprintf(command, sizeof(command), "wget -q %s -O %s", url, filename);
+    snprintf(command, sizeof(command), "wget -q %s -O %s >/dev/null 2>&1", url, filename);
     if (!executeSystemCommand(command)) {
         fprintf(stderr, "Download failed. Check version availability.\n");
         return;
     }
 
     // Extract source archive
-    snprintf(command, sizeof(command), "tar -xvzf %s", filename);
+    snprintf(command, sizeof(command), "tar -xvzf %s >/dev/null 2>&1", filename);
     if (!executeSystemCommand(command)) {
         fprintf(stderr, "Source extraction failed.\n");
         return;
     }
 
     // Remove source archive
-    snprintf(command, sizeof(command), "sudo rm -f %s", filename);
+    snprintf(command, sizeof(command), "sudo rm -f %s >/dev/null 2>&1", filename);
     executeSystemCommand(command);  // Optional error handling
 
     // Build with Maven
     snprintf(command, sizeof(command), 
             "cd apache-atlas-sources-%s && "
-            "mvn clean -DskipTests package -Pdist,embedded-hbase-solr", 
+            "mvn clean -DskipTests package -Pdist,embedded-hbase-solr >/dev/null 2>&1", 
             actual_version);
     if (!executeSystemCommand(command)) {
         fprintf(stderr,"Maven build failed.\n");
@@ -326,14 +364,14 @@ void install_Atlas(char *version, char *location) {
     snprintf(binary_tarball, sizeof(binary_tarball),
             "apache-atlas-sources-%s/distro/target/apache-atlas-%s-bin.tar.gz",
             actual_version, actual_version);
-    snprintf(command, sizeof(command), "tar -xvzf %s", binary_tarball);
+    snprintf(command, sizeof(command), "tar -xvzf %s >/dev/null 2>&1", binary_tarball);
     if (!executeSystemCommand(command)) {
         fprintf(stderr, "Binary extraction failed.\n");
         return;
     }
 
     // Cleanup source directory
-    snprintf(command, sizeof(command), "sudo rm -rf apache-atlas-sources-%s", actual_version);
+    snprintf(command, sizeof(command), "sudo rm -rf apache-atlas-sources-%s >/dev/null 2>&1", actual_version);
     executeSystemCommand(command);  // Optional error handling
 
     // Determine installation path
@@ -347,7 +385,7 @@ void install_Atlas(char *version, char *location) {
     // Move binary directory
     char extracted_dir[256];
     snprintf(extracted_dir, sizeof(extracted_dir), "apache-atlas-%s", actual_version);
-    snprintf(command, sizeof(command), "sudo mv %s %s/atlas-%s", 
+    snprintf(command, sizeof(command), "sudo mv %s %s/atlas-%s >/dev/null 2>&1", 
             extracted_dir, install_path, actual_version);
     if (!executeSystemCommand(command)) {
         fprintf(stderr,"Moving installation failed.\n");
@@ -360,7 +398,7 @@ void install_Atlas(char *version, char *location) {
         fprintf(stderr, "Could not determine current user\n");
         return;
     }
-    snprintf(command, sizeof(command), "sudo chown -R %s:%s %s/atlas-%s",
+    snprintf(command, sizeof(command), "sudo chown -R %s:%s %s/atlas-%s >/dev/null 2>&1",
             pwd->pw_name, pwd->pw_name, install_path, actual_version);
     if (!executeSystemCommand(command)) {
         fprintf(stderr, "Ownership change failed\n");
@@ -379,14 +417,14 @@ void install_Atlas(char *version, char *location) {
             "%s/atlas-%s/conf", install_path, actual_version);
 
     // Link core-site.xml
-    snprintf(command, sizeof(command), "ln -sf %s/etc/hadoop/core-site.xml %s/",
+    snprintf(command, sizeof(command), "ln -sf %s/etc/hadoop/core-site.xml %s/ >/dev/null 2>&1",
             hadoop_home, atlas_conf_dir);
     if (!executeSystemCommand(command)) {
         fprintf(stderr,"core-site.xml linking failed\n");
     }
 
     // Link hdfs-site.xml
-    snprintf(command, sizeof(command), "ln -sf %s/etc/hadoop/hdfs-site.xml %s/",
+    snprintf(command, sizeof(command), "ln -sf %s/etc/hadoop/hdfs-site.xml %s/ >/dev/null 2>&1",
             hadoop_home, atlas_conf_dir);
     if (!executeSystemCommand(command)) {
         fprintf(stderr, "hdfs-site.xml linking failed\n");
@@ -417,21 +455,9 @@ void install_Atlas(char *version, char *location) {
             "%s/atlas-%s/conf/atlas-application.properties",
             install_path, actual_version);
 
-    // Update Atlas configuration
-    ConfigStatus backend = update_atlas_config("atlas.graph.storage.backend", "hbase", "atlas-application.properties");
-    handle_result(backend);
-    ConfigStatus hostname = update_atlas_config("atlas.graph.storage.hostname", "localhost:2181", "atlas-application.properties");
-    handle_result(hostname);
-    ConfigStatus index = update_atlas_config("atlas.graph.index.search.backend", "solr", "atlas-application.properties");
-    handle_result(index);
-    ConfigStatus search = update_atlas_config("atlas.graph.index.search.solr.mode", "cloud", "atlas-application.properties");
-    handle_result(search);   
-    ConfigStatus zookeeper = update_atlas_config("atlas.graph.index.search.solr.zookeeper-url", "localhost:2181/solr", "atlas-application.properties");
-    handle_result(zookeeper);
-
     // Initialize HBase schema
     snprintf(command, sizeof(command),
-            "%s/atlas-%s/bin/atlas_start.py --setup",
+            "%s/atlas-%s/bin/atlas_start.py --setup >/dev/null 2>&1",
             install_path, actual_version);
     if (!executeSystemCommand(command)) {
         fprintf(stderr, "HBase schema initialization failed\n");
@@ -457,7 +483,7 @@ void install_Storm(char *version, char *location) {
     // Download the archive
    // printf( "Downloading Storm ...\n");
     char wget_cmd[512];
-    snprintf(wget_cmd, sizeof(wget_cmd), "wget -q %s", url);
+    snprintf(wget_cmd, sizeof(wget_cmd), "wget -q %s >/dev/null 2>&1", url);
     if (!executeSystemCommand(wget_cmd)) {
         fprintf(stderr,   "Download failed. Check version availability.\n");
         return;
@@ -468,10 +494,10 @@ void install_Storm(char *version, char *location) {
     char tar_cmd[512];
     if (version)
         snprintf(tar_cmd, sizeof(tar_cmd), 
-                 "tar -xzf apache-storm-%s.tar.gz", version);
+                 "tar -xzf apache-storm-%s.tar.gz >/dev/null 2>&1", version);
     else 
         snprintf(tar_cmd, sizeof(tar_cmd), 
-                 "tar -xzf apache-storm-1.2.4.tar.gz");
+                 "tar -xzf apache-storm-1.2.4.tar.gz >/dev/null 2>&1");
              
     if (!executeSystemCommand(tar_cmd)) {
         fprintf(stderr,   "Extraction failed\n");
@@ -482,9 +508,9 @@ void install_Storm(char *version, char *location) {
     //printf( "Removing archive...\n");
     char rm_cmd[512];
     if (version)
-        snprintf(rm_cmd, sizeof(rm_cmd), "sudo rm -f apache-storm-%s.tar.gz", version);
+        snprintf(rm_cmd, sizeof(rm_cmd), "sudo rm -f apache-storm-%s.tar.gz >/dev/null 2>&1", version);
     else 
-        snprintf(rm_cmd, sizeof(rm_cmd), "sudo rm -f apache-storm-1.2.4.tar.gz");
+        snprintf(rm_cmd, sizeof(rm_cmd), "sudo rm -f apache-storm-1.2.4.tar.gz >/dev/null 2>&1");
     
     if (!executeSystemCommand(rm_cmd)) {
         fprintf(stderr,   "Failed to remove archive.\n");
@@ -510,12 +536,12 @@ void install_Storm(char *version, char *location) {
     char mv_cmd[512];
     int is_root = (geteuid() == 0);
     if (version)
-        snprintf(mv_cmd, sizeof(mv_cmd), "%smv apache-storm-%s %s",
+        snprintf(mv_cmd, sizeof(mv_cmd), "%smv apache-storm-%s %s >/dev/null 2>&1",
                  is_root ? "" : "sudo ",
                  version,
                  install_dir);
     else
-        snprintf(mv_cmd, sizeof(mv_cmd), "%smv apache-storm-1.2.4 %s",
+        snprintf(mv_cmd, sizeof(mv_cmd), "%smv apache-storm-1.2.4 %s >/dev/null 2>&1",
                  is_root ? "" : "sudo ",
                  install_dir);
 
@@ -531,7 +557,7 @@ void install_Storm(char *version, char *location) {
         return;
     }
     char chown_cmd[512];
-    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s", pwd->pw_name, pwd->pw_name, install_dir);
+    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s >/dev/null 2>&1", pwd->pw_name, pwd->pw_name, install_dir);
     if (!executeSystemCommand(chown_cmd)) {
         fprintf(stderr,   "Error: Failed to set ownership of %s\n", install_dir);
         return;
@@ -573,21 +599,11 @@ void install_Storm(char *version, char *location) {
     char sudo_cmd[256];
     snprintf(sudo_cmd, sizeof(sudo_cmd), "%s", is_root ? "" : "sudo ");
 
-    // Modify configurations
-    printf( "Configuring Storm settings...\n");
-    ConfigStatus servers = modify_storm_config("storm.zookeeper.servers", "127.0.0.1", "storm.yaml");
-    handle_result(servers);
-    ConfigStatus seeds = modify_storm_config("nimbus.seeds", "[\"localhost\"]", "storm.yaml");
-    handle_result(seeds);
-    ConfigStatus local = modify_storm_config("storm.local.dir", "/var/lib/storm-data", "storm.yaml");
-    handle_result(local);
-    ConfigStatus datanode = modify_storm_config("supervisor.slots.ports", "6700", "storm.yaml"); 
-    handle_result(datanode);
 
     // Create Storm data directory with proper permissions
     printf( "Creating Storm data directory...\n");
     char mkdir_cmd[512];
-    snprintf(mkdir_cmd, sizeof(mkdir_cmd), "%smkdir -p /var/lib/storm-data && %schown -R storm:storm /var/lib/storm-data",
+    snprintf(mkdir_cmd, sizeof(mkdir_cmd), "%smkdir -p /var/lib/storm-data && %schown -R storm:storm /var/lib/storm-data >/dev/null 2>&1",
              is_root ? "" : "sudo ",
              is_root ? "" : "sudo ");
     if (!executeSystemCommand(mkdir_cmd)) {
@@ -619,21 +635,21 @@ void install_Ranger(char* version, char *location) {
     }
 
     // Download the source archive
-    snprintf(command, sizeof(command), "wget -O %s %s", filename, url);
+    snprintf(command, sizeof(command), "wget -O %s %s >/dev/null 2>&1", filename, url);
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "Failed to download Ranger source archive.\n");
         exit(EXIT_FAILURE);
     }
 
     // Extract the source archive
-    snprintf(command, sizeof(command), "tar -xvzf %s", filename);
+    snprintf(command, sizeof(command), "tar -xvzf %s >/dev/null 2>&1", filename);
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "Failed to extract the source archive.\n");
         exit(EXIT_FAILURE);
     }
 
     // Build Apache Ranger with Maven
-    snprintf(command, sizeof(command), "cd %s && mvn clean compile package install assembly:assembly -DskipTests", extracted_dir);
+    snprintf(command, sizeof(command), "cd %s && mvn clean compile package install assembly:assembly -DskipTests >/dev/null 2>&1", extracted_dir);
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "Failed to build Ranger.\n");
         exit(EXIT_FAILURE);
@@ -654,7 +670,7 @@ void install_Ranger(char* version, char *location) {
    // }
 
     // Extract the built binary archive
-    snprintf(command, sizeof(command), "tar -xvzf %s", built_filename);
+    snprintf(command, sizeof(command), "tar -xvzf %s >/dev/null 2>&1", built_filename);
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "Failed to extract the built Ranger archive.\n");
         exit(EXIT_FAILURE);
@@ -669,12 +685,12 @@ void install_Ranger(char* version, char *location) {
     }
 
     // Remove downloaded source archive and extracted source directory
-    snprintf(command, sizeof(command), "sudo rm -f %s", filename);
+    snprintf(command, sizeof(command), "sudo rm -f %s >/dev/null 2>&1", filename);
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "Failed to remove source archive.\n");
     }
 
-    snprintf(command, sizeof(command), "sudo rm -rf %s", extracted_dir);
+    snprintf(command, sizeof(command), "sudo rm -rf %s >/dev/null 2>&1", extracted_dir);
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "Failed to remove extracted source directory.\n");
     }
@@ -694,7 +710,7 @@ void install_Ranger(char* version, char *location) {
     }
 
     // Move the built extracted directory to the installation path
-    snprintf(command, sizeof(command), "sudo mv %s %s", built_extracted_dir, install_dir);
+    snprintf(command, sizeof(command), "sudo mv %s %s >/dev/null 2>&1", built_extracted_dir, install_dir);
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "Failed to move directory to %s. Check permissions.\n", install_dir);
         exit(EXIT_FAILURE);
@@ -707,7 +723,7 @@ void install_Ranger(char* version, char *location) {
         return;
     }
     char chown_cmd[512];
-    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s", pwd->pw_name, pwd->pw_name, install_dir);
+    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s >/dev/null 2>&1", pwd->pw_name, pwd->pw_name, install_dir);
     if (!executeSystemCommand(chown_cmd)) {
         fprintf(stderr,   "Error: Failed to set ownership of %s\n", install_dir);
         return;
@@ -788,7 +804,7 @@ void install_phoenix(char *version, char *location) {
     snprintf(dirname, sizeof(dirname), "phoenix-%s-HBase-%s-bin", version, hbase_version);
 
     // Download the binary archive
-    size_t ret = snprintf(command, sizeof(command), "wget -q %s -O %s", url, filename);
+    size_t ret = snprintf(command, sizeof(command), "wget -q %s -O %s >/dev/null 2>&1", url, filename);
     if (ret >= sizeof(command)) {
         fprintf(stderr,   "size error\n");
         exit(1);
@@ -799,14 +815,14 @@ void install_phoenix(char *version, char *location) {
     }
 
     // Extract the archive
-    snprintf(command, sizeof(command), "tar -xvzf %s", filename);
+    snprintf(command, sizeof(command), "tar -xvzf %s >/dev/null 2>&1", filename);
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "Extraction failed. File may be corrupt.\n");
         exit(1);
     }
 
     // Remove the downloaded archive
-    snprintf(command, sizeof(command), "rm -f %s", filename);
+    snprintf(command, sizeof(command), "rm -f %s >/dev/null 2>&1", filename);
     executeSystemCommand(command);
 
     // Determine installation directory based on OS
@@ -825,7 +841,7 @@ void install_phoenix(char *version, char *location) {
     else
         install_dir = location;
     // Move extracted directory to install path
-    snprintf(command, sizeof(command), "sudo mv %s %s", dirname, install_dir);
+    snprintf(command, sizeof(command), "sudo mv %s %s >/dev/null 2>&1", dirname, install_dir);
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "Failed to move Phoenix to %s. Check permissions.\n", install_dir);
         exit(1);
@@ -837,7 +853,7 @@ void install_phoenix(char *version, char *location) {
     char source_jar[512], dest_jar[512];
     snprintf(source_jar, sizeof(source_jar), "%s/%s", install_dir, server_jar);
     snprintf(dest_jar, sizeof(dest_jar), "%s/lib/%s", hbase_home, server_jar);
-    size_t ret2 = snprintf(command, sizeof(command), "sudo cp %s %s", source_jar, dest_jar);
+    size_t ret2 = snprintf(command, sizeof(command), "sudo cp %s %s >/dev/null 2>&1", source_jar, dest_jar);
     if (ret2 >= sizeof(command)) {
             fprintf(stderr,   "size error\n");
         exit(1);
@@ -868,7 +884,7 @@ void install_phoenix(char *version, char *location) {
         return;
     }
     char chown_cmd[512];
-    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s", pwd->pw_name, pwd->pw_name, install_dir);
+    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s >/dev/null 2>&1", pwd->pw_name, pwd->pw_name, install_dir);
     if (!executeSystemCommand(chown_cmd)) {
         fprintf(stderr,   "Error: Failed to set ownership of %s\n", install_dir);
         return;
@@ -914,11 +930,11 @@ void install_Solr(char* version, char *location) {
     if (version)
     {
         snprintf(command, sizeof(command), 
-             "wget https://downloads.apache.org/solr/solr/9.8.1/solr-%s.tgz", version);
+             "wget https://downloads.apache.org/solr/solr/9.8.1/solr-%s.tgz >/dev/null 2>&1", version);
     }
     else
         snprintf(command, sizeof(command), 
-             "wget https://downloads.apache.org/solr/solr/9.8.1/solr-9.8.1.tgz");
+             "wget https://downloads.apache.org/solr/solr/9.8.1/solr-9.8.1.tgz >/dev/null 2>&1");
              
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "downloading faild\n");
@@ -927,10 +943,10 @@ void install_Solr(char* version, char *location) {
     // 2. Extract the archive
     if (version)
         snprintf(command, sizeof(command), 
-             "tar xzf solr-%s.tgz", version);
+             "tar xzf solr-%s.tgz >/dev/null 2>&1", version);
     else 
           snprintf(command, sizeof(command), 
-             "tar xzf solr-9.8.1.tgz");
+             "tar xzf solr-9.8.1.tgz >/dev/null 2>&1");
 
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "download failed.\n");
@@ -940,9 +956,9 @@ void install_Solr(char* version, char *location) {
         // Remove downloaded archive after extraction
   //  printf( "Removing archive...\n");
     if (version)
-        snprintf(command, sizeof(command), "sudo rm -f solr-%s.tgz", version);
+        snprintf(command, sizeof(command), "sudo rm -f solr-%s.tgz >/dev/null 2>&1", version);
     else
-        snprintf(command, sizeof(command), "sudo rm -f solr-9.8.1.tgz");
+        snprintf(command, sizeof(command), "sudo rm -f solr-9.8.1.tgz >/dev/null 2>&1");
 
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "Failed to remove archive.\n");
@@ -962,11 +978,11 @@ void install_Solr(char* version, char *location) {
     // 4. Move files to installation directory
     if (version)
     snprintf(command, sizeof(command), 
-             "sudo mv solr-%s %s && sudo chown -R $(whoami): %s", 
+             "sudo mv solr-%s %s && sudo chown -R $(whoami): %s >/dev/null 2>&1", 
              version, install_dir, install_dir);
     else 
     snprintf(command, sizeof(command), 
-             "sudo mv solr-9.8.1 %s && sudo chown -R $(whoami): %s", install_dir, install_dir);
+             "sudo mv solr-9.8.1 %s && sudo chown -R $(whoami): %s >/dev/null 2>&1", install_dir, install_dir);
              
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "move failed.\n");
@@ -980,7 +996,7 @@ void install_Solr(char* version, char *location) {
         return;
     }
     char chown_cmd[512];
-    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s", pwd->pw_name, pwd->pw_name, install_dir);
+    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s >/dev/null 2>&1", pwd->pw_name, pwd->pw_name, install_dir);
     if (!executeSystemCommand(chown_cmd)) {
         fprintf(stderr,   "Error: Failed to set ownership of %s\n", install_dir);
         return;
@@ -1029,7 +1045,7 @@ void install_kafka(char* version, char *location) {
              "https://downloads.apache.org/kafka/3.7.2/kafka_2.13-3.7.2.tgz");
 
     // Download Kafka
-    snprintf(command, sizeof(command), "wget -q %s", url);
+    snprintf(command, sizeof(command), "wget -q %s >/dev/null 2>&1", url);
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "Failed to download Kafka\n");
         exit(EXIT_FAILURE);
@@ -1041,7 +1057,7 @@ void install_kafka(char* version, char *location) {
     else
         snprintf(filename, sizeof(filename), "kafka_2.13-3.7.2.tgz");
     
-    snprintf(command, sizeof(command), "tar -xvzf %s", filename);
+    snprintf(command, sizeof(command), "tar -xvzf %s >/dev/null 2>&1", filename);
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "Failed to extract archive\n");
         exit(EXIT_FAILURE);
@@ -1049,7 +1065,7 @@ void install_kafka(char* version, char *location) {
     
         // Remove downloaded archive after extraction
     //printf( "Removing archive...\n");
-        snprintf(command, sizeof(command), "sudo rm -f %s", filename);
+        snprintf(command, sizeof(command), "sudo rm -f %s >/dev/null 2>&1", filename);
 
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "Failed to remove archive.\n");
@@ -1073,7 +1089,7 @@ void install_kafka(char* version, char *location) {
     else 
         snprintf(dir_name, sizeof(dir_name), "kafka_2.13-3.7.2");
     
-    snprintf(command, sizeof(command), "sudo mv %s %s"
+    snprintf(command, sizeof(command), "sudo mv %s %s >/dev/null 2>&1"
     , dir_name, install_dir);
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "Failed to move Kafka directory\n");
@@ -1087,7 +1103,7 @@ void install_kafka(char* version, char *location) {
         return;
     }
     char chown_cmd[512];
-    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s", pwd->pw_name, pwd->pw_name, install_dir);
+    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s >/dev/null 2>&1", pwd->pw_name, pwd->pw_name, install_dir);
     if (!executeSystemCommand(chown_cmd)) {
         fprintf(stderr,   "Error: Failed to set ownership of %s\n", install_dir);
         return;
@@ -1115,6 +1131,26 @@ void install_kafka(char* version, char *location) {
     fprintf(bashrc, "export PATH=\"$KAFKA_HOME/bin:$PATH\"\n");
     fclose(bashrc);
 
+      char candidate_path[PATH_MAX];
+      snprintf(candidate_path, sizeof(candidate_path), "%s/config", install_dir);
+      
+    if (create_xml_file(candidate_path, "ranger-kafka-audit.xml") !=0)
+        fprintf(stderr,   "Failed to create XML file\n");
+
+
+    if (create_xml_file(candidate_path, "ranger-kafka-policymgr-ssl.xml") !=0)
+        fprintf(stderr,   "Failed to create XML file\n");
+
+    
+    if (create_xml_file(candidate_path, "ranger-kafka-security.xml") !=0)
+        fprintf(stderr,  "Failed to create XML file\n");
+    
+        
+    if (create_properties_file(candidate_path, "ranger-kafka-plugin.properties") !=0)
+        fprintf(stderr,    "Failed to create XML file\n");
+
+        
+
     printf( "\nKafka installed successfully to %s\n", install_dir);
 
       if (sourceBashrc() != 0) {
@@ -1134,13 +1170,13 @@ void install_pig(char* version, char *location) {
     
 
     char command[512];
-    snprintf(command, sizeof(command), "wget %s", url);
+    snprintf(command, sizeof(command), "wget %s >/dev/null 2>&1", url);
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "download failed\n");
         exit(EXIT_FAILURE);
     }
   
-    if (!executeSystemCommand("tar -xvzf pig-*.tar.gz")) {
+    if (!executeSystemCommand("tar -xvzf pig-*.tar.gz >/dev/null 2>&1")) {
         fprintf(stderr,   "taring failed\n");
         exit(EXIT_FAILURE);
     }
@@ -1148,9 +1184,9 @@ void install_pig(char* version, char *location) {
     // Remove downloaded archive after extraction
     //printf( "Removing archive...\n");
     if (version)
-        snprintf(command, sizeof(command), "sudo rm -f pig-%s.tar.gz", version);
+        snprintf(command, sizeof(command), "sudo rm -f pig-%s.tar.gz >/dev/null 2>&1", version);
     else 
-        snprintf(command, sizeof(command), "sudo rm -f pig-0.17.0.tar.gz");
+        snprintf(command, sizeof(command), "sudo rm -f pig-0.17.0.tar.gz >/dev/null 2>&1");
     
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "Failed to remove archive.\n");
@@ -1167,9 +1203,9 @@ void install_pig(char* version, char *location) {
         install_dir = location;
         
     if (version)
-          snprintf(command, sizeof(command), "mv pig-%s %s", version, install_dir);
+          snprintf(command, sizeof(command), "mv pig-%s %s >/dev/null 2>&1", version, install_dir);
     else 
-          snprintf(command, sizeof(command), "mv pig-0.17.0 %s", install_dir);
+          snprintf(command, sizeof(command), "mv pig-0.17.0 %s >/dev/null 2>&1", install_dir);
    
 //if (ret1 >= sizeof(command))  {// Truncation occurred
   //  fprintf(stderr,   "Error: Command truncated.\n");
@@ -1186,7 +1222,7 @@ void install_pig(char* version, char *location) {
         return;
     }
     char chown_cmd[512];
-    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s", pwd->pw_name, pwd->pw_name, install_dir);
+    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s >/dev/null 2>&1", pwd->pw_name, pwd->pw_name, install_dir);
     if (!executeSystemCommand(chown_cmd)) {
         fprintf(stderr,   "Error: Failed to set ownership of %s\n", install_dir);
         return;
@@ -1200,7 +1236,7 @@ void install_pig(char* version, char *location) {
     }
     snprintf(bashrc_path, sizeof(bashrc_path), "%s/.bashrc", home);
 
-    long unsigned int ret2 =  snprintf(command, sizeof(command), "echo 'export PIG_HOME=\"%s\"' >> %s", install_dir, bashrc_path);
+    long unsigned int ret2 =  snprintf(command, sizeof(command), "echo 'export PIG_HOME=\"%s\"' >> %s >/dev/null 2>&1", install_dir, bashrc_path);
     if (ret2 >= sizeof(command)) { // Truncation occurred
         fprintf(stderr,   "Error: Command truncated.\n");
     }
@@ -1209,12 +1245,12 @@ void install_pig(char* version, char *location) {
         exit(EXIT_FAILURE);
     }
   
-    snprintf(command, sizeof(command), "echo 'export PATH=$PATH:$PIG_HOME/bin' >> %s", bashrc_path);
+    snprintf(command, sizeof(command), "echo 'export PATH=$PATH:$PIG_HOME/bin' >> %s >/dev/null 2>&1", bashrc_path);
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "echo failed\n");
         exit(EXIT_FAILURE);
     }
-    snprintf(command, sizeof(command), "echo 'export PIG_CLASSPATH=$HADOOP_HOME/etc/hadoop' >> ");
+    snprintf(command, sizeof(command), "echo 'export PIG_CLASSPATH=$HADOOP_HOME/etc/hadoop' >> >/dev/null 2>&1 ");
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "echo failed\n");
         exit(EXIT_FAILURE);
@@ -1271,7 +1307,7 @@ void install_HBase(char *version, char *location) {
 
     // Download the archive
     char wget_cmd[512];
-    snprintf(wget_cmd, sizeof(wget_cmd), "wget %s", url);
+    snprintf(wget_cmd, sizeof(wget_cmd), "wget %s >/dev/null 2>&1", url);
     if (!executeSystemCommand(wget_cmd)) {
         fprintf(stderr,   "Download failed for version: %s\n", version ? version : default_version);
         exit(EXIT_FAILURE);
@@ -1279,7 +1315,7 @@ void install_HBase(char *version, char *location) {
 
     // Extract archive
     char tar_cmd[512];
-    snprintf(tar_cmd, sizeof(tar_cmd), "tar -xvzf hbase-%s-bin.tar.gz", 
+    snprintf(tar_cmd, sizeof(tar_cmd), "tar -xvzf hbase-%s-bin.tar.gz >/dev/null 2>&1", 
             version ? version : default_version);
     if (!executeSystemCommand(tar_cmd)) {
         fprintf(stderr,   "Extraction failed\n");
@@ -1288,7 +1324,7 @@ void install_HBase(char *version, char *location) {
 
     // Remove downloaded archive
     char rm_cmd[512];
-    snprintf(rm_cmd, sizeof(rm_cmd), "rm -f hbase-%s-bin.tar.gz", 
+    snprintf(rm_cmd, sizeof(rm_cmd), "rm -f hbase-%s-bin.tar.gz >/dev/null 2>&1", 
             version ? version : default_version);
     if (!executeSystemCommand(rm_cmd)) {
         fprintf(stderr,   "Failed to remove archive\n");
@@ -1316,14 +1352,14 @@ void install_HBase(char *version, char *location) {
 
     // Rename extracted directory to 'hbase'
     char rename_cmd[512];
-    snprintf(rename_cmd, sizeof(rename_cmd), "mv %s hbase", dir_name);
+    snprintf(rename_cmd, sizeof(rename_cmd), "mv %s hbase >/dev/null 2>&1", dir_name);
     if (!executeSystemCommand(rename_cmd)) {
         fprintf(stderr,   "Failed to rename HBase directory from %s to hbase\n", dir_name);
         exit(EXIT_FAILURE);
     }
 
     // Move HBase directory to target_dir
-    snprintf(command, sizeof(command), "sudo mv hbase %s", target_dir);
+    snprintf(command, sizeof(command), "sudo mv hbase %s >/dev/null 2>&1", target_dir);
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "Failed to move HBase to %s\n", target_dir);
         exit(EXIT_FAILURE);
@@ -1336,7 +1372,7 @@ void install_HBase(char *version, char *location) {
         exit(EXIT_FAILURE);
     }
     char chown_cmd[512];
-    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s/hbase", 
+    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s/hbase >/dev/null 2>&1", 
             pwd->pw_name, pwd->pw_name, target_dir);
     if (!executeSystemCommand(chown_cmd)) {
         fprintf(stderr,   "Error: Failed to set ownership of %s/hbase\n", target_dir);
@@ -1374,7 +1410,7 @@ void install_HBase(char *version, char *location) {
     // Update JAVA_HOME configuration
     char sed_cmd[1024];
     snprintf(sed_cmd, sizeof(sed_cmd),
-            "sed -i.bak '/^#[[:space:]]*export JAVA_HOME=/c\\export JAVA_HOME=\"%s\"' %s",
+            "sed -i.bak '/^#[[:space:]]*export JAVA_HOME=/c\\export JAVA_HOME=\"%s\"' %s >/dev/null 2>&1",
             java_home, hbase_env_path);
     if (!executeSystemCommand(sed_cmd)) {
         fprintf(stderr,   "Failed to set JAVA_HOME in hbase-env.sh\n");
@@ -1382,15 +1418,6 @@ void install_HBase(char *version, char *location) {
         exit(EXIT_FAILURE);
     }
     free(java_home);
-
-    // Configure HBase settings
-    ConfigStatus result;
-    result = update_hbase_config("hbase.rootdir", "hdfs://localhost:9000/hbase", "hbase-site.xml");
-    handle_result(result);
-    result = update_hbase_config("hbase.cluster.distributed", "true", "hbase-site.xml");
-    handle_result(result);
-    result = update_hbase_config("hbase.zookeeper.property.clientPort", "2181", "hbase-site.xml");
-    handle_result(result);
 
     fprintf(stderr,  "HBase successfully installed to %s/hbase\n", target_dir);
 }
@@ -1414,7 +1441,7 @@ void install_Tez(char* version, char *location) {
             "https://downloads.apache.org/tez/0.10.1/apache-tez-0.10.1-bin.tar.gz"); 
 
     // Download Tez archive
-    snprintf(command, sizeof(command), "wget -q %s", url);
+    snprintf(command, sizeof(command), "wget -q %s >/dev/null 2>&1", url);
 
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "downloading faild\n");
@@ -1423,10 +1450,10 @@ void install_Tez(char* version, char *location) {
     // Extract downloaded archive
     if (version)
     snprintf(command, sizeof(command), 
-            "tar -xvzf apache-tez-%s-bin.tar.gz", version);
+            "tar -xvzf apache-tez-%s-bin.tar.gz >/dev/null 2>&1", version);
     else 
     snprintf(command, sizeof(command), 
-            "tar -xvzf apache-tez-0.10.1-bin.tar.gz");
+            "tar -xvzf apache-tez-0.10.1-bin.tar.gz >/dev/null 2>&1");
 
 
     if (!executeSystemCommand(command)) {
@@ -1436,9 +1463,9 @@ void install_Tez(char* version, char *location) {
     // Remove downloaded archive after extraction
     //printf( "Removing archive...\n");
     if (version)
-        snprintf(command, sizeof(command), "sudo rm -f apache-tez-%s-bin.tar.gz", version);
+        snprintf(command, sizeof(command), "sudo rm -f apache-tez-%s-bin.tar.gz >/dev/null 2>&1", version);
     else
-        snprintf(command, sizeof(command), "sudo rm -f apache-tez-0.10.1-bin.tar.gz");
+        snprintf(command, sizeof(command), "sudo rm -f apache-tez-0.10.1-bin.tar.gz >/dev/null 2>&1");
 
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "Failed to remove archive.\n");
@@ -1460,10 +1487,10 @@ void install_Tez(char* version, char *location) {
     // Move extracted directory to installation location
     if (version)
     snprintf(command, sizeof(command), 
-            "sudo mv -f apache-tez-%s-bin %s", version, install_dir);
+            "sudo mv -f apache-tez-%s-bin %s >/dev/null 2>&1", version, install_dir);
     else
     snprintf(command, sizeof(command), 
-            "sudo mv -f apache-tez-0.10.1-bin %s", install_dir);
+            "sudo mv -f apache-tez-0.10.1-bin %s >/dev/null 2>&1", install_dir);
 
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "moving   faild\n");
@@ -1477,7 +1504,7 @@ void install_Tez(char* version, char *location) {
         return;
     }
     char chown_cmd[512];
-    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s", pwd->pw_name, pwd->pw_name, install_dir);
+    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s >/dev/null 2>&1", pwd->pw_name, pwd->pw_name, install_dir);
     if (!executeSystemCommand(chown_cmd)) {
         fprintf(stderr,   "Error: Failed to set ownership of %s\n", install_dir);
         return;
@@ -1502,10 +1529,7 @@ void install_Tez(char* version, char *location) {
         fprintf(stderr,   "bashing failed.\n");
         return;
     }
-      ConfigStatus defaultFS = modify_tez_config("tez.lib.uris", "${fs.defaultFS}/tez/tez.tar.gz" , "tez-site.xml");
-      handle_result(defaultFS);
-      ConfigStatus lib = modify_tez_config("tez.use.cluster.hadoop-libs", "true", "tez-site.xml");
-      handle_result(lib);
+    
     printf( "Apache Tez installed successfully at %s\n", install_dir);
 }
 
@@ -1529,7 +1553,7 @@ void install_flink(char* version, char *location) {
     }
     // Download the archive
     //printf( "Downloading Flink ...\n");
-    snprintf(cmd, sizeof(cmd), "wget -q %s", url);
+    snprintf(cmd, sizeof(cmd), "wget -q %s >/dev/null 2>&1", url);
     ret = executeSystemCommand(cmd);
     if (ret == -1) {
         fprintf(stderr,   "Failed to download Flink archive\n");
@@ -1548,7 +1572,7 @@ void install_flink(char* version, char *location) {
     // Remove downloaded archive after extraction
     //printf( "Removing archive...\n");
     if (version)
-        snprintf(cmd, sizeof(cmd), "sudo rm -f %s", filename);
+        snprintf(cmd, sizeof(cmd), "sudo rm -f %s >/dev/null 2>&1", filename);
 
     if (!executeSystemCommand(cmd)) {
         fprintf(stderr,   "Failed to remove archive.\n");
@@ -1577,7 +1601,7 @@ void install_flink(char* version, char *location) {
     else
         snprintf(src_dir, sizeof(src_dir), "flink-2.0.0");
     
-    snprintf(cmd, sizeof(cmd), "sudo mv %s %s", src_dir, install_dir);
+    snprintf(cmd, sizeof(cmd), "sudo mv %s %s >/dev/null 2>&1", src_dir, install_dir);
     ret = executeSystemCommand(cmd);
     if (ret == -1) {
         fprintf(stderr,   "Failed to move installation directory\n");
@@ -1591,7 +1615,7 @@ void install_flink(char* version, char *location) {
         return;
     }
     char chown_cmd[512];
-    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s", pwd->pw_name, pwd->pw_name, install_dir);
+    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s >/dev/null 2>&1", pwd->pw_name, pwd->pw_name, install_dir);
     if (!executeSystemCommand(chown_cmd)) {
         fprintf(stderr,   "Error: Failed to set ownership of %s\n", install_dir);
         return;
@@ -1642,7 +1666,7 @@ void install_zookeeper(char *version, char *location) {
         snprintf(url, sizeof(url), "https://downloads.apache.org/zookeeper/stable/apache-zookeeper-3.8.4-bin.tar.gz");
 
     // Download using wget
-    snprintf(command, sizeof(command), "wget -q %s", url);
+    snprintf(command, sizeof(command), "wget -q %s >/dev/null 2>&1", url);
     
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "downloading  faild\n");
@@ -1652,7 +1676,7 @@ void install_zookeeper(char *version, char *location) {
     if (version)
         snprintf(command, sizeof(command), "tar -xvzf apache-zookeeper-%s-bin.tar.gz > /dev/null", version);
     else 
-        snprintf(command, sizeof(command), "tar -xvzf apache-zookeeper-3.8.4-bin.tar.gz");
+        snprintf(command, sizeof(command), "tar -xvzf apache-zookeeper-3.8.4-bin.tar.gz >/dev/null 2>&1");
 
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "taring  faild\n");
@@ -1662,9 +1686,9 @@ void install_zookeeper(char *version, char *location) {
     // Remove downloaded archive after extraction
    // printf( "Removing archive...\n");
     if (version)
-        snprintf(command, sizeof(command), "sudo rm -f apache-zookeeper-%s-bin.tar.gz", version);
+        snprintf(command, sizeof(command), "sudo rm -f apache-zookeeper-%s-bin.tar.gz >/dev/null 2>&1", version);
     else
-        snprintf(command, sizeof(command), "sudo rm -f apache-zookeeper-3.8.4-bin.tar.gz");
+        snprintf(command, sizeof(command), "sudo rm -f apache-zookeeper-3.8.4-bin.tar.gz >/dev/null 2>&1");
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "Failed to remove archive.\n");
     }
@@ -1705,14 +1729,14 @@ void install_zookeeper(char *version, char *location) {
         return;
     }
     char chown_cmd[512];
-    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s", pwd->pw_name, pwd->pw_name, install_dir);
+    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s >/dev/null 2>&1", pwd->pw_name, pwd->pw_name, install_dir);
     if (!executeSystemCommand(chown_cmd)) {
         fprintf(stderr,   "Error: Failed to set ownership of %s\n", install_dir);
         return;
     }
     
     // Copy configuration file
-    snprintf(command, sizeof(command), "cp %s/zookeeper/conf/zoo_sample.cfg %s/zookeeper/conf/zoo.cfg", install_dir, install_dir);
+    snprintf(command, sizeof(command), "cp %s/zookeeper/conf/zoo_sample.cfg %s/zookeeper/conf/zoo.cfg >/dev/null 2>&1", install_dir, install_dir);
 
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "copying  faild\n");
@@ -1743,12 +1767,12 @@ void install_zookeeper(char *version, char *location) {
         snprintf(bashrc_path, sizeof(bashrc_path), "%s/.bashrc", home);
 
         // Append ZOOKEEPER_HOME and PATH
-        snprintf(command, sizeof(command), "echo 'export ZOOKEEPER_HOME=%s/zookeeper' >> %s", install_dir, bashrc_path);
+        snprintf(command, sizeof(command), "echo 'export ZOOKEEPER_HOME=%s/zookeeper' >> %s >/dev/null 2>&1", install_dir, bashrc_path);
         if (!executeSystemCommand(command)) {
         fprintf(stderr,   "eko  faild\n");
         return;
         }
-        snprintf(command, sizeof(command), "echo 'export PATH=\"$PATH:$ZOOKEEPER_HOME/bin\"' >> %s", bashrc_path);
+        snprintf(command, sizeof(command), "echo 'export PATH=\"$PATH:$ZOOKEEPER_HOME/bin\"' >> %s >/dev/null 2>&1", bashrc_path);
         if (!executeSystemCommand(command)) {
         fprintf(stderr,   "eko  faild\n");
         return;
@@ -1760,6 +1784,16 @@ void install_zookeeper(char *version, char *location) {
         fprintf(stderr,   "bashing failed.\n");
         return;
     }
+    
+      char candidate_path[PATH_MAX];
+      snprintf(candidate_path, sizeof(candidate_path), "%s/zookeeper/conf", install_dir);
+    
+        if (create_properties_file(candidate_path, "log4j.properties") !=0)
+        fprintf(stderr,   "Failed to create properties file\n");
+        
+        if (create_properties_file(candidate_path, "zookeeper-env.properties") !=0)
+        fprintf(stderr,   "Failed to create properties file\n");
+        
     fprintf(stderr,   "Zookeeper installed successfully\n");
     
 }
@@ -1780,7 +1814,7 @@ void install_Presto(char* version, char *location) {
              "https://repo1.maven.org/maven2/com/facebook/presto/presto-server/0.282/presto-server-0.282.tar.gz");
 
     // Download the archive
-    snprintf(command, sizeof(command), "wget -q %s", url);
+    snprintf(command, sizeof(command), "wget -q %s >/dev/null 2>&1", url);
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "Failed to download Presto version %s\n", version);
         exit(EXIT_FAILURE);
@@ -1791,7 +1825,7 @@ void install_Presto(char* version, char *location) {
     if (version)
         snprintf(command, sizeof(command), "tar -xvzf presto-server-%s.tar.gz > /dev/null", version);
     else 
-        snprintf(command, sizeof(command), "tar -xvzf presto-server-0.282.tar.gz");
+        snprintf(command, sizeof(command), "tar -xvzf presto-server-0.282.tar.gz >/dev/null 2>&1");
 
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "taring  faild\n");
@@ -1801,9 +1835,9 @@ void install_Presto(char* version, char *location) {
     // Remove downloaded archive after extraction
    // printf( "Removing archive...\n");
     if (version)
-        snprintf(command, sizeof(command), "sudo rm -f presto-server-%s.tar.gz", version);
+        snprintf(command, sizeof(command), "sudo rm -f presto-server-%s.tar.gz >/dev/null 2>&1", version);
     else
-        snprintf(command, sizeof(command), "sudo rm -f presto-server-0.282.tar.gz");
+        snprintf(command, sizeof(command), "sudo rm -f presto-server-0.282.tar.gz >/dev/null 2>&1");
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "Failed to remove archive.\n");
     }
@@ -1823,7 +1857,7 @@ void install_Presto(char* version, char *location) {
     else 
         install_dir = location;
     // Create installation directory
-    snprintf(command, sizeof(command), "sudo mkdir -p %s", install_dir);
+    snprintf(command, sizeof(command), "sudo mkdir -p %s >/dev/null 2>&1", install_dir);
      // Adjust ownership of install_dir to current user
     struct passwd *pwd = getpwuid(getuid());
     if (!pwd) {
@@ -1831,7 +1865,7 @@ void install_Presto(char* version, char *location) {
         return;
     }
     char chown_cmd[512];
-    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s", pwd->pw_name, pwd->pw_name, install_dir);
+    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s >/dev/null 2>&1", pwd->pw_name, pwd->pw_name, install_dir);
     if (!executeSystemCommand(chown_cmd)) {
         fprintf(stderr,   "Error: Failed to set ownership of %s\n", install_dir);
         return;
@@ -1844,9 +1878,9 @@ void install_Presto(char* version, char *location) {
     }
     // Move extracted files
     if (version)
-        snprintf(command, sizeof(command), "sudo mv presto-server-%s %s", version, install_dir);
+        snprintf(command, sizeof(command), "sudo mv presto-server-%s %s >/dev/null 2>&1", version, install_dir);
     else
-        snprintf(command, sizeof(command), "sudo mv presto-server-0.282 %s", install_dir);
+        snprintf(command, sizeof(command), "sudo mv presto-server-0.282 %s >/dev/null 2>&1", install_dir);
 
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "making directory  faild\n");
@@ -1876,7 +1910,7 @@ void install_Presto(char* version, char *location) {
     }
 
 
-    if (!executeSystemCommand("rm -f presto-server-*.tar.gz")) {
+    if (!executeSystemCommand("rm -f presto-server-*.tar.gz >/dev/null 2>&1")) {
         fprintf(stderr,   "moving failed %s\n", version);
         exit(EXIT_FAILURE);
     }
@@ -1895,7 +1929,7 @@ void install_hive(char* version, char *location) {
 
     // Download Hive archive
     char wget_cmd[512];
-   long unsigned int ret= snprintf(wget_cmd, sizeof(wget_cmd), "wget %s", url);
+   long unsigned int ret= snprintf(wget_cmd, sizeof(wget_cmd), "wget %s >/dev/null 2>&1", url);
     if (ret >= sizeof(wget_cmd)) { // Truncation occurred
     fprintf(stderr,   "Error: Command truncated.\n");
     }
@@ -1908,7 +1942,7 @@ void install_hive(char* version, char *location) {
     if (version)
         snprintf(command, sizeof(command), "tar -xvzf apache-hive-%s-bin.tar.gz > /dev/null", version);
     else 
-        snprintf(command, sizeof(command), "tar -xvzf apache-hive-4.0.1-bin.tar.gz");
+        snprintf(command, sizeof(command), "tar -xvzf apache-hive-4.0.1-bin.tar.gz >/dev/null 2>&1");
 
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "taring  faild\n");
@@ -1918,9 +1952,9 @@ void install_hive(char* version, char *location) {
     // Remove downloaded archive after extraction
    // printf( "Removing archive...\n");
     if (version)
-        snprintf(command, sizeof(command), "sudo rm -f apache-hive-%s-bin.tar.gz", version);
+        snprintf(command, sizeof(command), "sudo rm -f apache-hive-%s-bin.tar.gz >/dev/null 2>&1", version);
     else
-        snprintf(command, sizeof(command), "sudo rm -f apache-hive-4.0.1-bin.tar.gz");
+        snprintf(command, sizeof(command), "sudo rm -f apache-hive-4.0.1-bin.tar.gz >/dev/null 2>&1");
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "Failed to remove archive.\n");
     }
@@ -1953,13 +1987,13 @@ void install_hive(char* version, char *location) {
     snprintf(dir_name, sizeof(dir_name), "apache-hive-%s-bin", 
             version ? version : "4.0.1");
     char rename_cmd[512];
-    snprintf(rename_cmd, sizeof(rename_cmd), "mv %s hive", dir_name);
+    snprintf(rename_cmd, sizeof(rename_cmd), "mv %s hive >/dev/null 2>&1", dir_name);
     if (!executeSystemCommand(rename_cmd)) {
         fprintf(stderr,   "Failed to rename HBase directory from %s to hive\n", dir_name);
         exit(EXIT_FAILURE);
     }
  
-    snprintf(command, sizeof(command), "sudo mv hive %s"
+    snprintf(command, sizeof(command), "sudo mv hive %s >/dev/null 2>&1"
     , installation_dir);
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "Failed to move hive directory\n");
@@ -1973,7 +2007,7 @@ void install_hive(char* version, char *location) {
         return;
     }
     char chown_cmd[512];
-    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s", pwd->pw_name, pwd->pw_name, installation_dir);
+    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s >/dev/null 2>&1", pwd->pw_name, pwd->pw_name, installation_dir);
     if (!executeSystemCommand(chown_cmd)) {
         fprintf(stderr,   "Error: Failed to set ownership of %s\n", installation_dir);
         return;
@@ -2003,6 +2037,38 @@ void install_hive(char* version, char *location) {
         return;
     }
     
+      char candidate_path[PATH_MAX];
+      snprintf(candidate_path, sizeof(candidate_path), "%s/hive/conf", installation_dir);
+        
+    if (create_properties_file(candidate_path, "beeline-log4j2.properties") !=0)
+        fprintf(stderr,   "Failed to create XML file\n");
+  
+    if (create_properties_file(candidate_path, "atlas-application.properties") !=0)
+        fprintf(stderr,   "Failed to create XML file\n");
+
+    if (create_properties_file(candidate_path, "hive-exec-log4j2.properties") !=0)
+        fprintf(stderr,   "Failed to create XML file\n");
+        
+    if (create_properties_file(candidate_path, "llap-cli-log4j2.properties") !=0)
+        fprintf(stderr,   "Failed to create XML file\n");
+      
+    if (create_properties_file(candidate_path, "llap-daemon-log4j2.properties") !=0)
+        fprintf(stderr,   "Failed to create XML file\n");
+
+      
+    if (create_properties_file(candidate_path, "hive-log4j2.properties") !=0)
+        fprintf(stderr,   "Failed to create XML file\n");
+        
+        
+    if (create_xml_file(candidate_path, "hive-site.xml") !=0)
+        fprintf(stderr,   "Failed to create XML file\n");
+
+    if (create_xml_file(candidate_path, "hivemetastore-site.xml") !=0)
+        fprintf(stderr,   "Failed to create XML file\n");
+        
+    if (create_xml_file(candidate_path, "hiveserver2-site.xml") !=0)
+        fprintf(stderr,   "Failed to create XML file\n");
+        
     printf( "Hive has been successfully installed to %s.\n", installation_dir);
 }
 
@@ -2023,7 +2089,7 @@ void install_spark(char* version, char *location) {
 
     // Download Spark archive
     char wget_cmd[512];
-    snprintf(wget_cmd, sizeof(wget_cmd), "wget -q %s", url);
+    snprintf(wget_cmd, sizeof(wget_cmd), "wget -q %s >/dev/null 2>&1", url);
 
     if (!executeSystemCommand(wget_cmd)) {
         fprintf(stderr,   "Downloading failed\n");
@@ -2033,9 +2099,9 @@ void install_spark(char* version, char *location) {
     // Extract archive
     char tar_cmd[512];
     if (version)
-        snprintf(tar_cmd, sizeof(tar_cmd), "tar -xvzf spark-%s-bin-hadoop3.tgz", version);
+        snprintf(tar_cmd, sizeof(tar_cmd), "tar -xvzf spark-%s-bin-hadoop3.tgz >/dev/null 2>&1", version);
     else 
-        snprintf(tar_cmd, sizeof(tar_cmd), "tar -xvzf spark-3.5.6-bin-hadoop3.tgz");
+        snprintf(tar_cmd, sizeof(tar_cmd), "tar -xvzf spark-3.5.6-bin-hadoop3.tgz >/dev/null 2>&1");
     if (!executeSystemCommand(tar_cmd)) {
         fprintf(stderr,   "Error: Failed to extract archive\n");
         return;
@@ -2043,9 +2109,9 @@ void install_spark(char* version, char *location) {
   
     // Remove the downloaded archive
     if (version) {
-        snprintf(tar_cmd, sizeof(tar_cmd), "sudo rm -f spark-%s-bin-hadoop3.tgz", version);
+        snprintf(tar_cmd, sizeof(tar_cmd), "sudo rm -f spark-%s-bin-hadoop3.tgz >/dev/null 2>&1", version);
     } else {
-        snprintf(tar_cmd, sizeof(tar_cmd), "sudo rm -f spark-3.5.6-bin-hadoop3.tgz");
+        snprintf(tar_cmd, sizeof(tar_cmd), "sudo rm -f spark-3.5.6-bin-hadoop3.tgz >/dev/null 2>&1");
     }
     if (!executeSystemCommand(tar_cmd)) {
         fprintf(stderr,   "Error: Failed to remove archive\n");
@@ -2072,10 +2138,10 @@ void install_spark(char* version, char *location) {
     char mv_cmd[512];
     if (version) {
         snprintf(mv_cmd, sizeof(mv_cmd), 
-            "sudo mv spark-%s-bin-hadoop3 %s", version, install_path);
+            "sudo mv spark-%s-bin-hadoop3 %s >/dev/null 2>&1", version, install_path);
     } else {
         snprintf(mv_cmd, sizeof(mv_cmd), 
-            "sudo mv spark-3.5.6-bin-hadoop3 %s", install_path);
+            "sudo mv spark-3.5.6-bin-hadoop3 %s >/dev/null 2>&1", install_path);
     }
     if (!executeSystemCommand(mv_cmd)) {
         fprintf(stderr,   "Moving failed\n");
@@ -2095,7 +2161,7 @@ void install_spark(char* version, char *location) {
     // Append SPARK_HOME to .bashrc
     char env_cmd[512];
     snprintf(env_cmd, sizeof(env_cmd),
-        "echo 'export SPARK_HOME=%s' >> %s", install_path, bashrc_path);
+        "echo 'export SPARK_HOME=%s' >> %s >/dev/null 2>&1", install_path, bashrc_path);
 
     if (!executeSystemCommand(env_cmd)) {
         fprintf(stderr,   "Environment setup failed\n");
@@ -2104,7 +2170,7 @@ void install_spark(char* version, char *location) {
 
     // Append PATH update to .bashrc
     snprintf(env_cmd, sizeof(env_cmd),
-        "echo 'export PATH=$PATH:$SPARK_HOME/bin' >> %s", bashrc_path);
+        "echo 'export PATH=$PATH:$SPARK_HOME/bin' >> %s >/dev/null 2>&1", bashrc_path);
 
     if (!executeSystemCommand(env_cmd)) {
         fprintf(stderr,   "Environment setup failed\n");
@@ -2132,7 +2198,7 @@ void install_Zeppelin(char *version, char *location) {
 
     // Step 2: Download using wget
     char wget_cmd[512];
-   long unsigned int ret = snprintf(wget_cmd, sizeof(wget_cmd), "wget %s", url);
+   long unsigned int ret = snprintf(wget_cmd, sizeof(wget_cmd), "wget %s >/dev/null 2>&1", url);
     
     if (ret >= sizeof(wget_cmd)) { // Truncation occurred
     fprintf(stderr,   "Error: Command truncated.\n");
@@ -2146,9 +2212,9 @@ void install_Zeppelin(char *version, char *location) {
     // Step 3: Extract archive
     char tar_cmd[512];
     if (version)
-        snprintf(tar_cmd, sizeof(tar_cmd), "tar -xvzf zeppelin-%s-bin-all.tgz", version);
+        snprintf(tar_cmd, sizeof(tar_cmd), "tar -xvzf zeppelin-%s-bin-all.tgz >/dev/null 2>&1", version);
     else 
-        snprintf(tar_cmd, sizeof(tar_cmd), "tar -xvzf zeppelin-0.10.1-bin-all.tgz");
+        snprintf(tar_cmd, sizeof(tar_cmd), "tar -xvzf zeppelin-0.10.1-bin-all.tgz >/dev/null 2>&1");
     if (!executeSystemCommand(tar_cmd)) {
         fprintf(stderr,   "Extraction failed. Corrupted download?\n");
         exit(EXIT_FAILURE);
@@ -2156,9 +2222,9 @@ void install_Zeppelin(char *version, char *location) {
     // Remove downloaded archive after extraction
    // printf( "Removing archive...\n");
         if (version)
-        snprintf(tar_cmd, sizeof(tar_cmd), "sudo rm -f zeppelin-%s-bin-all.tgz", version);
+        snprintf(tar_cmd, sizeof(tar_cmd), "sudo rm -f zeppelin-%s-bin-all.tgz >/dev/null 2>&1", version);
       else
-      snprintf(tar_cmd, sizeof(tar_cmd), "sudo rm -f zeppelin-0.10.1-bin-all.tgz");
+      snprintf(tar_cmd, sizeof(tar_cmd), "sudo rm -f zeppelin-0.10.1-bin-all.tgz >/dev/null 2>&1");
     if (!executeSystemCommand(tar_cmd)) {
         fprintf(stderr,   "Failed to remove archive.\n");
     }
@@ -2185,7 +2251,7 @@ void install_Zeppelin(char *version, char *location) {
     else
         snprintf(dir_name, sizeof(dir_name), "zeppelin-0.10.1-bin-all");
     char mv_cmd[512];
-    snprintf(mv_cmd, sizeof(mv_cmd), "sudo mv %s %s", dir_name, target_dir);
+    snprintf(mv_cmd, sizeof(mv_cmd), "sudo mv %s %s >/dev/null 2>&1", dir_name, target_dir);
     if (!executeSystemCommand(mv_cmd)) {
         fprintf(stderr,   "Failed to move installation directory\n");
         exit(EXIT_FAILURE);
@@ -2197,7 +2263,7 @@ void install_Zeppelin(char *version, char *location) {
         return;
     }
     char chown_cmd[512];
-    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s", pwd->pw_name, pwd->pw_name, target_dir);
+    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s >/dev/null 2>&1", pwd->pw_name, pwd->pw_name, target_dir);
     if (!executeSystemCommand(chown_cmd)) {
         fprintf(stderr,   "Error: Failed to set ownership of %s\n", target_dir);
         return;
@@ -2227,6 +2293,14 @@ void install_Zeppelin(char *version, char *location) {
         fprintf(stderr,   "bashing failed.\n");
         return;
     }
+    
+      char candidate_path[PATH_MAX];
+      snprintf(candidate_path, sizeof(candidate_path), "%s/config", target_dir);
+
+    
+        
+    if (create_properties_file(candidate_path, "zeppelin-shiro.ini") !=0)
+        fprintf(stderr,    "Failed to create properties file\n");
     printf( "Apache Zeppelin installed successfully at %s\n", target_dir);
 }
 
@@ -2253,7 +2327,7 @@ void install_Livy(char* version, char *location) {
         "https://downloads.apache.org/incubator/livy/0.7.1-incubating/apache-livy-0.7.1-incubating-bin.zip");
 
     // 2. Download using wget
-    snprintf(command, sizeof(command), "wget -q %s", url);
+    snprintf(command, sizeof(command), "wget -q %s >/dev/null 2>&1", url);
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "Error downloading Livy archive\n");
         return;
@@ -2266,7 +2340,7 @@ void install_Livy(char* version, char *location) {
     else
         snprintf(zip_file, sizeof(zip_file), "apache-livy-0.7.1-incubating-bin.zip");
   
-    snprintf(command, sizeof(command), "unzip -q %s", zip_file);
+    snprintf(command, sizeof(command), "unzip -q %s >/dev/null 2>&1", zip_file);
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "Error extracting archive\n");
         return;
@@ -2274,9 +2348,9 @@ void install_Livy(char* version, char *location) {
     // Remove downloaded archive after extraction
     printf( "Removing archive...\n");
         if (version)
-            snprintf(command, sizeof(command), "sudo rm -f apache-livy-%s-incubating-bin.zip", version);
+            snprintf(command, sizeof(command), "sudo rm -f apache-livy-%s-incubating-bin.zip >/dev/null 2>&1", version);
       else
-          snprintf(command, sizeof(command), "sudo rm -f apache-livy-0.7.1-incubating-bin.zip");
+          snprintf(command, sizeof(command), "sudo rm -f apache-livy-0.7.1-incubating-bin.zip >/dev/null 2>&1");
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "Failed to remove archive.\n");
     }
@@ -2300,7 +2374,7 @@ void install_Livy(char* version, char *location) {
     else 
         snprintf(source_dir, sizeof(source_dir), "apache-livy-0.7.1-incubating-bin");
         
-    snprintf(command, sizeof(command), "sudo mv %s %s/livy && sudo chmod -R 755 %s/livy",
+    snprintf(command, sizeof(command), "sudo mv %s %s/livy && sudo chmod -R 755 %s/livy >/dev/null 2>&1",
             source_dir, install_dir, install_dir);
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "Error moving Livy to installation directory\n");
@@ -2314,7 +2388,7 @@ void install_Livy(char* version, char *location) {
         return;
     }
     char chown_cmd[512];
-    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s", pwd->pw_name, pwd->pw_name, install_dir);
+    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s >/dev/null 2>&1", pwd->pw_name, pwd->pw_name, install_dir);
     if (!executeSystemCommand(chown_cmd)) {
         fprintf(stderr,   "Error: Failed to set ownership of %s\n", install_dir);
         return;
@@ -2343,7 +2417,7 @@ void install_Livy(char* version, char *location) {
     setenv("PATH", path_env, 1);
 
     // 8. Cleanup temporary files
-    snprintf(command, sizeof(command), "rm %s", zip_file);
+    snprintf(command, sizeof(command), "rm %s >/dev/null 2>&1", zip_file);
     
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "rm  faild\n");
@@ -2354,5 +2428,12 @@ void install_Livy(char* version, char *location) {
         fprintf(stderr,   "bashing failed.\n");
         return;
     }
+    
+      char candidate_path[PATH_MAX];
+      snprintf(candidate_path, sizeof(candidate_path), "%s/conf", install_dir); 
+    
+    if (create_conf_file(candidate_path, "livy.conf") !=0)
+        fprintf(stderr,   "Failed to create XML file\n");
+        
     printf( "Livy  installed successfully to %s/livy\n", install_dir);
 }

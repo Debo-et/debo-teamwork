@@ -83,23 +83,23 @@ ConfigParam param_map[] = {
     { "zookeeper.nio.numSelectorThreads", "zookeepernionumselectorthreads", "zoo.cfg" },
     { "zookeeper.nio.numWorkerThreads", "zookeepernionumworkerthreads", "zoo.cfg" },
     { "zookeeper.nio.directBufferBytes", "zookeeperniodirectbufferbytes", "zoo.cfg" },
-        // New Parameters from zookeeper-log4j.properties
-    { "log4j.rootLogger", "log4jrootlogger", "zookeeper-log4j.properties" },
-    { "log4j.appender.CONSOLE", "log4jappenderconsole", "zookeeper-log4j.properties" },
-    { "log4j.appender.CONSOLE.Threshold", "log4jappenderconsolethreshold", "zookeeper-log4j.properties" },
-    { "log4j.appender.CONSOLE.layout", "log4jappenderconsolelayout", "zookeeper-log4j.properties" },
-    { "log4j.appender.CONSOLE.layout.ConversionPattern", "log4jappenderconsolelayoutconversionpattern", "zookeeper-log4j.properties" },
-    { "log4j.appender.ROLLINGFILE", "log4jappenderrollingfile", "zookeeper-log4j.properties" },
-    { "log4j.appender.ROLLINGFILE.Threshold", "log4jappenderrollingfilethreshold", "zookeeper-log4j.properties" },
-    { "log4j.appender.ROLLINGFILE.File", "log4jappenderrollingfilefile", "zookeeper-log4j.properties" },
-    { "log4j.appender.ROLLINGFILE.MaxFileSize", "log4jappenderrollingfilemaxfilesize", "zookeeper-log4j.properties" },
-    { "log4j.appender.ROLLINGFILE.layout", "log4jappenderrollingfilelayout", "zookeeper-log4j.properties" },
-    { "log4j.appender.ROLLINGFILE.layout.ConversionPattern", "log4jappenderrollingfilelayoutconversionpattern", "zookeeper-log4j.properties" },
-    { "log4j.appender.TRACEFILE", "log4jappendertracefile", "zookeeper-log4j.properties" },
-    { "log4j.appender.TRACEFILE.Threshold", "log4jappendertracefilethreshold", "zookeeper-log4j.properties" },
-    { "log4j.appender.TRACEFILE.File", "log4jappendertracefilefile", "zookeeper-log4j.properties" },
-    { "log4j.appender.TRACEFILE.layout", "log4jappendertracefilelayout", "zookeeper-log4j.properties" },
-    { "log4j.appender.TRACEFILE.layout.ConversionPattern", "log4jappendertracefilelayoutconversionpattern", "zookeeper-log4j.properties" },
+        // New Parameters from log4j.properties
+    { "log4j.rootLogger", "log4jrootlogger", "log4j.properties" },
+    { "log4j.appender.CONSOLE", "log4jappenderconsole", "log4j.properties" },
+    { "log4j.appender.CONSOLE.Threshold", "log4jappenderconsolethreshold", "log4j.properties" },
+    { "log4j.appender.CONSOLE.layout", "log4jappenderconsolelayout", "log4j.properties" },
+    { "log4j.appender.CONSOLE.layout.ConversionPattern", "log4jappenderconsolelayoutconversionpattern", "log4j.properties" },
+    { "log4j.appender.ROLLINGFILE", "log4jappenderrollingfile", "log4j.properties" },
+    { "log4j.appender.ROLLINGFILE.Threshold", "log4jappenderrollingfilethreshold", "log4j.properties" },
+    { "log4j.appender.ROLLINGFILE.File", "log4jappenderrollingfilefile", "log4j.properties" },
+    { "log4j.appender.ROLLINGFILE.MaxFileSize", "log4jappenderrollingfilemaxfilesize", "log4j.properties" },
+    { "log4j.appender.ROLLINGFILE.layout", "log4jappenderrollingfilelayout", "log4j.properties" },
+    { "log4j.appender.ROLLINGFILE.layout.ConversionPattern", "log4jappenderrollingfilelayoutconversionpattern", "log4j.properties" },
+    { "log4j.appender.TRACEFILE", "log4jappendertracefile", "log4j.properties" },
+    { "log4j.appender.TRACEFILE.Threshold", "log4jappendertracefilethreshold", "log4j.properties" },
+    { "log4j.appender.TRACEFILE.File", "log4jappendertracefilefile", "log4j.properties" },
+    { "log4j.appender.TRACEFILE.layout", "log4jappendertracefilelayout", "log4j.properties" },
+    { "log4j.appender.TRACEFILE.layout.ConversionPattern", "log4jappendertracefilelayoutconversionpattern", "log4j.properties" },
 };
 
 const size_t num_params = sizeof(param_map) / sizeof(param_map[0]);
@@ -248,7 +248,7 @@ ConfigStatus modify_zookeeper_config(const char* config_param, const char* value
     // Fallback to default directories if not found in ZOOKEEPER_HOME
     if (!file_path) {
         const char *default_dirs[] = {
-            "/user/local/zookeeper",          // Debian
+            "/usr/local/zookeeper/conf",          // Debian
             "/opt/zookeeper/conf",     // Red Hat
             // Add other possible paths if needed
         };
@@ -266,7 +266,7 @@ ConfigStatus modify_zookeeper_config(const char* config_param, const char* value
         }
     }
     
-    if (strcmp(filename, "zookeeper-log4j.properties") == 0 ) {
+    if (strcmp(filename, "log4j.properties") == 0 ) {
         configure_hadoop_property(file_path, config_param, value);
         return SUCCESS;
     }

@@ -33,99 +33,74 @@ char* capture_command_output(const char* command) {
     }
 
     if (pid == 0) {
-        close(pipefd[0]);
-        dup2(pipefd[1], STDOUT_FILENO);
-        dup2(pipefd[1], STDERR_FILENO);
+        // Child process
+        close(pipefd[0]);    // Close unused read end
+        dup2(pipefd[1], STDOUT_FILENO);  // Redirect stdout to pipe
+        dup2(pipefd[1], STDERR_FILENO);  // Redirect stderr to pipe
         close(pipefd[1]);
 
         execl("/bin/sh", "sh", "-c", command, NULL);
         perror("execl");
         exit(EXIT_FAILURE);
     } else {
-        close(pipefd[1]);
-        FILE* fp = fdopen(pipefd[0], "r");
-        if (!fp) {
-            perror("fdopen");
-            close(pipefd[0]);
-            waitpid(pid, NULL, 0);
-            return strdup("");
-        }
-
-        char* current_line = NULL;
-        size_t len = 0;
-        int line_count = 0;
-        char* candidate = NULL;
-        char* target_line = NULL;
-
-        // Read lines until we find the third line or reach EOF
-        while (getline(&current_line, &len, fp) != -1) {
-            line_count++;
-            
-            if (line_count == 3) {
-                target_line = strdup(current_line);
-                // Drain remaining output to prevent pipe blocking
-                while (getline(&current_line, &len, fp) != -1) {
-                    // Discard content
-                }
-                break;
+        // Parent process
+        close(pipefd[1]);  // Close unused write end
+        
+        char* output = NULL;
+        size_t total_size = 0;
+        char buffer[4096];
+        ssize_t n;
+        
+        while ((n = read(pipefd[0], buffer, sizeof(buffer)-1)) {
+            if (n == -1) {
+                perror("read");
+                exit(EXIT_FAILURE);
             }
-        }
-
-        // Determine which line to process
-        if (line_count == 3) {
-            candidate = target_line;  // Use saved third line
-        } else if (line_count > 0) {
-            candidate = strdup(current_line);  // Use last line
-        } else {
-            candidate = strdup("");  // No output
-        }
-
-        // Clean the selected line if it exists
-        if (candidate && strlen(candidate) > 0) {
-            // Remove trailing newline
-            size_t len_clean = strlen(candidate);
-            if (candidate[len_clean - 1] == '\n') {
-                candidate[len_clean - 1] = '\0';
-                len_clean--;
+            buffer[n] = '\0';
+            char* new_output = realloc(output, total_size + n + 1);
+            if (!new_output) {
+                perror("realloc");
+                free(output);
+                exit(EXIT_FAILURE);
             }
-
-            // Trim leading non-content characters
-            char* start = candidate;
-            while (*start && 
-                  (isspace((unsigned char)*start) || 
-                  (!isalnum((unsigned char)*start) && *start != '.'))) {
-                start++;
-            }
-
-            // Trim trailing non-content characters
-            if (*start) {
-                char* end = start + strlen(start) - 1;
-                while (end > start && 
-                      (isspace((unsigned char)*end) || 
-                      (!isalnum((unsigned char)*end) && *end != '.'))) {
-                    end--;
-                }
-                *(end + 1) = '\0';
-                
-                // Shift cleaned content to start of buffer
-                if (start != candidate) {
-                    memmove(candidate, start, end - start + 2);
-                }
-            } else {
-                *candidate = '\0';  // Empty after cleaning
-            }
+            output = new_output;
+            strcpy(output + total_size, buffer);
+            total_size += n;
         }
-
-        // Cleanup resources
-        if (current_line) free(current_line);
-        if (target_line && target_line != candidate) free(target_line);
-        fclose(fp);
+        
+        close(pipefd[0]);
         waitpid(pid, NULL, 0);
         
-        return candidate;
+        // Remove ANSI escape sequences if output is not empty
+        if (output) {
+            char *src = output;
+            char *dst = output;
+            while (*src) {
+                if (src[0] == 0x1B && src[1] == '[') {
+                    // Skip the escape character and '['
+                    src += 2;
+                    // Skip intermediate characters until a terminator (0x40-0x7E)
+                    while (*src && (*src < 0x40 || *src > 0x7E)) {
+                        src++;
+                    }
+                    // Skip the terminator if found
+                    if (*src) src++;
+                } else {
+                    *dst++ = *src++;
+                }
+            }
+            *dst = '\0';
+            
+            // Reallocate memory to fit the cleaned string
+            size_t new_length = dst - output;
+            char *cleaned_output = realloc(output, new_length + 1);
+            if (cleaned_output) {
+                output = cleaned_output;
+            }
+        }
+        return output;
     }
 }
-
 // Common utility to find Hadoop installation
 const char* get_hadoop_path() {
     static char path[PATH_MAX];

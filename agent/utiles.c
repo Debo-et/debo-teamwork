@@ -279,14 +279,14 @@ apache_strdup(const char *in)
 
         if (!in)
         {
-                fprintf(stderr,
+                PRINTF(global_client_socket,
                                 ("cannot duplicate null pointer (internal error)\n"));
                 exit(EXIT_FAILURE);
         }
         tmp = strdup(in);
         if (!tmp)
         {
-                fprintf(stderr, ("out of memory\n"));
+                PRINTF(global_client_socket, ("out of memory\n"));
                 exit(EXIT_FAILURE);
         }
         return tmp;
@@ -396,6 +396,7 @@ const char* component_to_string(Component comp) {
     }
 }
 
+
 Component string_to_component(const char* name) {
     // Flink
     if (strcmp(name, "flink") == 0) return FLINK;
@@ -448,7 +449,7 @@ const char * action_to_string(Action action) {
         case CONFIGURE:
             return "Configuring...";  
         /* Add cases for all components */
-        default: fprintf(stderr, "Unknown component\n"); break;
+        default: PRINTF(global_client_socket, "Unknown component\n"); break;
     }
     return NULL;
 }
@@ -612,7 +613,7 @@ bool executeSystemCommand(const char *cmd) {
     if (ret >= 0) {
         return true;
     } else {
-        fprintf(stderr, "System command execution failed with error code: %d\n", ret);
+        PRINTF(global_client_socket, "System command execution failed with error code: %d\n", ret);
         return false;
     }
 #else
@@ -893,50 +894,52 @@ char **split_string(char *input) {
     return result;
 }
 
-void handle_result(ConfigStatus status) {
+void handle_result(ConfigStatus status, const char *config_param, const char *config_value, const char *config_file) {
     switch(status) {
         case SUCCESS:
-            PRINTF(global_client_socket,  "Operation completed successfully\n");
+            PRINTF(global_client_socket, "Successfully configure '%s' to '%s' in %s\n", 
+                   config_param, config_value, config_file);
             break;
             
         case INVALID_FILE_TYPE:
-            FPRINTF(global_client_socket, "Error: Invalid file type provided\n");
+            PRINTF(global_client_socket, "Error: File '%s' has invalid type (must be XML)\n", config_file);
             break;
             
         case FILE_NOT_FOUND:
-            FPRINTF(global_client_socket, "Error: Configuration file not found\n");
+            PRINTF(global_client_socket, "Error: Configuration file '%s' not found\n", config_file);
             break;
             
         case XML_PARSE_ERROR:
-            FPRINTF(global_client_socket, "Error: Failed to parse XML content\n");
+            PRINTF(global_client_socket, "Error: Failed to parse XML content in '%s'\n", config_file);
             break;
             
         case INVALID_CONFIG_FILE:
-            FPRINTF(global_client_socket, "Error: Invalid configuration file format\n");
+            PRINTF(global_client_socket, "Error: Invalid XML structure in '%s'\n", config_file);
             break;
             
         case XML_UPDATE_ERROR:
-            FPRINTF(global_client_socket, "Error: Failed to update XML configuration\n");
+            PRINTF(global_client_socket, "Error: Failed to update parameter '%s' in '%s'\n", 
+                   config_param, config_file);
             break;
             
         case FILE_WRITE_ERROR:
-            FPRINTF(global_client_socket, "Error: Could not write to file\n");
+            PRINTF(global_client_socket, "Error: Could not write to file '%s'\n", config_file);
             break;
             
         case FILE_READ_ERROR:
-            FPRINTF(global_client_socket, "Error: Could not read from file\n");
+            PRINTF(global_client_socket, "Error: Could not read from file '%s'\n", config_file);
             break;
             
         case XML_INVALID_ROOT:
-            FPRINTF(global_client_socket, "Error: XML root element is invalid or missing\n");
+            PRINTF(global_client_socket, "Error: Missing or invalid root element in '%s'\n", config_file);
             break;
             
         case SAVE_FAILED:
-            FPRINTF(global_client_socket, "Error: Failed to save configuration changes\n");
+            PRINTF(global_client_socket, "Error: Failed to save configuration changes to '%s'\n", config_file);
             break;
             
         default:
-            FPRINTF(global_client_socket, "Unknown error occurred\n");
+            PRINTF(global_client_socket, "Unknown error occurred (status code: %d)\n", status);
             break;
     }
 }
@@ -947,23 +950,23 @@ bool handleValidationResult(ValidationResult result) {
             return true;
             
         case ERROR_PARAM_NOT_FOUND:
-            FPRINTF(global_client_socket, "Error: Parameter not found in  configuration\n");
+            PRINTF(global_client_socket, "Error: Parameter not found in  configuration\n");
             break;
             
         case ERROR_VALUE_EMPTY:
-            FPRINTF(global_client_socket, "Error: Configuration value cannot be empty\n");
+            PRINTF(global_client_socket, "Error: Configuration value cannot be empty\n");
             break;
             
         case ERROR_INVALID_FORMAT:
-            FPRINTF(global_client_socket, "Error: Invalid format for configuration parameter\n");
+            PRINTF(global_client_socket, "Error: Invalid format for configuration parameter\n");
             break;
             
         case ERROR_CONSTRAINT_VIOLATED:
-            FPRINTF(global_client_socket, "Error: Parameter value violates constraints\n");
+            PRINTF(global_client_socket, "Error: Parameter value violates constraints\n");
             break;
             
         default:
-            FPRINTF(global_client_socket, "Error: Unknown validation error\n");
+            PRINTF(global_client_socket, "Error: Unknown validation error\n");
             break;
     }
     return false;
@@ -1101,6 +1104,8 @@ static bool is_key_present(const char *line, const char *key) {
 
 // Main configuration function
 int configure_hadoop_property(const char *file_path, const char *key, const char *value) {
+    // Handle NULL value by treating it as empty string
+    const char *safe_value = value ? value : "";
     FILE *fp = fopen(file_path, "r");
     if (!fp) {
         perror("❌ Error opening file");
@@ -1125,12 +1130,12 @@ int configure_hadoop_property(const char *file_path, const char *key, const char
 
         // Check for key presence and update if found
         if (!key_found && is_key_present(buffer, key)) {
-            lines[line_count] = malloc(strlen(key) + strlen(value) + 3);
+            lines[line_count] = malloc(strlen(key) + strlen(safe_value) + 3);
             if (!lines[line_count]) {
                 status = -1;
                 goto CLEANUP_READ;
             }
-            sprintf(lines[line_count], "%s=%s\n", key, value);
+            sprintf(lines[line_count], "%s=%s\n", key, safe_value);
             key_found = true;
         } 
         else {
@@ -1161,12 +1166,12 @@ int configure_hadoop_property(const char *file_path, const char *key, const char
         }
         lines = new_lines;
         
-        lines[line_count] = malloc(strlen(key) + strlen(value) + 3);
+        lines[line_count] = malloc(strlen(key) + strlen(safe_value) + 3);
         if (!lines[line_count]) {
             status = -1;
             goto CLEANUP_READ;
         }
-        sprintf(lines[line_count], "%s=%s\n", key, value);
+        sprintf(lines[line_count], "%s=%s\n", key, safe_value);
         line_count++;
     }
 
@@ -1326,6 +1331,423 @@ int updateHadoopConfigXML(const char *filePath, const char *parameterName, const
 }
 
 
+
+#define BUFFER_SIZE 1024
+
+int update_config(const char *param, const char *value, const char *file_path) {
+    // Open file for reading
+    FILE *file = fopen(file_path, "r");
+    if (file == NULL) {
+        // File doesn't exist - create and write new key-value pair
+        FILE *new_file = fopen(file_path, "w");
+        if (new_file == NULL) {
+
+            PRINTF(global_client_socket, "Error creating file: %s\n", strerror(errno));
+            return -1;
+        }
+        fprintf(new_file, "%s=%s\n", param, value);
+        fclose(new_file);
+        return 0;
+    }
+
+    // Read file into memory
+    char **lines = NULL;
+    size_t line_count = 0;
+    char buffer[BUFFER_SIZE];
+    int found = 0;
+
+    while (fgets(buffer, sizeof(buffer), file) != NULL) {
+        size_t len = strlen(buffer);
+        if (len > 0 && buffer[len-1] == '\n') {
+            buffer[len-1] = '\0'; // Strip newline for processing
+        }
+
+        // Allocate space for line pointer
+        char **temp = realloc(lines, (line_count + 1) * sizeof(char *));
+        if (!temp) {
+            perror("Memory allocation failed");
+            fclose(file);
+            for (size_t i = 0; i < line_count; i++) free(lines[i]);
+            free(lines);
+            return -1;
+        }
+        lines = temp;
+        lines[line_count] = strdup(buffer);
+        if (!lines[line_count]) {
+            perror("Memory allocation failed");
+            fclose(file);
+            for (size_t i = 0; i < line_count; i++) free(lines[i]);
+            free(lines);
+            return -1;
+        }
+        line_count++;
+    }
+    fclose(file);
+
+    // Search for parameter and update if found
+    for (size_t i = 0; i < line_count; i++) {
+        char *line = lines[i];
+        char *p = line;
+
+        // Skip leading whitespace
+        while (isspace((unsigned char)*p)) p++;
+
+        // Skip comments and empty lines
+        if (*p == '#' || *p == '\0') continue;
+
+        // Split into key and value
+        char *delim = strchr(p, '=');
+        if (!delim) continue;
+
+        // Extract key and trim trailing whitespace
+        *delim = '\0';
+        char *key = p;
+        char *key_end = delim - 1;
+        while (key_end >= key && isspace((unsigned char)*key_end)) {
+            *key_end = '\0';
+            key_end--;
+        }
+
+        // Check if key matches
+        if (strcmp(key, param) == 0) {
+            found = 1;
+            // Create new line: key=value
+            char new_line[BUFFER_SIZE];
+            snprintf(new_line, sizeof(new_line), "%s=%s", param, value);
+            free(lines[i]);
+            lines[i] = strdup(new_line);
+            if (!lines[i]) {
+                perror("Memory allocation failed");
+                for (size_t j = 0; j < line_count; j++) free(lines[j]);
+                free(lines);
+                return -1;
+            }
+            break;
+        }
+    }
+
+    // Append if not found
+    if (!found) {
+        // Add new line
+        char **temp = realloc(lines, (line_count + 1) * sizeof(char *));
+        if (!temp) {
+            perror("Memory allocation failed");
+            for (size_t i = 0; i < line_count; i++) free(lines[i]);
+            free(lines);
+            return -1;
+        }
+        lines = temp;
+        char new_line[BUFFER_SIZE];
+        snprintf(new_line, sizeof(new_line), "%s=%s", param, value);
+        lines[line_count] = strdup(new_line);
+        if (!lines[line_count]) {
+            perror("Memory allocation failed");
+            for (size_t i = 0; i < line_count; i++) free(lines[i]);
+            free(lines);
+            return -1;
+        }
+        line_count++;
+    }
+
+    // Write updated content back to file
+    FILE *out = fopen(file_path, "w");
+    if (!out) {
+        PRINTF(global_client_socket, "Error opening file for writing: %s\n", strerror(errno));
+        for (size_t i = 0; i < line_count; i++) free(lines[i]);
+        free(lines);
+        return -1;
+    }
+
+    for (size_t i = 0; i < line_count; i++) {
+        PRINTF(global_client_socket, "%s\n", lines[i]); // Write with newline
+        free(lines[i]);
+    }
+    free(lines);
+    fclose(out);
+    return 0;
+}
+
+
+
+#define MAX_PATH_LENGTH 4096
+
+int create_xml_file(const char *directory_path, const char *xml_file_name) {
+    // Validate input parameters
+    if (!directory_path || !xml_file_name) {
+        PRINTF(global_client_socket, "Error: Null input parameters\n");
+        return -1;
+    }
+
+    // Check directory path validity
+    size_t dir_len = strlen(directory_path);
+    if (dir_len == 0 || dir_len > MAX_PATH_LENGTH - 1) {
+        PRINTF(global_client_socket, "Error: Invalid directory path length\n");
+        return -1;
+    }
+
+    // Check filename validity
+    size_t file_len = strlen(xml_file_name);
+    if (file_len == 0 || file_len > 255 || 
+        strstr(xml_file_name, "..") != NULL || 
+        strchr(xml_file_name, '/') != NULL || 
+        strchr(xml_file_name, '\\') != NULL) {
+        PRINTF(global_client_socket, "Error: Invalid XML file name\n");
+        return -1;
+    }
+
+    // Construct full file path
+    char full_path[MAX_PATH_LENGTH];
+    int path_len = snprintf(full_path, sizeof(full_path), "%s/%s", directory_path, xml_file_name);
+    if (path_len < 0 || path_len >= (int)sizeof(full_path)) {
+        PRINTF(global_client_socket, "Error: Path construction failed\n");
+        return -1;
+    }
+
+    // Create directory with proper permissions
+    if (mkdir(directory_path, 0755) != 0 && errno != EEXIST) {
+        PRINTF(global_client_socket, "Error creating directory '%s': %s\n", 
+                directory_path, strerror(errno));
+        return -1;
+    }
+
+    // Open file for writing
+    FILE *file = fopen(full_path, "wx");
+    if (!file) {
+        PRINTF(global_client_socket,"Error opening file '%s': %s\n", 
+                full_path, strerror(errno));
+        return -1;
+    }
+
+    // Define XML content with required structure
+    const char *xml_content = 
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        "<?xml-stylesheet type=\"text/xsl\" href=\"configuration.xsl\"?>\n"
+        "<configuration xmlns:xi=\"http://www.w3.org/2001/XInclude\">\n"
+        "</configuration>\n";
+
+    // Write content to file
+    size_t content_length = strlen(xml_content);
+    size_t written = fwrite(xml_content, 1, content_length, file);
+    
+    // Handle write errors
+    if (written != content_length) {
+        PRINTF(global_client_socket, "Error writing to file: %s\n", 
+                ferror(file) ? "Write failure" : "Unknown error");
+        fclose(file);
+        remove(full_path);
+        return -1;
+    }
+
+    // Finalize file operations
+    if (fclose(file) != 0) {
+        PRINTF(global_client_socket, "Error closing file: %s\n", strerror(errno));
+        remove(full_path);
+        return -1;
+    }
+
+    return 0;
+}
+
+
+int create_properties_file(const char *directory_path, const char *properties_file_name) {
+    // Validate input parameters
+    if (directory_path == NULL || properties_file_name == NULL) {
+        PRINTF(global_client_socket, "Error: Null input parameters\n");
+        return -1;
+    }
+
+    // Check directory path length
+    size_t dir_len = strlen(directory_path);
+    if (dir_len == 0 || dir_len >= MAX_PATH_LENGTH) {
+        PRINTF(global_client_socket, "Error: Invalid directory path length\n");
+        return -1;
+    }
+
+    // Validate filename
+    size_t file_len = strlen(properties_file_name);
+    const char *ext_properties = ".properties";
+    const char *ext_ini = ".ini";
+    size_t ext_properties_len = strlen(ext_properties);
+    size_t ext_ini_len = strlen(ext_ini);
+    
+    int valid_extension = 0;
+    // Check for .properties extension
+    if (file_len >= ext_properties_len && 
+        strcmp(properties_file_name + file_len - ext_properties_len, ext_properties) == 0) {
+        valid_extension = 1;
+    }
+    // Check for .ini extension
+    else if (file_len >= ext_ini_len && 
+             strcmp(properties_file_name + file_len - ext_ini_len, ext_ini) == 0) {
+        valid_extension = 1;
+    }
+
+    // Validate filename length and extension
+    if (file_len == 0 || 
+        file_len > 255 || 
+        !valid_extension) {
+        PRINTF(global_client_socket, "Error: File name must end with '.properties' or '.ini'\n");
+        return -1;
+    }
+
+    // Check for path traversal attempts
+    if (strstr(properties_file_name, "..") != NULL || 
+        strchr(properties_file_name, '/') != NULL || 
+        strchr(properties_file_name, '\\') != NULL) {
+        PRINTF(global_client_socket, "Error: Invalid characters in file name\n");
+        return -1;
+    }
+
+    // Construct full path
+    char full_path[MAX_PATH_LENGTH];
+    int path_len = snprintf(full_path, sizeof(full_path), "%s/%s", directory_path, properties_file_name);
+    if (path_len < 0 || path_len >= (int)sizeof(full_path)) {
+        PRINTF(global_client_socket, "Error: Path construction failed. Path too long\n");
+        return -1;
+    }
+
+    // Create directory if needed (with secure permissions)
+    if (mkdir(directory_path, 0755) != 0) {
+        if (errno != EEXIST) {
+            PRINTF(global_client_socket,"Error creating directory '%s': %s\n", 
+                    directory_path, strerror(errno));
+            return -1;
+        }
+        // Directory already exists - verify it's actually a directory
+        else {
+            struct stat dir_stat;
+            if (stat(directory_path, &dir_stat) != 0 || !S_ISDIR(dir_stat.st_mode)) {
+                PRINTF(global_client_socket, "Error: Path exists but is not a directory\n");
+                return -1;
+            }
+        }
+    }
+
+    // Create file with exclusive mode (fails if file exists)
+    FILE *file = fopen(full_path, "w");
+    if (file == NULL) {
+        PRINTF(global_client_socket, "Error creating file '%s': %s\n", 
+                full_path, strerror(errno));
+        return -1;
+    }
+
+    // Close file handle (no content written per requirements)
+    if (fclose(file) != 0) {
+        PRINTF(global_client_socket, "Error closing file: %s\n", strerror(errno));
+        remove(full_path);  // Clean up partially created file
+        return -1;
+    }
+
+    return 0;  // Success
+}
+#define MAX_FILENAME_LENGTH 256
+
+int create_conf_file(const char *directory_path, const char *conf_file_name) {
+    // Validate input parameters
+    if (directory_path == NULL || conf_file_name == NULL) {
+        PRINTF(global_client_socket,"Error: Null input parameters\n");
+        return -1;
+    }
+
+    // Check directory path length
+    size_t dir_len = strlen(directory_path);
+    if (dir_len == 0 || dir_len >= MAX_PATH_LENGTH) {
+        PRINTF(global_client_socket, "Error: Invalid directory path length (0-%d allowed)\n", MAX_PATH_LENGTH-1);
+        return -1;
+    }
+
+    // Validate filename
+    size_t file_len = strlen(conf_file_name);
+    const char *extension = ".conf";
+    size_t ext_len = strlen(extension);
+    
+    if (file_len == 0 || file_len >= MAX_FILENAME_LENGTH) {
+        PRINTF(global_client_socket, "Error: Invalid filename length (1-%d allowed)\n", MAX_FILENAME_LENGTH-1);
+        return -1;
+    }
+    
+    // Ensure filename ends with .conf extension
+    if (file_len < ext_len || strcmp(conf_file_name + file_len - ext_len, extension) != 0) {
+        PRINTF(global_client_socket, "Error: Filename must end with '.conf' extension\n");
+        return -1;
+    }
+
+    // Check for invalid characters in filename
+    if (strstr(conf_file_name, "..") != NULL || 
+        strchr(conf_file_name, '/') != NULL || 
+        strchr(conf_file_name, '\\') != NULL ||
+        strchr(conf_file_name, ':') != NULL ||
+        strchr(conf_file_name, '*') != NULL ||
+        strchr(conf_file_name, '?') != NULL ||
+        strchr(conf_file_name, '"') != NULL ||
+        strchr(conf_file_name, '<') != NULL ||
+        strchr(conf_file_name, '>') != NULL ||
+        strchr(conf_file_name, '|') != NULL) {
+        PRINTF(global_client_socket, "Error: Invalid characters in filename\n");
+        return -1;
+    }
+
+    // Construct full path safely
+    char full_path[MAX_PATH_LENGTH];
+    int path_len = snprintf(full_path, sizeof(full_path), "%s/%s", directory_path, conf_file_name);
+    if (path_len < 0 || path_len >= (int)sizeof(full_path)) {
+        PRINTF(global_client_socket, "Error: Path construction failed (max %d chars)\n", MAX_PATH_LENGTH-1);
+        return -1;
+    }
+
+    // Create directory if needed (with secure permissions)
+    if (mkdir(directory_path, 0755) != 0) {
+        if (errno != EEXIST) {
+            PRINTF(global_client_socket, "Error creating directory '%s': %s\n", 
+                    directory_path, strerror(errno));
+            return -1;
+        }
+        
+        // Verify existing path is a directory
+        struct stat path_stat;
+        if (stat(directory_path, &path_stat) != 0) {
+            PRINTF(global_client_socket, "Error accessing directory '%s': %s\n",
+                    directory_path, strerror(errno));
+            return -1;
+        }
+        
+        if (!S_ISDIR(path_stat.st_mode)) {
+            PRINTF(global_client_socket,"Error: Path exists but is not a directory\n");
+            return -1;
+        }
+    }
+
+    // Create file exclusively (fails if exists)
+    FILE *file = fopen(full_path, "wx");
+    if (file == NULL) {
+        // Provide specific error for file existence
+        if (errno == EEXIST) {
+            PRINTF(global_client_socket, "Error: File '%s' already exists\n", full_path);
+        } else {
+            PRINTF(global_client_socket, "Error creating file '%s': %s\n", 
+                    full_path, strerror(errno));
+        }
+        return -1;
+    }
+
+    // Close file handle (creating empty file)
+    if (fclose(file) != 0) {
+        PRINTF(global_client_socket, "Error closing file '%s': %s\n", 
+                full_path, strerror(errno));
+        remove(full_path);  // Clean up empty file
+        return -1;
+    }
+
+    // Set restrictive permissions (owner read/write only)
+    if (chmod(full_path, 0600) != 0) {
+        PRINTF(global_client_socket,"Warning: Failed to set permissions on '%s': %s\n",
+                full_path, strerror(errno));
+        // Not fatal, but warn about potential permission issues
+    }
+
+    return 0;  // Success
+}
+
 /* Helper functions to detect OS */
 int is_redhat() {
     struct stat st;
@@ -1433,7 +1855,7 @@ char* generate_regex_pattern(const char* canonical_name) {
 
     // Check for potential overflow when adding 1 to regex_len
     if (regex_len > SIZE_MAX - 1) {
-        fprintf(stderr, "Error: regex_len is too large\n");
+        PRINTF(global_client_socket, "Error: regex_len is too large\n");
         free(copy);
         free(parts);
         return NULL;
@@ -1442,7 +1864,7 @@ char* generate_regex_pattern(const char* canonical_name) {
     size_t needed = regex_len + 1;
     // Check if the needed size exceeds system's maximum allowed allocation size
     if (needed > (size_t)SSIZE_MAX) {
-        fprintf(stderr, "Error: regex pattern exceeds maximum allowed size\n");
+        PRINTF(global_client_socket, "Error: regex pattern exceeds maximum allowed size\n");
         free(copy);
         free(parts);
         return NULL;

@@ -32,7 +32,6 @@ extern const char       *host;
 extern const char       *user;
 extern char *password ;
 
-
 typedef enum {
     // Flink components
     NONE,
@@ -121,7 +120,7 @@ typedef struct {
     const char *configFile;
 } ConfigParam;
 
-typedef enum {NO_ACTION, START, STOP, RESTART, INSTALL, UPGRADE,
+typedef enum {NO_ACTION, START, STOP, RESTART, INSTALL, VERSION_SWITCH,
 UNINSTALL, REPORT ,CONFIGURE} Action;
 
 typedef struct PromptInterruptContext
@@ -194,12 +193,11 @@ Component string_to_component(const char* name);
 unsigned char get_protocol_code(Component comp, Action action, const char* version);
 char *concatenate_strings(const char *s1, const char *s2);
 int validate_file_path(const char* path);
-int update_component_version(const char* component, const char* new_version);
 bool executeSystemCommand(const char *cmd);
 bool isComponentVersionSupported(Component component, const char *version);
-Conn* connect_to_postgres(const char* host, const char* port);
+Conn* connect_to_debo(const char* host, const char* port);
 void  reset_connection_buffers(Conn *conn);
-void handle_result(ConfigStatus status);
+void handle_result(ConfigStatus status, const char *config_param, const char *config_value, const char *config_file);
 bool handleValidationResult(ValidationResult result);
 bool isPositiveInteger(const char *value);
 bool isValidPort(const char *value);
@@ -261,5 +259,17 @@ int mkdir_p(const char *path);
 char* generate_regex_pattern(const char* canonical_name);
 int configure_hadoop_property(const char *file_path, const char *key, const char *value);
 int updateHadoopConfigXML(const char *filePath, const char *parameterName, const char *parameterValue);
+void SendComponentActionCommand(Component component, Action action,
+                              const char* version,
+                              const char* param_name, const char* param_value,
+                              Conn* conn);
+Component* get_dependencies(Component comp, int *count);
+int update_config(const char *param, const char *value, const char *file_path);
+int create_xml_file(const char *directory_path, const char *xml_file_name);
+int create_properties_file(const char *directory_path, const char *properties_file_name);
+int create_conf_file(const char *directory_path, const char *conf_file_name);
+int start_stdout_capture(void);
+int stop_stdout_capture(void);
+char* get_component_config_path(Component comp, const char* config_filename);
 
 #endif

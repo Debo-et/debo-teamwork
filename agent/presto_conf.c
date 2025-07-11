@@ -214,7 +214,7 @@ ConfigStatus  set_presto_config(const char *param, const char *value, const char
         if (presto_home != NULL) {
             snprintf(path, MAX_PATH_LEN, "%s/etc", presto_home);
             if (mkdir(path, 0755) != 0 && errno != EEXIST) {
-                fprintf(stderr, "Failed to create directory %s: %s\n", path, strerror(errno));
+                FPRINTF(global_client_socket, "Failed to create directory %s: %s\n", path, strerror(errno));
             } else {
                 snprintf(path, MAX_PATH_LEN, "%s/etc/%s", presto_home, config_file);
                 FILE *fp = fopen(path, "w");
@@ -222,7 +222,7 @@ ConfigStatus  set_presto_config(const char *param, const char *value, const char
                     fclose(fp);
                     found_path = strdup(path);
                 } else {
-                    fprintf(stderr, "Failed to create file %s: %s\n", path, strerror(errno));
+                    FPRINTF(global_client_socket, "Failed to create file %s: %s\n", path, strerror(errno));
                 }
             }
         }
@@ -236,7 +236,7 @@ ConfigStatus  set_presto_config(const char *param, const char *value, const char
             };
             for (size_t i = 0; i < sizeof(bigtop_create_dirs)/sizeof(bigtop_create_dirs[0]); i++) {
                 if (mkdir(bigtop_create_dirs[i], 0755) != 0 && errno != EEXIST) {
-                    fprintf(stderr, "Failed to create directory %s: %s\n", bigtop_create_dirs[i], strerror(errno));
+                    FPRINTF(global_client_socket,"Failed to create directory %s: %s\n", bigtop_create_dirs[i], strerror(errno));
                     continue;
                 }
                 snprintf(path, MAX_PATH_LEN, "%s/%s", bigtop_create_dirs[i], config_file);
@@ -246,14 +246,14 @@ ConfigStatus  set_presto_config(const char *param, const char *value, const char
                     found_path = strdup(path);
                     break;
                 } else {
-                    fprintf(stderr, "Failed to create file %s: %s\n", path, strerror(errno));
+                    FPRINTF(global_client_socket, "Failed to create file %s: %s\n", path, strerror(errno));
                 }
             }
         }
     }
 
     if (!found_path) {
-        fprintf(stderr, "Failed to find or create config file\n");
+        FPRINTF(global_client_socket, "Failed to find or create config file\n");
         return FILE_NOT_FOUND;
     }
 
@@ -264,7 +264,7 @@ ConfigStatus  set_presto_config(const char *param, const char *value, const char
     FILE *src = fopen(found_path, "r");
     FILE *dst = fopen(temp_path, "w");
     if (!dst) {
-        fprintf(stderr, "Failed to create temp file %s: %s\n", temp_path, strerror(errno));
+        FPRINTF(global_client_socket,"Failed to create temp file %s: %s\n", temp_path, strerror(errno));
         free(found_path);
         return FILE_NOT_FOUND;
     }
@@ -310,7 +310,7 @@ ConfigStatus  set_presto_config(const char *param, const char *value, const char
 
     // Replace the original file with the temp file
     if (rename(temp_path, found_path) != 0) {
-        fprintf(stderr, "Failed to replace file: %s\n", strerror(errno));
+        FPRINTF(global_client_socket, "Failed to replace file: %s\n", strerror(errno));
         remove(temp_path);
         free(found_path);
         return -1;

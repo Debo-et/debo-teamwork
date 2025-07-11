@@ -16,8 +16,8 @@ typedef struct {
 } command_result;
 
 // Prototype for capture function
-static command_result capture_tez_command_output(const char* command);
 
+// Function to capture stdout of a command
 char* capture_command_output(const char* command) {
     int pipefd[2];
     if (pipe(pipefd) == -1) {
@@ -69,10 +69,37 @@ char* capture_command_output(const char* command) {
         
         close(pipefd[0]);
         waitpid(pid, NULL, 0);
+        
+        // Remove ANSI escape sequences if output is not empty
+        if (output) {
+            char *src = output;
+            char *dst = output;
+            while (*src) {
+                if (src[0] == 0x1B && src[1] == '[') {
+                    // Skip the escape character and '['
+                    src += 2;
+                    // Skip intermediate characters until a terminator (0x40-0x7E)
+                    while (*src && (*src < 0x40 || *src > 0x7E)) {
+                        src++;
+                    }
+                    // Skip the terminator if found
+                    if (*src) src++;
+                } else {
+                    *dst++ = *src++;
+                }
+            }
+            *dst = '\0';
+            
+            // Reallocate memory to fit the cleaned string
+            size_t new_length = dst - output;
+            char *cleaned_output = realloc(output, new_length + 1);
+            if (cleaned_output) {
+                output = cleaned_output;
+            }
+        }
         return output;
     }
 }
-
 // Common utility to find Hadoop installation
 const char* get_hadoop_path() {
     static char path[PATH_MAX];
@@ -101,7 +128,7 @@ const char* get_hadoop_path() {
 void test_install_hdfs() {
     printf("Running HDFS installation test...\n");
     
-    char* actual_output = capture_command_output("./debo --install --hdfs --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --install --hdfs --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -152,7 +179,7 @@ void test_hdfs_service(const char* action, const char* expected_msg) {
     printf("Running HDFS %s test...\n", action);
     
     char cmd[256];
-    snprintf(cmd, sizeof(cmd), "./debo --%s --hdfs --port=\"1221\" --host=\"127.0.0.1\"", action);
+    snprintf(cmd, sizeof(cmd), "./debo --%s --hdfs --host=\"localhost\" --port=\"1221\"", action);
     char* actual_output = capture_command_output(cmd);
     
     if (!actual_output) {
@@ -208,9 +235,9 @@ void test_restart_hdfs() {
 void test_hdfs_report() {
     printf("Testing HDFS reporting...\n");
     
-    char* debo_output = capture_command_output("./debo --hdfs --port=\"1221\" --host=\"127.0.0.1\"");
+    char* debo_output = capture_command_output("./debo --hdfs --host=\"localhost\" --port=\"1221\"");
     if (!debo_output) {
-        fprintf(stderr, "Error: Failed to execute ./debo --hdfs --port=\"1221\" --host=\"127.0.0.1\"\n");
+        fprintf(stderr, "Error: Failed to execute ./debo --hdfs --host=\"localhost\" --port=\"1221\"\n");
         return;
     }
 
@@ -263,7 +290,7 @@ void test_hdfs_report() {
 void test_uninstall_hdfs() {
     printf("Running HDFS uninstalling test...\n");
     
-    char* actual_output = capture_command_output("./debo --uninstall --hdfs --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --uninstall --hdfs --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -297,7 +324,7 @@ void test_configure_hdfs() {
     printf("Running HDFS configuration test...\n");
     
     // Capture output of the command
-    char* actual_output = capture_command_output("./debo  --hdfs --configure=\"fs.defaultFS\" --value=\"hdfs://localhost:9000\" --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo  --hdfs --configure=\"fs.defaultFS\" --value=\"hdfs://localhost:9000\" --host=\"localhost\" --port=\"1221\" ");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -335,7 +362,7 @@ static const char* get_base_path() {
 void test_install_hbase() {
     printf("Running hbase installation test...\n");
     
-    char* actual_output = capture_command_output("./debo --install --hbase --port=\"1221\" --host=\"127.0.0.1\" 2>&1");
+    char* actual_output = capture_command_output("./debo --install --hbase  --host=\"localhost\" --port=\"1221\" 2>&1");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -367,7 +394,7 @@ void test_install_hbase() {
 void test_start_hbase() {
     printf("Running hbase start test...\n");
     
-    char* actual_output = capture_command_output("./debo --start --hbase --port=\"1221\" --host=\"127.0.0.1\" 2>&1");
+    char* actual_output = capture_command_output("./debo --start --hbase  --host=\"localhost\" --port=\"1221\" 2>&1");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -390,7 +417,7 @@ void test_start_hbase() {
 void test_stop_hbase() {
     printf("Running hbase stop test...\n");
     
-    char* actual_output = capture_command_output("./debo --stop --hbase --port=\"1221\" --host=\"127.0.0.1\" 2>&1");
+    char* actual_output = capture_command_output("./debo --stop --hbase  --host=\"localhost\" --port=\"1221\"2>&1");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -413,7 +440,7 @@ void test_stop_hbase() {
 void test_restart_hbase() {
     printf("Running hbase restart test...\n");
     
-    char* actual_output = capture_command_output("./debo --restart --hbase --port=\"1221\" --host=\"127.0.0.1\" 2>&1");
+    char* actual_output = capture_command_output("./debo --restart --hbase --host=\"localhost\" --port=\"1221\" 2>&1");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -436,9 +463,9 @@ void test_restart_hbase() {
 void test_hbase_report() {
     printf("Testing hbase reporting...\n");
     
-    char* debo_output = capture_command_output("./debo --hbase --port=\"1221\" --host=\"127.0.0.1\" 2>&1");
+    char* debo_output = capture_command_output("./debo --hbase --host=\"localhost\" --port=\"1221\" 2>&1");
     if (!debo_output) {
-        fprintf(stderr, "Error: Failed to execute ./debo --hbase --port=\"1221\" --host=\"127.0.0.1\" \n");
+        fprintf(stderr, "Error: Failed to execute ./debo --hbase --host=\"localhost\" --port=\"1221\" \n");
         return;
     }
 
@@ -463,7 +490,7 @@ void test_hbase_report() {
         printf("Test PASSED\n");
     } else {
         printf("Test FAILED\n");
-        printf("./debo --hbase --port=\"1221\" --host=\"127.0.0.1\" output:\n%s\n", debo_output);
+        printf("./debo --hbase  --host=\"localhost\" --port=\"1221\" output:\n%s\n", debo_output);
         printf("hbase shell status output:\n%s\n", hbase_output);
     }
 
@@ -475,7 +502,7 @@ void test_hbase_report() {
 void test_uninstall_hbase() {
     printf("Running hbase uninstall test...\n");
     
-    char* actual_output = capture_command_output("./debo --uninstall --hbase --port=\"1221\" --host=\"127.0.0.1\" 2>&1");
+    char* actual_output = capture_command_output("./debo --uninstall --hbase --host=\"localhost\" --port=\"1221\" 2>&1");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -542,25 +569,25 @@ void test_install_spark() {
     system(cleanup);
     
     run_spark_command_test("spark installation test", 
-                          "./debo --install --spark --port=\"1221\" --host=\"127.0.0.1\"",
+                          "./debo --install --spark --host=\"localhost\" --port=\"1221\"",
                           "Spark installed successfully\n");
 }
 
 void test_start_spark() {
     run_spark_command_test("spark starting test",
-                          "./debo --start --spark --port=\"1221\" --host=\"127.0.0.1\"",
+                          "./debo --start --spark --host=\"localhost\" --port=\"1221\"",
                           "Spark service started successfully\n");
 }
 
 void test_stop_spark() {  // Renamed from test_stop_hbase
     run_spark_command_test("spark stopping test",
-                          "./debo --stop --spark --port=\"1221\" --host=\"127.0.0.1\"",
+                          "./debo --stop --spark --host=\"localhost\" --port=\"1221\"",
                           "Spark service stopped successfully\n");
 }
 
 void test_restart_spark() {
     run_spark_command_test("spark restarting test",
-                          "./debo --restart --spark --port=\"1221\" --host=\"127.0.0.1\"",
+                          "./debo --restart --spark --host=\"localhost\" --port=\"1221\"",
                           "Spark service restarted successfully\n");
 }
 
@@ -568,9 +595,9 @@ void test_spark_report() {
     printf("Testing Spark reporting...\n");
     
     // Capture and compare outputs
-    char* debo_output = capture_command_output("./debo --spark --port=\"1221\" --host=\"127.0.0.1\"");
+    char* debo_output = capture_command_output("./debo --spark --host=\"localhost\" --port=\"1221\"");
     if (!debo_output) {
-        fprintf(stderr, "Error: Failed to execute ./debo --spark --port=\"1221\" --host=\"127.0.0.1\"\n");
+        fprintf(stderr, "Error: Failed to execute ./debo --spark --host=\"localhost\" --port=\"1221\" \n");
         return;
     }
 
@@ -586,14 +613,14 @@ void test_spark_report() {
     int passed = 0;
     
     if (version_tag && strstr(debo_output, version_tag)) {
-        passed = 1; 
+        passed = 1;
     }
 
     if (passed) {
         printf("Test PASSED\n");
     } else {
         printf("Test FAILED\n");
-        printf("./debo --spark --port=\"1221\" --host=\"127.0.0.1\" output:\n%s\n", debo_output);
+        printf("./debo --spark --host=\"localhost\" --port=\"1221\" output:\n%s\n", debo_output);
         printf("spark-shell output:\n%s\n", spark_output);
     }
 
@@ -609,10 +636,10 @@ void test_uninstall_spark() {
     }
     
     // Ensure Spark is installed first
-    system("./debo --install --spark --port=\"1221\" --host=\"127.0.0.1\"> /dev/null 2>&1");
+    system("./debo --install --spark --host=\"localhost\" --port=\"1221\" > /dev/null 2>&1");
     
     run_spark_command_test("spark uninstallation test",
-                          "./debo --uninstall --spark --port=\"1221\" --host=\"127.0.0.1\"",
+                          "./debo --uninstall --spark --host=\"localhost\" --port=\"1221\"",
                           "Uninstallation complete. Verification:\n");
 }
 // Test function for HDFS installation
@@ -620,7 +647,7 @@ void test_configure_spark() {
     printf("Running HDFS installation test...\n");
     
     // Capture output of the command
-    char* actual_output = capture_command_output("./debo  --hbase --configure=\"spark.master\" --value=\"local\" --port=\"1221\" --host=\"127.0.0.1\" ");
+    char* actual_output = capture_command_output("./debo  --hbase --configure=\"spark.master\" --value=\"local\" --host=\"localhost\" --port=\"1221\" ");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -676,9 +703,9 @@ void test_install_kafka() {
     printf("Running Kafka installation test...\n");
     
     // Uninstall first for clean state
-    system("./debo --uninstall --kafka --port=\"1221\" --host=\"127.0.0.1\" >/dev/null 2>&1");
+    system("./debo --uninstall --kafka --host=\"localhost\" --port=\"1221\" >/dev/null 2>&1");
     
-    char* actual_output = capture_command_output("./debo --install --kafka --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --install --kafka --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -724,10 +751,10 @@ void test_start_kafka() {
     }
     
     // Ensure Kafka is stopped first
-    system("./debo --stop --kafka --port=\"1221\" --host=\"127.0.0.1\" >/dev/null 2>&1");
+    system("./debo --stop --kafka --host=\"localhost\" --port=\"1221\" >/dev/null 2>&1");
     sleep(2);
 
-    char* actual_output = capture_command_output("./debo --start --kafka --port=\"1221\" --host=\"127.0.0.1\" ");
+    char* actual_output = capture_command_output("./debo --start --kafka --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -762,10 +789,10 @@ void test_stop_kafka() {  // Renamed from test_stop_hbase
     }
     
     // Ensure Kafka is running first
-    system("./debo --start --kafka --port=\"1221\" --host=\"127.0.0.1\" >/dev/null 2>&1");
+    system("./debo --start --kafka --host=\"localhost\" --port=\"1221\" >/dev/null 2>&1");
     sleep(2);
 
-    char* actual_output = capture_command_output("./debo --stop --kafka --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --stop --kafka --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -802,7 +829,7 @@ void test_restart_kafka() {
     // Get initial PID
     system("pgrep -f kafka.Kafka > /tmp/pid_before 2>/dev/null");
 
-    char* actual_output = capture_command_output("./debo --restart --kafka --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --restart --kafka --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -837,12 +864,12 @@ void test_kafka_report() {
     }
     
     // Ensure Kafka is running
-    system("./debo --start --kafka --port=\"1221\" --host=\"127.0.0.1\" >/dev/null 2>&1");
+    system("./debo --start --kafka --host=\"localhost\" --port=\"1221\" >/dev/null 2>&1");
     sleep(3);
 
-    char* debo_output = capture_command_output("./debo --kafka --port=\"1221\" --host=\"127.0.0.1\"");
+    char* debo_output = capture_command_output("./debo --kafka --host=\"localhost\" --port=\"1221\"");
     if (!debo_output) {
-        fprintf(stderr, "Error: Failed to execute ./debo --kafka --port=\"1221\" --host=\"127.0.0.1\"\n");
+        fprintf(stderr, "Error: Failed to execute ./debo --kafka --host=\"localhost\" --port=\"1221\"\n");
         return;
     }
 
@@ -892,7 +919,7 @@ void test_uninstall_kafka() {
         return;
     }
 
-    char* actual_output = capture_command_output("./debo --uninstall --kafka --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --uninstall --kafka --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -931,7 +958,7 @@ void test_configure_kafka() {
     printf("Running kafka configuration test...\n");
     
     // Capture output of the command
-    char* actual_output = capture_command_output("./debo  --kafka --configure=\"bootstrap.servers\" --value=\"local\" --port=\"1221\" --host=\"127.0.0.1\" ");
+    char* actual_output = capture_command_output("./debo  --kafka --configure=\"bootstrap.servers\" --value=\"local\" --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -1004,10 +1031,10 @@ void test_install_flink() {
     printf("Running flink installation test...\n");
     
     // Cleanup any previous installation
-    system("./debo --uninstall --flink --port=\"1221\" --host=\"127.0.0.1\" >/dev/null 2>&1");
+    system("./debo --uninstall --flink --host=\"localhost\" --port=\"1221\" >/dev/null 2>&1");
     
     // Capture output
-    char* output = capture_command_output("./debo --install --flink --port=\"1221\" --host=\"127.0.0.1\"");
+    char* output = capture_command_output("./debo --install --flink --host=\"localhost\" --port=\"1221\"");
     if (!output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -1054,10 +1081,10 @@ void test_start_flink() {
     }
     
     // Stop if already running
-    system("./debo --stop --flink --port=\"1221\" --host=\"127.0.0.1\" >/dev/null 2>&1");
+    system("./debo --stop --flink --host=\"localhost\" --port=\"1221\" >/dev/null 2>&1");
     
     // Capture output
-    char* output = capture_command_output("./debo --start --flink --port=\"1221\" --host=\"127.0.0.1\"");
+    char* output = capture_command_output("./debo --start --flink --host=\"localhost\" --port=\"1221\"");
     if (!output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -1083,11 +1110,11 @@ void test_stop_flink() {
     
     // Ensure service is running
     if (verify_flink_service_state(1) != 1) {
-        system("./debo --start --flink --port=\"1221\" --host=\"127.0.0.1\" >/dev/null 2>&1");
+        system("./debo --start --flink --host=\"localhost\" --port=\"1221\"  >/dev/null 2>&1");
     }
     
     // Capture output
-    char* output = capture_command_output("./debo --stop --flink --port=\"1221\" --host=\"127.0.0.1\"");
+    char* output = capture_command_output("./debo --stop --flink --host=\"localhost\" --port=\"1221\"");
     if (!output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -1113,11 +1140,11 @@ void test_restart_flink() {
     
     // Ensure service is running
     if (verify_flink_service_state(1) != 1) {
-        system("./debo --start --flink  --port=\"1221\" --host=\"127.0.0.1\" >/dev/null 2>&1");
+        system("./debo --start --flink  --host=\"localhost\" --port=\"1221\" >/dev/null 2>&1");
     }
     
     // Capture output
-    char* output = capture_command_output("./debo --restart --flink --port=\"1221\" --host=\"127.0.0.1\"");
+    char* output = capture_command_output("./debo --restart --flink --host=\"localhost\" --port=\"1221\"");
     if (!output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -1143,13 +1170,13 @@ void test_flink_report() {
     
     // Ensure service is running
     if (verify_flink_service_state(1) != 1) {
-        system("./debo --start --flink --port=\"1221\" --host=\"127.0.0.1\" >/dev/null 2>&1");
+        system("./debo --start --flink --host=\"localhost\" --port=\"1221\" >/dev/null 2>&1");
     }
     
     // Capture outputs
-    char* debo_output = capture_command_output("./debo --flink --port=\"1221\" --host=\"127.0.0.1\"");
+    char* debo_output = capture_command_output("./debo --flink --host=\"localhost\" --port=\"1221\"");
     if (!debo_output) {
-        fprintf(stderr, "Error: Failed to execute ./debo --flink --port=\"1221\" --host=\"127.0.0.1\" \n");
+        fprintf(stderr, "Error: Failed to execute ./debo --flink --host=\"localhost\" --port=\"1221\" \n");
         return;
     }
 
@@ -1195,11 +1222,11 @@ void test_uninstall_flink() {
     // Ensure installation exists
     const char* base_path = get_flink_base_path();
     if (!base_path || !directory_exists(base_path)) {
-        system("./debo --install --flink  --port=\"1221\" --host=\"127.0.0.1\" >/dev/null 2>&1");
+        system("./debo --install --flink --host=\"localhost\" --port=\"1221\" >/dev/null 2>&1");
     }
     
     // Capture output
-    char* output = capture_command_output("./debo --uninstall --flink --port=\"1221\" --host=\"127.0.0.1\"");
+    char* output = capture_command_output("./debo --uninstall --flink --host=\"localhost\" --port=\"1221\"");
     if (!output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -1230,7 +1257,7 @@ void test_configure_flink() {
     printf("Running flink configuration test...\n");
     
     // Capture output of the command
-    char* actual_output = capture_command_output("./debo  --flink --configure=\"jobmanager.rpc.address\" --value=\"localhost\" --port=\"1221\" --host=\"127.0.0.1\" ");
+    char* actual_output = capture_command_output("./debo  --flink --configure=\"jobmanager.rpc.address\" --value=\"localhost\" --host=\"localhost\" --port=\"1221\" ");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -1265,7 +1292,7 @@ void test_configure_flink() {
 void test_install_zookeeper() {
     printf("Running zookeeper installation test...\n");
     
-    char* actual_output = capture_command_output("./debo --install --zookeeper --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --install --zookeeper --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -1290,7 +1317,7 @@ void test_install_zookeeper() {
 void test_start_zookeeper() {
     printf("Running zookeeper start test...\n");
     
-    char* actual_output = capture_command_output("./debo --start --zookeeper --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --start --zookeeper --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -1315,7 +1342,7 @@ void test_start_zookeeper() {
 void test_stop_zookeeper() {
     printf("Running zookeeper stop test...\n");
     
-    char* actual_output = capture_command_output("./debo --stop --zookeeper --port=\"1221\" --host=\"127.0.0.1\" ");
+    char* actual_output = capture_command_output("./debo --stop --zookeeper --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -1340,7 +1367,7 @@ void test_stop_zookeeper() {
 void test_restart_zookeeper() {
     printf("Running zookeeper restart test...\n");
     
-    char* actual_output = capture_command_output("./debo --restart --zookeeper --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --restart --zookeeper --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -1383,9 +1410,9 @@ char* normalize_zk_output(char* output) {
 void test_report_zookeeper() {
     printf("Testing zookeeper reporting...\n");
     
-    char* debo_output = capture_command_output("./debo --zookeeper --port=\"1221\" --host=\"127.0.0.1\"");
+    char* debo_output = capture_command_output("./debo --zookeeper --host=\"localhost\" --port=\"1221\"");
     if (!debo_output) {
-        fprintf(stderr, "Error: Failed to execute ./debo --zookeeper --port=\"1221\" --host=\"127.0.0.1\"\n");
+        fprintf(stderr, "Error: Failed to execute ./debo --zookeeper --host=\"localhost\" --port=\"1221\" \n");
         return;
     }
 
@@ -1418,7 +1445,7 @@ void test_report_zookeeper() {
 void test_uninstall_zookeeper() {
     printf("Running zookeeper uninstall test...\n");
     
-    char* actual_output = capture_command_output("./debo --uninstall --zookeeper --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --uninstall --zookeeper --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -1445,7 +1472,7 @@ void test_configure_zookeeper() {
     printf("Running zookeeper configuration test...\n");
     
     // Capture output of the command
-    char* actual_output = capture_command_output("./debo  --zookeeper --configure=\"clientPort\" --value=\"8765\" --port=\"1221\" --host=\"127.0.0.1\" ");
+    char* actual_output = capture_command_output("./debo  --zookeeper --configure=\"clientPort\" --value=\"8765\" --host=\"localhost\" --port=\"1221\" ");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -1483,7 +1510,7 @@ void test_install_storm() {
     printf("Running storm installation test...\n");
     
     // Capture output
-    char* actual_output = capture_command_output("./debo --install --storm --port=\"1221\" --host=\"127.0.0.1\" ");
+    char* actual_output = capture_command_output("./debo --install --storm --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -1516,7 +1543,7 @@ void test_start_storm() {
     printf("Running storm start test...\n");
     
     // Capture output
-    char* actual_output = capture_command_output("./debo --start --storm --port=\"1221\" --host=\"127.0.0.1\" ");
+    char* actual_output = capture_command_output("./debo --start --storm --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -1551,10 +1578,10 @@ void test_stop_storm() {
     printf("Running storm stop test...\n");
     
     // First ensure services are running
-    system("./debo --start --storm --port=\"1221\" --host=\"127.0.0.1\" >/dev/null 2>&1");
+    system("./debo --start --storm --host=\"localhost\" --port=\"1221\" >/dev/null 2>&1");
     
     // Capture output
-    char* actual_output = capture_command_output("./debo --stop --storm --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --stop --storm --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -1589,7 +1616,7 @@ void test_restart_storm() {
     printf("Running storm restart test...\n");
     
     // Capture output
-    char* actual_output = capture_command_output("./debo --restart --storm --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --restart --storm --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -1618,11 +1645,11 @@ void test_report_storm() {
     printf("Running storm report test...\n");
     
     // Start services to ensure reportability
-    system("./debo --start --storm --port=\"1221\" --host=\"127.0.0.1\" >/dev/null 2>&1");
+    system("./debo --start --storm --host=\"localhost\" --port=\"1221\" >/dev/null 2>&1");
     sleep(2);  // Allow services to initialize
     
     // Capture outputs
-    char* debo_output = capture_command_output("./debo --storm --port=\"1221\" --host=\"127.0.0.1\"");
+    char* debo_output = capture_command_output("./debo --storm --host=\"localhost\" --port=\"1221\"");
     if (!debo_output) {
         fprintf(stderr, "Error: Failed to capture debo output\n");
         return;
@@ -1664,7 +1691,7 @@ void test_uninstall_storm() {
     printf("Running storm uninstall test...\n");
     
     // Capture output
-    char* actual_output = capture_command_output("./debo --uninstall --storm --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --uninstall --storm --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -1697,7 +1724,7 @@ void test_configure_storm() {
     printf("Running storm configuration test...\n");
     
     // Capture output of the command
-    char* actual_output = capture_command_output("./debo  --storm --configure=\"storm.zookeeper.servers\" --value=\"localhost\" --port=\"1221\" --host=\"127.0.0.1\" ");
+    char* actual_output = capture_command_output("./debo  --storm --configure=\"storm.zookeeper.servers\" --value=\"localhost\" --host=\"localhost\" --port=\"1221\" ");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -1733,7 +1760,7 @@ void test_configure_storm() {
 void test_install_hive() {
     printf("Running hive installation test...\n");
     
-    char* actual_output = capture_command_output("./debo --install --hive --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --install --hive --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -1773,7 +1800,7 @@ void test_install_hive() {
 void test_start_hive() {
     printf("Running hive starting test...\n");
     
-    char* actual_output = capture_command_output("./debo --start --hive --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --start --hive --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -1796,7 +1823,7 @@ void test_start_hive() {
 void test_stop_hive() {
     printf("Running hive stopping test...\n");
     
-    char* actual_output = capture_command_output("./debo --stop --hive --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --stop --hive --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -1819,7 +1846,7 @@ void test_stop_hive() {
 void test_restart_hive() {
     printf("Running hive restarting test...\n");
     
-    char* actual_output = capture_command_output("./debo --restart --hive --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --restart --hive --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -1857,9 +1884,9 @@ char* normalize_output(char* output) {
 void test_report_hive() {
     printf("Testing hive reporting...\n");
     
-    char* debo_output = capture_command_output("./debo --hive --port=\"1221\" --host=\"127.0.0.1\"");
+    char* debo_output = capture_command_output("./debo --hive --host=\"localhost\" --port=\"1221\"");
     if (!debo_output) {
-        fprintf(stderr, "Error: Failed to execute ./debo --hive --port=\"1221\" --host=\"127.0.0.1\" \n");
+        fprintf(stderr, "Error: Failed to execute ./debo --hive --host=\"localhost\" --port=\"1221\"\n");
         return;
     }
 
@@ -1890,7 +1917,7 @@ void test_report_hive() {
 void test_uninstall_hive() {
     printf("Running hive uninstalling test...\n");
     
-    char* actual_output = capture_command_output("./debo --uninstall --hive --port=\"1221\" --host=\"127.0.0.1\" ");
+    char* actual_output = capture_command_output("./debo --uninstall --hive --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -1914,7 +1941,7 @@ void test_configure_hive() {
     printf("Running hive configuration test...\n");
     
     // Capture output of the command
-    char* actual_output = capture_command_output("./debo  --hive --configure=\"hive.exec.parallel\" --value=\"true\"  --port=\"1221\" --host=\"127.0.0.1\" ");
+    char* actual_output = capture_command_output("./debo  --hive --configure=\"hive.exec.parallel\" --value=\"true\" --host=\"localhost\" --port=\"1221\" ");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -1972,7 +1999,7 @@ static const char* get_expected_install_path() {
 void test_install_livy() {
     printf("Running Livy installation test...\n");
     
-    char* actual_output = capture_command_output("./debo --install --livy --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --install --livy --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -2011,7 +2038,7 @@ void test_livy_service(const char* action_name, const char* expected_msg) {
     }
 
     char command[64];
-    snprintf(command, sizeof(command), "./debo --%s --livy --port=\"1221\" --host=\"127.0.0.1\" ", action_name);
+    snprintf(command, sizeof(command), "./debo --%s --livy --host=\"localhost\" --port=\"1221\" ", action_name);
     char* actual_output = capture_command_output(command);
     
     if (!actual_output) {
@@ -2051,7 +2078,7 @@ void test_uninstall_livy() {
         return;
     }
 
-    char* actual_output = capture_command_output("./debo --uninstall --livy --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --uninstall --livy --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -2071,9 +2098,9 @@ void test_uninstall_livy() {
 void test_report_livy() {
     printf("Testing livy reporting...\n");
     
-    char* debo_output = capture_command_output("./debo --livy --port=\"1221\" --host=\"127.0.0.1\"");
+    char* debo_output = capture_command_output("./debo --livy --host=\"localhost\" --port=\"1221\"");
     if (!debo_output) {
-        fprintf(stderr, "Error: Failed to execute ./debo --livy --port=\"1221\" --host=\"127.0.0.1\"\n");
+        fprintf(stderr, "Error: Failed to execute ./debo --livy --host=\"localhost\" --port=\"1221\"\n");
         return;
     }
 
@@ -2102,7 +2129,7 @@ void test_configure_livy() {
     printf("Running livy configuration test...\n");
     
     // Capture output of the command
-    char* actual_output = capture_command_output("./debo  --livy --configure=\"livy.server.port\" --value=\"3546\" --port=\"1221\" --host=\"127.0.0.1\" ");
+    char* actual_output = capture_command_output("./debo  --livy --configure=\"livy.server.port\" --value=\"3546\" --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -2143,7 +2170,7 @@ void test_install_phoenix() {
     printf("Running phoenix installation test...\n");
     
     // Capture output including stderr
-    char* actual_output = capture_command_output("./debo --install --phoenix --port=\"1221\" --host=\"127.0.0.1\" 2>&1");
+    char* actual_output = capture_command_output("./debo --install --phoenix --host=\"localhost\" --port=\"1221\" 2>&1");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -2179,7 +2206,7 @@ void test_install_phoenix() {
 void test_start_phoenix() {
     printf("Running phoenix starting test...\n");
     
-    char* actual_output = capture_command_output("./debo --start --phoenix --port=\"1221\" --host=\"127.0.0.1\" 2>&1");
+    char* actual_output = capture_command_output("./debo --start --phoenix --host=\"localhost\" --port=\"1221\" 2>&1");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -2201,7 +2228,7 @@ void test_start_phoenix() {
 void test_stop_phoenix() {
     printf("Running phoenix stopping test...\n");
     
-    char* actual_output = capture_command_output("./debo --stop --phoenix --port=\"1221\" --host=\"127.0.0.1\" 2>&1");
+    char* actual_output = capture_command_output("./debo --stop --phoenix  --host=\"localhost\" --port=\"1221\" 2>&1");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -2223,7 +2250,7 @@ void test_stop_phoenix() {
 void test_restart_phoenix() {
     printf("Running phoenix restarting test...\n");
     
-    char* actual_output = capture_command_output("./debo --restart --phoenix --port=\"1221\" --host=\"127.0.0.1\" 2>&1");
+    char* actual_output = capture_command_output("./debo --restart --phoenix --host=\"localhost\" --port=\"1221\" 2>&1");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -2245,9 +2272,9 @@ void test_restart_phoenix() {
 void test_report_phoenix() {
     printf("Testing Phoenix status reporting...\n");
     
-    char* debo_output = capture_command_output("./debo --report --phoenix --port=\"1221\" --host=\"127.0.0.1\" 2>&1");
+    char* debo_output = capture_command_output("./debo --report --phoenix --host=\"localhost\" --port=\"1221\" 2>&1");
     if (!debo_output) {
-        fprintf(stderr, "Error: Failed to execute ./debo --report --phoenix --port=\"1221\" --host=\"127.0.0.1\" \n");
+        fprintf(stderr, "Error: Failed to execute ./debo --report --phoenix --host=\"localhost\" --port=\"1221\" \n");
         return;
     }
 
@@ -2273,7 +2300,7 @@ void test_report_phoenix() {
 void test_uninstall_phoenix() {
     printf("Running phoenix uninstalling test...\n");
     
-    char* actual_output = capture_command_output("./debo --uninstall --phoenix  --port=\"1221\" --host=\"127.0.0.1\" 2>&1");
+    char* actual_output = capture_command_output("./debo --uninstall --phoenix --host=\"localhost\" --port=\"1221\" 2>&1");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -2296,7 +2323,7 @@ void test_configure_phoenix() {
     printf("Running phoenix configuration test...\n");
     
     // Capture output of the command
-    char* actual_output = capture_command_output("./debo  --phoenix --configure=\"livy.server.port\" --value=\"3546\" --port=\"1221\" --host=\"127.0.0.1\" ");
+    char* actual_output = capture_command_output("./debo  --phoenix --configure=\"livy.server.port\" --value=\"3546\" --host=\"localhost\" --port=\"1221\" ");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -2342,7 +2369,7 @@ static const char* get_expected_solr_path() {
 void test_install_solr() {
     printf("Running solr installation test...\n");
     
-    char* actual_output = capture_command_output("./debo --install --solr --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --install --solr --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -2373,7 +2400,7 @@ void test_install_solr() {
 void test_start_solr() {
     printf("Running solr starting test...\n");
     
-    char* actual_output = capture_command_output("./debo --start --solr --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --start --solr --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -2395,7 +2422,7 @@ void test_start_solr() {
 void test_stop_solr() {
     printf("Running solr stopping test...\n");
     
-    char* actual_output = capture_command_output("./debo --stop --solr --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --stop --solr --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -2417,7 +2444,7 @@ void test_stop_solr() {
 void test_restart_solr() {
     printf("Running solr restarting test...\n");
     
-    char* actual_output = capture_command_output("./debo --restart --solr --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --restart --solr --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -2445,9 +2472,9 @@ void test_report_solr() {
         return;
     }
 
-    char* debo_output = capture_command_output("./debo --solr --port=\"1221\" --host=\"127.0.0.1\"");
+    char* debo_output = capture_command_output("./debo --solr --host=\"localhost\" --port=\"1221\"");
     if (!debo_output) {
-        fprintf(stderr, "Error: Failed to execute ./debo --solr --port=\"1221\" --host=\"127.0.0.1\"\n");
+        fprintf(stderr, "Error: Failed to execute ./debo --solr --host=\"localhost\" --port=\"1221\" \n");
         return;
     }
 
@@ -2473,7 +2500,7 @@ void test_report_solr() {
 void test_uninstall_solr() {
     printf("Running solr uninstalling test...\n");
     
-    char* actual_output = capture_command_output("./debo --uninstall --solr --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --uninstall --solr --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -2496,7 +2523,7 @@ void test_configure_solr() {
     printf("Running solr configuration test...\n");
     
     // Capture output of the command
-    char* actual_output = capture_command_output("./debo  --solr --configure=\"zkHost\" --value=\"3546\" --port=\"1221\" --host=\"127.0.0.1\" ");
+    char* actual_output = capture_command_output("./debo  --solr --configure=\"zkHost\" --value=\"3546\" --host=\"localhost\" --port=\"1221\" ");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -2581,27 +2608,27 @@ void test_install_zeppelin() {
              "Apache Zeppelin installed successfully at %s\n", expected_path);
 
     run_zeppelin_test("zeppelin installation test", 
-                      "./debo --install --zeppelin --port=\"1221\" --host=\"127.0.0.1\"",
+                      "./debo --install --zeppelin --host=\"localhost\" --port=\"1221\" ",
                       expected_output, NULL);
 }
 
 void test_start_zeppelin() {
     run_zeppelin_test("zeppelin start test",
-                      "./debo --start --zeppelin --port=\"1221\" --host=\"127.0.0.1\"",
+                      "./debo --start --zeppelin --host=\"localhost\" --port=\"1221\" ",
                       "Zeppelin Started completed successfully\n",
                       is_debian_based);
 }
 
 void test_stop_zeppelin() {
     run_zeppelin_test("zeppelin stop test",
-                      "./debo --stop --zeppelin --port=\"1221\" --host=\"127.0.0.1\"",
+                      "./debo --stop --zeppelin --host=\"localhost\" --port=\"1221\"",
                       "Zeppelin Stopped completed successfully\n",
                       is_redhat_based);
 }
 
 void test_restart_zeppelin() {
     run_zeppelin_test("zeppelin restart test",
-                      "./debo --restart --zeppelin --port=\"1221\" --host=\"127.0.0.1\"",
+                      "./debo --restart --zeppelin --host=\"localhost\" --port=\"1221\"",
                       "Zeppelin Restarted successfully\n",
                       NULL);
 }
@@ -2609,7 +2636,7 @@ void test_restart_zeppelin() {
 void test_report_zeppelin() {
     printf("Testing zeppelin reporting...\n");
     
-    char* debo_output = capture_command_output("./debo --zeppelin --port=\"1221\" --host=\"127.0.0.1\"");
+    char* debo_output = capture_command_output("./debo --zeppelin --host=\"localhost\" --port=\"1221\"");
     if (!debo_output) {
         fprintf(stderr, "Error: Failed to get debo report\n");
         return;
@@ -2637,7 +2664,7 @@ void test_report_zeppelin() {
 
 void test_uninstall_zeppelin() {
     run_zeppelin_test("zeppelin uninstall test",
-                      "./debo --uninstall --zeppelin --port=\"1221\" --host=\"127.0.0.1\"",
+                      "./debo --uninstall --zeppelin --host=\"localhost\" --port=\"1221\"",
                       "Zeppelin uninstallation completed\n",
                       NULL);
 }
@@ -2645,7 +2672,7 @@ void test_configure_zeppelin() {
     printf("Running zeppelin configuration test...\n");
     
     // Capture output of the command
-    char* actual_output = capture_command_output("./debo  --zeppelin --configure=\"zeppelin.server.port\" --value=\"3546\" --port=\"1221\" --host=\"127.0.0.1\" ");
+    char* actual_output = capture_command_output("./debo  --zeppelin --configure=\"zeppelin.server.port\" --value=\"3546\" --host=\"localhost\" --port=\"1221\" ");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -2691,7 +2718,7 @@ void test_install_ranger() {
     printf("Running ranger installation test...\n");
     
     // Capture output
-    char* output = capture_command_output("./debo --install --ranger --port=\"1221\" --host=\"127.0.0.1\"");
+    char* output = capture_command_output("./debo --install --ranger --host=\"localhost\" --port=\"1221\"");
     if (!output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -2730,7 +2757,7 @@ void test_service_action(const char* action) {
     printf("Running ranger %s test...\n", action);
     
     char command[256];
-    snprintf(command, sizeof(command), "./debo --%s --ranger --port=\"1221\" --host=\"127.0.0.1\"", action);
+    snprintf(command, sizeof(command), "./debo --%s --ranger --host=\"localhost\" --port=\"1221\" ", action);
     char* output = capture_command_output(command);
     
     if (!output) {
@@ -2771,9 +2798,9 @@ void test_restart_ranger() { test_service_action("restart"); }
 void test_report_ranger() {
     printf("Testing ranger reporting...\n");
     
-    char* debo_output = capture_command_output("./debo --ranger --port=\"1221\" --host=\"127.0.0.1\"");
+    char* debo_output = capture_command_output("./debo --ranger --host=\"localhost\" --port=\"1221\"");
     if (!debo_output) {
-        fprintf(stderr, "Error: Failed to execute ./debo --ranger --port=\"1221\" --host=\"127.0.0.1\"\n");
+        fprintf(stderr, "Error: Failed to execute ./debo --ranger --host=\"localhost\" --port=\"1221\" \n");
         return;
     }
 
@@ -2796,7 +2823,7 @@ void test_report_ranger() {
 void test_uninstall_ranger() {
     printf("Running ranger uninstall test...\n");
     
-    char* output = capture_command_output("./debo --uninstall --ranger --port=\"1221\" --host=\"127.0.0.1\"");
+    char* output = capture_command_output("./debo --uninstall --ranger --host=\"localhost\" --port=\"1221\"");
     if (!output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -2825,7 +2852,7 @@ void test_configure_ranger() {
     printf("Running ranger configuration test...\n");
     
     // Capture output of the command
-    char* actual_output = capture_command_output("./debo  --ranger --configure=\"ranger.admin.${1}.port\" --value=\"3546\"  --port=\"1221\" --host=\"127.0.0.1\" ");
+    char* actual_output = capture_command_output("./debo  --ranger --configure=\"ranger.admin.${1}.port\" --value=\"3546\" --host=\"localhost\" --port=\"1221\" ");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -2859,7 +2886,7 @@ void test_configure_ranger() {
 void test_install_atlas() {
     printf("Running atlas installation test...\n");
     
-    char* actual_output = capture_command_output("./debo --install --atlas --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --install --atlas --host=\"localhost\" --port=\"1221\" ");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -2914,7 +2941,7 @@ void test_install_atlas() {
 void test_start_atlas() {
     printf("Running atlas start test...\n");
     
-    char* actual_output = capture_command_output("./debo --start --atlas --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --start --atlas --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -2936,7 +2963,7 @@ void test_start_atlas() {
 void test_stop_atlas() {
     printf("Running atlas stop test...\n");
     
-    char* actual_output = capture_command_output("./debo --stop --atlas --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --stop --atlas --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -2958,7 +2985,7 @@ void test_stop_atlas() {
 void test_restart_atlas() {
     printf("Running atlas restart test...\n");
     
-    char* actual_output = capture_command_output("./debo --restart --atlas --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --restart --atlas --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -2988,9 +3015,9 @@ char* normalize_json_output(char* output) {
 void test_report_atlas() {
     printf("Testing atlas reporting...\n");
     
-    char* debo_output = capture_command_output("./debo --atlas --port=\"1221\" --host=\"127.0.0.1\"");
+    char* debo_output = capture_command_output("./debo --atlas --host=\"localhost\" --port=\"1221\"");
     if (!debo_output) {
-        fprintf(stderr, "Error: Failed to execute ./debo --atlas --port=\"1221\" --host=\"127.0.0.1\"\n");
+        fprintf(stderr, "Error: Failed to execute ./debo --atlas --host=\"localhost\" --port=\"1221\" \n");
         return;
     }
 
@@ -3027,7 +3054,7 @@ void test_report_atlas() {
 void test_uninstall_atlas() {
     printf("Running atlas uninstall test...\n");
     
-    char* actual_output = capture_command_output("./debo --uninstall --atlas --port=\"1221\" --host=\"127.0.0.1\"");
+    char* actual_output = capture_command_output("./debo --uninstall --atlas --host=\"localhost\" --port=\"1221\" ");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -3050,7 +3077,7 @@ void test_configure_atlas() {
     printf("Running atlas configuration test...\n");
     
     // Capture output of the command
-    char* actual_output = capture_command_output("./debo  --atlas --configure=\"atlas.server.http.port\" --value=\"3546\" --port=\"1221\" --host=\"127.0.0.1\" ");
+    char* actual_output = capture_command_output("./debo  --atlas --configure=\"atlas.server.http.port\" --value=\"3546\" --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -3112,7 +3139,7 @@ static void test_tez_action(const char* action, const char* expected) {
     printf("Testing Tez %s...\n", action);
     
     char command[256];
-    snprintf(command, sizeof(command), "./debo --%s --tez --port=\"1221\" --host=\"127.0.0.1\"", action);
+    snprintf(command, sizeof(command), "./debo --%s --tez --host=\"localhost\" --port=\"1221\"", action);
     command_result result = capture_tez_command_output(command);
     
     if (!result.output) {
@@ -3136,7 +3163,7 @@ void test_install_tez() {
     printf("Testing Tez installation...\n");
     
     char command[256];
-    snprintf(command, sizeof(command), "./debo --install --tez --port=\"1221\" --host=\"127.0.0.1\"");
+    snprintf(command, sizeof(command), "./debo --install --tez --host=\"localhost\" --port=\"1221\"");
     command_result result = capture_tez_command_output(command);
     
     if (!result.output) {
@@ -3176,7 +3203,7 @@ void test_install_tez() {
 void test_report_tez() {
     printf("Testing Tez status reporting...\n");
     
-    command_result debo_result = capture_tez_command_output("./debo --tez --port=\"1221\" --host=\"127.0.0.1\"");
+    command_result debo_result = capture_tez_command_output("./debo --tez --host=\"localhost\" --port=\"1221\"");
     if (!debo_result.output) {
         fprintf(stderr, "Error: Failed to get Debo status\n");
         return;
@@ -3229,7 +3256,7 @@ void test_configure_tez() {
     printf("Running tez configuration test...\n");
     
     // Capture output of the command
-    char* actual_output = capture_command_output("./debo  --tez --configure=\"tez.am.resource.memory.mb\" --value=\"3546mb\" --port=\"1221\" --host=\"127.0.0.1\" ");
+    char* actual_output = capture_command_output("./debo  --tez --configure=\"tez.am.resource.memory.mb\" --value=\"3546mb\" --host=\"localhost\" --port=\"1221\"");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -3277,7 +3304,7 @@ void run_pig_service_test(const char* action, const char* expected_success_msg) 
     printf("Running pig %s test...\n", action);
     
     char command[256];
-    snprintf(command, sizeof(command), "./debo --%s --pig --port=\"1221\" --host=\"127.0.0.1\"", action);
+    snprintf(command, sizeof(command), "./debo --%s --pig --host=\"localhost\" --port=\"1221\"", action);
     char* actual_output = capture_command_output(command);
     
     if (!actual_output) {
@@ -3328,9 +3355,9 @@ void test_uninstall_pig() {
 void test_report_pig() {
     printf("Testing pig reporting...\n");
     
-    char* debo_output = capture_command_output("./debo --pig --port=\"1221\" --host=\"127.0.0.1\"");
+    char* debo_output = capture_command_output("./debo --pig --host=\"localhost\" --port=\"1221\"");
     if (!debo_output) {
-        fprintf(stderr, "Error: Failed to execute ./debo --pig --port=\"1221\" --host=\"127.0.0.1\"\n");
+        fprintf(stderr, "Error: Failed to execute ./debo --pig --host=\"localhost\" --port=\"1221\" \n");
         return;
     }
 
@@ -3366,7 +3393,7 @@ void test_configure_pig() {
     printf("Running pig configuration test...\n");
     
     // Capture output of the command
-    char* actual_output = capture_command_output("./debo  --tez --configure=\"pig.exec.mapPartAgg\" --value=\"3546\"  --port=\"1221\" --host=\"127.0.0.1\" ");
+    char* actual_output = capture_command_output("./debo  --tez --configure=\"pig.exec.mapPartAgg\" --value=\"3546\" --host=\"localhost\" --port=\"1221\" ");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -3413,7 +3440,7 @@ void run_presto_service_test(const char* action, const char* expected_success_ms
     printf("Running Presto %s test...\n", action);
     
     char command[256];
-    snprintf(command, sizeof(command), "./debo --%s --presto --port=\"1221\" --host=\"127.0.0.1\"", action);
+    snprintf(command, sizeof(command), "./debo --%s --presto --host=\"localhost\" --port=\"1221\" ", action);
     char* actual_output = capture_command_output(command);
     
     if (!actual_output) {
@@ -3464,9 +3491,9 @@ void test_uninstall_presto() {
 void test_report_presto() {
     printf("Testing Presto reporting...\n");
     
-    char* debo_output = capture_command_output("./debo --presto --port=\"1221\" --host=\"127.0.0.1\"");
+    char* debo_output = capture_command_output("./debo --presto --host=\"localhost\" --port=\"1221\"");
     if (!debo_output) {
-        fprintf(stderr, "Error: Failed to execute ./debo --presto --port=\"1221\" --host=\"127.0.0.1\"\n");
+        fprintf(stderr, "Error: Failed to execute ./debo --presto --host=\"localhost\" --port=\"1221\" \n");
         return;
     }
 

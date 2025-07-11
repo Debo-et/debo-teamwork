@@ -183,7 +183,7 @@ void buffer_intermediary_function(ClientSocket *client_sock, char *buf);
 void PERROR(ClientSocket *client_sock, const char *s);
 int PRINTF(ClientSocket *client_sock, const char *format, ...);
 int FPRINTF(ClientSocket *client_sock, const char *format, ...);
-void handle_result(ConfigStatus status);
+void handle_result(ConfigStatus status, const char *config_param, const char *config_value, const char *config_file);
 bool handleValidationResult(ValidationResult result);
 bool isPositiveInteger(const char *value);
 bool isValidPort(const char *value);
@@ -245,4 +245,9 @@ int mkdir_p(const char *path);
 char* generate_regex_pattern(const char* canonical_name);
 int configure_hadoop_property(const char *file_path, const char *key, const char *value);
 int updateHadoopConfigXML(const char *filePath, const char *parameterName, const char *parameterValue);
+int create_xml_file(const char *directory_path, const char *xml_file_name);
+int update_config(const char *param, const char *value, const char *file_path);
+int create_properties_file(const char *directory_path, const char *properties_file_name);
+int create_conf_file(const char *directory_path, const char *conf_file_name);
+char* get_component_config_path(Component comp, const char* config_filename);
 #endif
