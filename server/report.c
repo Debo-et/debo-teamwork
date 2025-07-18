@@ -66,11 +66,11 @@ char *report_hdfs() {
     }
 
     // Check command exit status
-    int status = pclose(fp);
-    if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
-        free(output);
-        return strdup("Hadoop is not started");
-    }
+    //int status = pclose(fp);
+    //if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+      //  free(output);
+        //return strdup("Hadoop is not started");
+    //}
 
     return output;
 }

@@ -10,6 +10,7 @@
 #include <sys/epoll.h>
 #include <signal.h>
 #include <stdbool.h>
+#include <fcntl.h>
 
 #include "connutil.h"
 #include "format.h"
@@ -394,11 +395,17 @@ debo_child_launch(ClientSocket *client_sock)
             fprintf(stderr, "Child: malloc failed\n");
             _exit(1);
         }
+int flags = fcntl(client_sock->sock, F_GETFL, 0);
+fcntl(client_sock->sock, F_SETFL, flags & ~O_NONBLOCK);  // Disable non-blocking mode
 
         // Copy the socket FD and SockAddr
         MyClientSocket->sock = client_sock->sock;  // Integer copy is safe
         CopySockAddr(&MyClientSocket->raddr, &client_sock->raddr);  // Deep copy
-
+    // Perform GSSAPI handshake
+    if (secure_open_gssapi(MyClientSocket) != 0)
+    {
+        fprintf(stderr, "GSSAPI handshake failed\n");
+    }
         // Handle the client command
         handle_command(MyClientSocket);
 
@@ -480,9 +487,11 @@ static void handle_command(ClientSocket *client_socket) {
                 break;
             case CliMsg_Hdfs_Install_Version:
                 install_hadoop(result[0],result[1]);
+                configure_target_component(HDFS);
                 break;
             case CliMsg_Hdfs_Install:
                 install_hadoop(NULL, NULL);
+                configure_target_component(HDFS);
                 break;
             case CliMsg_Hdfs:
                 FPRINTF(global_client_socket, report_hdfs());
@@ -504,9 +513,11 @@ static void handle_command(ClientSocket *client_socket) {
                 break;
             case CliMsg_Spark_Install_Version:
                 install_spark(result[0],result[1]);
+                configure_target_component(SPARK);
                 break;
             case CliMsg_Spark_Install:
                 install_spark(NULL, NULL);
+                configure_target_component(SPARK);
                 break;
             case CliMsg_Spark:
                 FPRINTF(global_client_socket, report_spark());
@@ -526,9 +537,11 @@ static void handle_command(ClientSocket *client_socket) {
                 break;
             case CliMsg_Kafka_Install_Version:
                 install_kafka(result[0],result[1]);
+                configure_target_component(KAFKA);
                 break;
             case CliMsg_Kafka_Install:
                 install_kafka(NULL, NULL);
+                configure_target_component(KAFKA);
                 break;
             case CliMsg_Kafka:
                 FPRINTF(global_client_socket, report_kafka());
@@ -549,9 +562,11 @@ static void handle_command(ClientSocket *client_socket) {
                 break;
             case CliMsg_HBase_Install_Version:
                 install_HBase(result[0],result[1]);
+                configure_target_component(HBASE);
                 break;
             case CliMsg_HBase_Install:
                 install_HBase(NULL, NULL);
+                configure_target_component(HBASE);
                 break;
             case CliMsg_HBase:
                 FPRINTF(global_client_socket, report_hbase());
@@ -572,9 +587,11 @@ static void handle_command(ClientSocket *client_socket) {
                 break;
             case CliMsg_ZooKeeper_Install_Version:
                 install_zookeeper(result[0],result[1]);
+                configure_target_component(ZOOKEEPER);
                 break;
             case CliMsg_ZooKeeper_Install:
                 install_zookeeper(NULL, NULL);
+                configure_target_component(ZOOKEEPER);
                 break;
             case CliMsg_ZooKeeper:
                 FPRINTF(global_client_socket, report_zookeeper());
@@ -595,9 +612,11 @@ static void handle_command(ClientSocket *client_socket) {
                 break;
             case CliMsg_Flink_Install_Version:
                 install_flink(result[0],result[1]);
+                configure_target_component(FLINK);
                 break;
             case CliMsg_Flink_Install:
                 install_flink(NULL, NULL);
+                configure_target_component(FLINK);
                 break;
             case CliMsg_Flink:
                 FPRINTF(global_client_socket, report_flink());
@@ -618,9 +637,11 @@ static void handle_command(ClientSocket *client_socket) {
                 break;
             case CliMsg_Storm_Install_Version:
                 install_Storm(result[0],result[1]);
+                configure_target_component(STORM);
                 break;
             case CliMsg_Storm_Install:
                 install_Storm(NULL, NULL);
+                configure_target_component(STORM);
                 break;
             case CliMsg_Storm:
                 FPRINTF(global_client_socket, report_storm());
@@ -641,9 +662,11 @@ static void handle_command(ClientSocket *client_socket) {
                 break;
             case CliMsg_Hive_Install_Version:
                 install_hive(result[0],result[1]);
+                configure_target_component(HIVE);
                 break;
             case CliMsg_Hive_Install:
                 install_hive(NULL, NULL);
+                configure_target_component(HIVE);
                 break;
             case CliMsg_Hive:
                 FPRINTF(global_client_socket, report_hive());
@@ -664,9 +687,11 @@ static void handle_command(ClientSocket *client_socket) {
                 break;
             case CliMsg_Pig_Install_Version:
                 install_pig(result[0],result[1]);
+                configure_target_component(PIG);
                 break;
             case CliMsg_Pig_Install:
                 install_pig(NULL, NULL);
+                configure_target_component(PIG);
                 break;
             case CliMsg_Pig:
                 FPRINTF(global_client_socket, report_pig());
@@ -687,9 +712,11 @@ static void handle_command(ClientSocket *client_socket) {
                 break;
             case CliMsg_Tez_Install_Version:
                 install_Tez(result[0],result[1]);
+                configure_target_component(TEZ);
                 break;
             case CliMsg_Tez_Install:
                 install_Tez(NULL, NULL);
+                configure_target_component(TEZ);
                 break;
             case CliMsg_Tez:
                 FPRINTF(global_client_socket, report_tez());
@@ -710,9 +737,11 @@ static void handle_command(ClientSocket *client_socket) {
                 break;
             case CliMsg_Atlas_Install_Version:
                 install_Atlas(result[0],result[1]);
+                configure_target_component(ATLAS);
                 break;
             case CliMsg_Atlas_Install:
                 install_Atlas(NULL, NULL);
+                configure_target_component(ATLAS);
                 break;
             case CliMsg_Atlas:
                 FPRINTF(global_client_socket, report_atlas());
@@ -733,9 +762,11 @@ static void handle_command(ClientSocket *client_socket) {
                 break;
             case CliMsg_Ranger_Install_Version:
                 install_Ranger(result[0],result[1]);
+                configure_target_component(RANGER);
                 break;
             case CliMsg_Ranger_Install:
                 install_Ranger(NULL, NULL);
+                configure_target_component(RANGER);
                 break;
             case CliMsg_Ranger:
                 FPRINTF(global_client_socket, report_ranger());
@@ -756,9 +787,11 @@ static void handle_command(ClientSocket *client_socket) {
                 break;
             case CliMsg_Livy_Install_Version:
                 install_Livy(result[0],result[1]);
+                configure_target_component(LIVY);
                 break;
             case CliMsg_Livy_Install:
                 install_Livy(NULL, NULL);
+                configure_target_component(LIVY);
                 break;
             case CliMsg_Livy:
                 FPRINTF(global_client_socket, report_livy());
@@ -779,10 +812,12 @@ static void handle_command(ClientSocket *client_socket) {
                 break;
             case CliMsg_Phoenix_Install_Version:
                 install_phoenix(result[0],result[1]);
+                configure_target_component(PHOENIX);
                 break;
             /* =================== Phoenix Commands =================== */
             case CliMsg_Phoenix_Install:
                 install_phoenix(NULL, NULL);
+                configure_target_component(PHOENIX);
                 break;
             case CliMsg_Phoenix:
                 FPRINTF(global_client_socket, report_phoenix());
@@ -803,9 +838,11 @@ static void handle_command(ClientSocket *client_socket) {
                 break;
             case CliMsg_Solr_Install_Version:
                 install_Solr(result[0],result[1]);
+                configure_target_component(SOLR);
                 break;
             case CliMsg_Solr_Install:
                 install_Solr(NULL, NULL);
+                configure_target_component(SOLR);
                 break;
             case CliMsg_Solr:
                 FPRINTF(global_client_socket, report_solr());
@@ -826,9 +863,11 @@ static void handle_command(ClientSocket *client_socket) {
                 break;
             case CliMsg_Zeppelin_Install_Version:
                 install_Zeppelin(result[0],result[1]);
+                configure_target_component(ZEPPELIN);
                 break;
             case CliMsg_Zeppelin_Install:
                 install_Zeppelin(NULL, NULL);
+                configure_target_component(ZEPPELIN);
                 break;
             case CliMsg_Zeppelin:
                 FPRINTF(global_client_socket, report_zeppelin());
@@ -862,7 +901,7 @@ static void handle_command(ClientSocket *client_socket) {
             ConfigResult *sparkResult= get_spark_config(result[0],result[1]);
             if (sparkResult == NULL)
                     FPRINTF(global_client_socket,"configuration parameter not supported yet");
-            ConfigStatus sparkStatus = update_spark_config(sparkResult->canonical_name, sparkResult->value);
+            ConfigStatus sparkStatus = update_spark_config(sparkResult->canonical_name, sparkResult->value, sparkResult->config_file);
             handle_result(sparkStatus, sparkResult->canonical_name, sparkResult->value, sparkResult->config_file);
             break;
         case CliMsg_Kafka_Configure:
@@ -943,7 +982,7 @@ static void handle_command(ClientSocket *client_socket) {
             ConfigResult *livyConf = parse_livy_config_param(result[0],result[1]);
             if (livyConf == NULL)
                     FPRINTF(global_client_socket,"configuration parameter not supported yet");
-            ConfigStatus livyStatus = set_livy_config(livyConf->canonical_name, livyConf->value);
+            ConfigStatus livyStatus = set_livy_config(livyConf->canonical_name, livyConf->value,livyConf->config_file);
             handle_result(livyStatus, livyConf->canonical_name, livyConf->value,livyConf->config_file);
             break;
        // case CliMsg_Phoenix_Configure:

@@ -244,4 +244,15 @@ extern ssize_t secure_write(Port *port, void *ptr, size_t len);
 extern ssize_t secure_raw_read(ClientSocket *client_sock, void *ptr, size_t len);
 extern ssize_t secure_raw_write(ClientSocket *client_sock, const void *ptr, size_t len);
 
+ssize_t
+be_gssapi_write(ClientSocket *client_sock, void *ptr, size_t len);
+ssize_t
+be_gssapi_read(ClientSocket *client_sock, void *ptr, size_t len);
+void
+pg_GSS_error(const char *errmsg,
+			 OM_uint32 maj_stat, OM_uint32 min_stat);
+void
+pg_store_delegated_credential(gss_cred_id_t cred);
+
+ssize_t secure_open_gssapi(ClientSocket *client_sock);
 #endif	

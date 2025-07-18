@@ -1773,6 +1773,13 @@ void install_zookeeper(char *version, char *location) {
     }
       char candidate_path[PATH_MAX];
       snprintf(candidate_path, sizeof(candidate_path), "%s/zookeeper/conf", install_dir);
+    
+    if (create_properties_file(candidate_path, "log4j.properties") !=0)
+        FPRINTF(global_client_socket,  "Failed to create properties file\n");
+        
+    if (create_properties_file(candidate_path, "zookeeper-env.properties") !=0)
+        FPRINTF(global_client_socket,  "Failed to create properties file\n");
+        
     FPRINTF(global_client_socket,  "Zookeeper installed successfully\n");
     
 }

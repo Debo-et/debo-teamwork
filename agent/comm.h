@@ -11,6 +11,8 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdbool.h>
+#include <gssapi.h>
+#include <gssapi/gssapi.h>
 
 typedef size_t Size;
 #define LONG_ALIGN_MASK (sizeof(long) - 1)
@@ -266,5 +268,19 @@ is_unixsock_path(const char *path)
 	return path;
 }
 
+typedef struct
+{
+        gss_buffer_desc outbuf;         /* GSSAPI output token buffer */
+        gss_cred_id_t cred;                     /* GSSAPI connection cred's */
+        gss_ctx_id_t ctx;                       /* GSSAPI connection context */
+        gss_name_t      name;                   /* GSSAPI client name */
+        char       *princ;                      /* GSSAPI Principal used for auth, NULL if
+                                                                 * GSSAPI auth was not used */
+        bool            auth;                   /* GSSAPI Authentication used */
+        bool            enc;                    /* GSSAPI encryption in use */
+        bool            delegated_creds;        /* GSSAPI Delegated credentials */
+} pg_gssinfo;
+bool
+set_noblock(int sock);
 
 #endif							/* PQCOMM_H */

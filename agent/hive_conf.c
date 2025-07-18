@@ -638,7 +638,9 @@ ConfigStatus modify_hive_config(const char* config_param, const char* value, con
         strcmp(configuration_file, "hive-exec-log4j2.properties") == 0 ||
         strcmp(configuration_file, "parquet-logging.properties") == 0 ||
         strcmp(configuration_file, "llap-cli-log4j2.properties") == 0 ||
-        strcmp(configuration_file, "llap-daemon-log4j.properties") == 0) {
+        strcmp(configuration_file, "llap-daemon-log4j2.properties") == 0 ||
+        strcmp(configuration_file, "atlas-application.properties") == 0 ||
+        strcmp(configuration_file, "hive-log4j2.properties") == 0) {
         configure_hadoop_property(file_path, config_param, value);
         return SUCCESS;
     }

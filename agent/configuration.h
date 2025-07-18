@@ -4,14 +4,14 @@ ConfigStatus modify_hdfs_config(const char* param, const char* value, const char
 ConfigStatus set_ranger_config(const char *param, const char *value, const char *config_file);
 ConfigStatus modify_yarn_config(const char* param, const char* value);
 ConfigStatus update_hbase_config(const char* param, const char* value, const char *config_file);
-ConfigStatus update_spark_config(const char* param, const char* value);
+ConfigStatus update_spark_config(const char *param, const char *value, const char* configuration_file);
 ConfigStatus modify_kafka_config(const char* param, const char* value, const char *config_file);
 ConfigStatus modify_zookeeper_config(const char* param, const char* value, const char *filename);
 ConfigStatus modify_storm_config(const char* param, const char* value, const char *filename);
 ConfigStatus modify_hive_config(const char* config_param, const char* value, const char* configuration_file);
 ConfigStatus set_hue_config(const char* param, const char* value);
 ConfigStatus modify_oozie_config(const char* param, const char* value);
-ConfigStatus set_livy_config(const char* param, const char* value);
+ConfigStatus set_livy_config(const char *param, const char *value, const char *filename);
 ConfigStatus update_pig_config(char *param,  char *value);
 ConfigStatus update_phoenix_config(const char* param, const char* value);
 ConfigStatus update_solr_config(const char* param, const char* value, const char* configuration_file);
@@ -51,3 +51,4 @@ ValidationResult validateKafkaConfigParam(const char *param_name, const char *va
 ValidationResult validateSparkConfigParam(const char *param_name, const char *value);
 ValidationResult validateHBaseConfigParam(const char *param_name, const char *value);
 ValidationResult validatePigConfigParam(const char *param_name, const char *value);
+void configure_target_component(Component target);

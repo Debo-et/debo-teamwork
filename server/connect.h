@@ -27,7 +27,8 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdbool.h>
-
+#include <gssapi.h>
+#include <gssapi/gssapi.h>
 
 #include "expbuffer.h"
 
@@ -84,6 +85,17 @@ typedef enum
 	CONNECTION_ALLOCATED,		/* Waiting for connection attempt to be
 								 * started.  */
 } ConnStatusType;
+
+
+typedef enum
+{
+        PGRES_POLLING_FAILED = 0,
+        PGRES_POLLING_READING,          /* These two indicate that one may        */
+        PGRES_POLLING_WRITING,          /* use select before polling again.   */
+        PGRES_POLLING_OK,
+        PGRES_POLLING_ACTIVE            /* unused; keep for backwards compatibility */
+} PollingStatusType;
+
 
 /* Conn encapsulates a connection to the backend.
  * The contents of this struct are not supposed to be known to applications.
@@ -645,6 +657,37 @@ struct pg_conn
 
 	/* Buffer for receiving various parts of messages */
 	 ExpBufferData workBuffer; /* expansible string */
+	 
+	 
+        gss_ctx_id_t gctx;                      /* GSS context */
+        gss_name_t      gtarg_nam;              /* GSS target name */
+
+        /* The following are encryption-only */
+        bool            gssenc;                 /* GSS encryption is usable */
+        gss_cred_id_t gcred;            /* GSS credential temp storage. */
+
+        /* GSS encryption I/O state --- see fe-secure-gssapi.c */
+        char       *gss_SendBuffer; /* Encrypted data waiting to be sent */
+        int                     gss_SendLength; /* End of data available in gss_SendBuffer */
+        int                     gss_SendNext;   /* Next index to send a byte from
+                                                                 * gss_SendBuffer */
+        int                     gss_SendConsumed;       /* Number of source bytes encrypted but
+                                                                         * not yet reported as sent */
+        char       *gss_RecvBuffer; /* Received, encrypted data */
+        int                     gss_RecvLength; /* End of data available in gss_RecvBuffer */
+        char       *gss_ResultBuffer;   /* Decryption of data in gss_RecvBuffer */
+        int                     gss_ResultLength;       /* End of data available in
+                                                                         * gss_ResultBuffer */
+        int                     gss_ResultNext; /* Next index to read a byte from
+                                                                 * gss_ResultBuffer */
+        uint32          gss_MaxPktSize; /* Maximum size we can encrypt and fit the
+                                                                 * results into our output buffer */
+      char       *gssdelegation;      /* Try to delegate GSS credentials? (0 or 1) */
+      bool            gssapi_used;    /* true if authenticated via gssapi */
+      char       *krbsrvname;         /* Kerberos service name */
+
+
+
 };
 
 
@@ -742,7 +785,21 @@ extern int	 WriteReady(Conn *conn);
 /* Poll a socket for reading and/or writing with an optional timeout */
 extern int      socketPoll(int sock, int forRead, int forWrite,
                                                  pg_usec_time_t end_time);
-
+extern ssize_t pg_GSS_write(Conn *conn, const void *ptr, size_t len);
+extern ssize_t pg_GSS_read(Conn *conn, void *ptr, size_t len);
+void
+pg_GSS_error(const char *mprefix, Conn *conn,
+			 OM_uint32 maj_stat, OM_uint32 min_stat);
+int
+pg_GSS_load_servicename(Conn *conn);
+bool
+pg_GSS_have_cred_cache(gss_cred_id_t *cred_out);
+ssize_t
+secure_raw_write(Conn *conn, const void *ptr, size_t len);
+ssize_t
+secure_raw_read(Conn *conn, void *ptr, size_t len);
+PollingStatusType
+pqsecure_open_gss(Conn *conn);
 
 
 /* === miscellaneous macros === */

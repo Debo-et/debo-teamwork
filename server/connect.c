@@ -1019,7 +1019,6 @@ pg_getaddrinfo_all(const char *hostname, const char *servname,
  *
  * Poll an asynchronous connection.
  *
- * Returns a PostgresPollingStatusType.
  * Before calling this function, use select(2) to determine when data
  * has arrived..
  *
@@ -1041,30 +1040,22 @@ pg_getaddrinfo_all(const char *hostname, const char *servname,
  *
  * ----------------
  */
+
 bool
 connectPoll(Conn *conn)
 {
 	char		sebuf[PG_STRERROR_R_BUFLEN];
 	int			optval;
+	int			save_whichhost;
+	int			save_whichaddr;
 
 	if (conn == NULL)
 		return false;
 
-keep_going:
-	/* Time to advance to next address, or next host if no more addresses? */
-	if (conn->try_next_addr)
-	{
-		if (conn->whichaddr < conn->naddr)
-		{
-			conn->whichaddr++;
-		}
-		else
-			conn->try_next_host = true;
-		conn->try_next_addr = false;
-	}
+	save_whichhost = conn->whichhost;
+	save_whichaddr = conn->whichaddr;
 
-	/* Time to advance to next connhost[] entry? */
-	if (conn->try_next_host)
+	for (; conn->whichhost < conn->nconnhost; conn->whichhost++)
 	{
 		pg_conn_host *ch;
 		struct addrinfo hint;
@@ -1072,11 +1063,6 @@ keep_going:
 		int			thisport;
 		int			ret;
 		char		portstr[MAXPGPATH];
-
-		if (conn->whichhost + 1 < conn->nconnhost)
-			conn->whichhost++;
-		else
-			goto error_return;
 
 		ch = &conn->connhost[conn->whichhost];
 		MemSet(&hint, 0, sizeof(hint));
@@ -1093,7 +1079,7 @@ keep_going:
 			if (thisport < 1 || thisport > 65535)
 			{
 				db_append_conn_error(conn, "invalid port number: \"%s\"", ch->port);
-				goto keep_going;
+				continue;
 			}
 		}
 		snprintf(portstr, sizeof(portstr), "%d", thisport);
@@ -1105,8 +1091,8 @@ keep_going:
 				if (ret || !addrlist)
 				{
 					db_append_conn_error(conn, "could not translate host name \"%s\" to address: %s",
-											ch->host, gai_strerror(ret));
-					goto keep_going;
+										 ch->host, gai_strerror(ret));
+					continue;
 				}
 				break;
 
@@ -1116,8 +1102,8 @@ keep_going:
 				if (ret || !addrlist)
 				{
 					db_append_conn_error(conn, "could not parse network address \"%s\": %s",
-											ch->hostaddr, gai_strerror(ret));
-					goto keep_going;
+										 ch->hostaddr, gai_strerror(ret));
+					continue;
 				}
 				break;
 
@@ -1128,187 +1114,243 @@ keep_going:
 				if (ret || !addrlist)
 				{
 					db_append_conn_error(conn, "could not translate Unix-domain socket path \"%s\" to address: %s",
-											portstr, gai_strerror(ret));
-					goto keep_going;
+										 portstr, gai_strerror(ret));
+					continue;
 				}
 				break;
+
+			default:
+				continue;
 		}
 
 		if (store_conn_addrinfo(conn, addrlist))
-			goto error_return;
-		conn->try_next_host = false;
-	}
-
-	if (conn->status != CONNECTION_NEEDED)
-	{
-		db_append_conn_error(conn,
-								"invalid connection state %d, probably indicative of memory corruption",
-								conn->status);
-		goto error_return;
-	}
-
-	{
-		char		host_addr[NI_MAXHOST];
-		int			sock_type;
-		AddrInfo   *addr_cur;
-
-		if (conn->whichaddr == conn->naddr)
 		{
-			conn->try_next_host = true;
-			goto keep_going;
+			//pg_freeaddrinfo_all(hint.ai_family, addrlist);
+			continue;
 		}
-		addr_cur = &conn->addr[conn->whichaddr];
-		memcpy(&conn->raddr, &addr_cur->addr, sizeof(SockAddr));
 
-		if (conn->connip != NULL)
+		for (conn->whichaddr = (conn->whichhost == save_whichhost) ? save_whichaddr : 0;
+			 conn->whichaddr < conn->naddr;
+			 conn->whichaddr++)
 		{
-			free(conn->connip);
-			conn->connip = NULL;
-		}
-		getHostaddr(conn, host_addr, NI_MAXHOST);
-		if (host_addr[0])
-			conn->connip = strdup(host_addr);
+			char		host_addr[NI_MAXHOST];
+			int			sock_type;
+			AddrInfo   *addr_cur;
 
-		sock_type = SOCK_STREAM;
-#ifdef SOCK_CLOEXEC
-		sock_type |= SOCK_CLOEXEC;
-#endif
-#ifdef SOCK_NONBLOCK
-		sock_type |= SOCK_NONBLOCK;
-#endif
-		conn->sock = socket(addr_cur->family, sock_type, 0);
-		if (conn->sock == PGINVALID_SOCKET)
-		{
-			int			errorno = SOCK_ERRNO;
+			addr_cur = &conn->addr[conn->whichaddr];
+			memcpy(&conn->raddr, &addr_cur->addr, sizeof(SockAddr));
 
-			if (conn->whichaddr < conn->naddr || conn->whichhost + 1 < conn->nconnhost)
+			if (conn->connip != NULL)
 			{
-				conn->try_next_addr = true;
-				goto keep_going;
+				free(conn->connip);
+				conn->connip = NULL;
 			}
-			db_append_conn_error(conn, "could not create socket: %s",
-									SOCK_STRERROR(errorno, sebuf, sizeof(sebuf)));
-			goto error_return;
-		}
+			getHostaddr(conn, host_addr, NI_MAXHOST);
+			if (host_addr[0])
+				conn->connip = strdup(host_addr);
 
-		if (addr_cur->family != AF_UNIX && !connectNoDelay(conn))
-		{
-			conn->try_next_addr = true;
-			goto keep_going;
-		}
+			sock_type = SOCK_STREAM;
+#ifdef SOCK_CLOEXEC
+			sock_type |= SOCK_CLOEXEC;
+#endif
+			conn->sock = socket(addr_cur->family, sock_type, 0);
+			if (conn->sock == PGINVALID_SOCKET)
+			{
+				int			errorno = SOCK_ERRNO;
+				db_append_conn_error(conn, "could not create socket: %s",
+									 SOCK_STRERROR(errorno, sebuf, sizeof(sebuf)));
+				continue;
+			}
+
+			if (addr_cur->family != AF_UNIX && !connectNoDelay(conn))
+			{
+				close(conn->sock);
+				conn->sock = PGINVALID_SOCKET;
+				continue;
+			}
 
 #ifndef SOCK_NONBLOCK
-		if (!pg_set_noblock(conn->sock))
-		{
-			db_append_conn_error(conn, "could not set socket to nonblocking mode: %s",
-									SOCK_STRERROR(SOCK_ERRNO, sebuf, sizeof(sebuf)));
-			conn->try_next_addr = true;
-			goto keep_going;
-		}
+		//	if (!pg_set_noblock(conn->sock))
+		//	{
+		//		db_append_conn_error(conn, "could not set socket to nonblocking mode: %s",
+		//							 SOCK_STRERROR(SOCK_ERRNO, sebuf, sizeof(sebuf)));
+		//		close(conn->sock);
+		//		conn->sock = PGINVALID_SOCKET;
+		//		continue;
+		//	}
 #endif
+int flags = fcntl(conn->sock, F_GETFL, 0);
+fcntl(conn->sock, F_SETFL, flags & ~O_NONBLOCK);  // Disable non-blocking mode
+
 
 #ifndef SOCK_CLOEXEC
 #ifdef F_SETFD
-		if (fcntl(conn->sock, F_SETFD, FD_CLOEXEC) == -1)
-		{
-			db_append_conn_error(conn, "could not set socket to close-on-exec mode: %s",
-									SOCK_STRERROR(SOCK_ERRNO, sebuf, sizeof(sebuf)));
-			conn->try_next_addr = true;
-			goto keep_going;
-		}
+			if (fcntl(conn->sock, F_SETFD, FD_CLOEXEC) == -1)
+			{
+				db_append_conn_error(conn, "could not set socket to close-on-exec mode: %s",
+									 SOCK_STRERROR(SOCK_ERRNO, sebuf, sizeof(sebuf)));
+				close(conn->sock);
+				conn->sock = PGINVALID_SOCKET;
+				continue;
+			}
 #endif
 #endif
 
-		conn->sigpipe_so = false;
+			conn->sigpipe_so = false;
 #ifdef MSG_NOSIGNAL
-		conn->sigpipe_flag = true;
+			conn->sigpipe_flag = true;
 #else
-		conn->sigpipe_flag = false;
+			conn->sigpipe_flag = false;
 #endif
 
 #ifdef SO_NOSIGPIPE
-		optval = 1;
-		if (setsockopt(conn->sock, SOL_SOCKET, SO_NOSIGPIPE,
-					   (char *) &optval, sizeof(optval)) == 0)
-		{
-			conn->sigpipe_so = true;
-			conn->sigpipe_flag = false;
-		}
+			optval = 1;
+			if (setsockopt(conn->sock, SOL_SOCKET, SO_NOSIGPIPE,
+						   (char *) &optval, sizeof(optval)) == 0)
+			{
+				conn->sigpipe_so = true;
+				conn->sigpipe_flag = false;
+			}
 #endif
 
-		if (connect(conn->sock, (struct sockaddr *) &addr_cur->addr.addr,
-					addr_cur->addr.salen) < 0)
-		{
-			if (SOCK_ERRNO == EINPROGRESS ||
-#ifdef WIN32
-				SOCK_ERRNO == EWOULDBLOCK ||
-#endif
-				SOCK_ERRNO == EINTR)
+			while (connect(conn->sock, (struct sockaddr *) &addr_cur->addr.addr,
+						   addr_cur->addr.salen) < 0)
+			{
+				if (errno == EINTR)
+					continue;
+				connectFailureMessage(conn, errno);
+				close(conn->sock);
+				conn->sock = PGINVALID_SOCKET;
+				break;
+			}
+
+			if (conn->sock == PGINVALID_SOCKET)
+				continue;
+
+			socklen_t	optlen = sizeof(optval);
+			if (getsockopt(conn->sock, SOL_SOCKET, SO_ERROR,
+						   (char *) &optval, &optlen) == -1)
+			{
+				db_append_conn_error(conn, "could not get socket error status: %s",
+									 SOCK_STRERROR(SOCK_ERRNO, sebuf, sizeof(sebuf)));
+				close(conn->sock);
+				conn->sock = PGINVALID_SOCKET;
+				continue;
+			}
+			else if (optval != 0)
+			{
+				connectFailureMessage(conn, optval);
+				close(conn->sock);
+				conn->sock = PGINVALID_SOCKET;
+				continue;
+			}
+
+			conn->laddr.salen = sizeof(conn->laddr.addr);
+			if (getsockname(conn->sock,
+							(struct sockaddr *) &conn->laddr.addr,
+							&conn->laddr.salen) < 0)
+			{
+				db_append_conn_error(conn, "could not get client address from socket: %s",
+									 SOCK_STRERROR(SOCK_ERRNO, sebuf, sizeof(sebuf)));
+				close(conn->sock);
+				conn->sock = PGINVALID_SOCKET;
+				continue;
+			}
+
+			if (conn->requirepeer && conn->requirepeer[0] &&
+				conn->raddr.addr.ss_family == AF_UNIX)
+			{
+				uid_t		uid;
+				gid_t		gid;
+
+				errno = 0;
+				if (getpeereid(conn->sock, &uid, &gid) != 0)
+				{
+					if (errno == ENOSYS)
+						db_append_conn_error(conn, "requirepeer parameter is not supported on this platform");
+					else
+						db_append_conn_error(conn, "could not get peer credentials: %s",
+											 strerror_r(errno, sebuf, sizeof(sebuf)));
+					close(conn->sock);
+					conn->sock = PGINVALID_SOCKET;
+					continue;
+				}
+				Assert(false);
+			}
+
+			PollingStatusType gss_status;
+			bool		gss_done = false;
+			bool		gss_success = false;
+			
+
+			while (!gss_done)
+			{
+				gss_status = pqsecure_open_gss(conn);
+
+				switch (gss_status)
+				{
+					case PGRES_POLLING_OK:
+						gss_done = true;
+						gss_success = true;
+						break;
+
+					case PGRES_POLLING_READING:
+					case PGRES_POLLING_WRITING:
+						{
+							fd_set		read_fds;
+							fd_set		write_fds;
+							int			nfds = conn->sock + 1;
+
+							FD_ZERO(&read_fds);
+							FD_ZERO(&write_fds);
+
+							if (gss_status == PGRES_POLLING_READING)
+								FD_SET(conn->sock, &read_fds);
+							else
+								FD_SET(conn->sock, &write_fds);
+
+							if (select(nfds, &read_fds, &write_fds, NULL, NULL) < 0)
+							{
+								if (errno == EINTR)
+									continue;
+								db_append_conn_error(conn, "select() failed: %s",
+													 strerror(errno));
+								gss_done = true;
+							}
+						}
+						break;
+
+					case PGRES_POLLING_FAILED:
+						gss_done = true;
+						break;
+
+					default:
+						db_append_conn_error(conn, "unexpected GSSAPI polling status: %d",
+											 (int) gss_status);
+						gss_done = true;
+						break;
+				}
+			}
+
+			if (gss_success)
 			{
 				conn->status = CONNECTION_STARTED;
 				return true;
 			}
-			connectFailureMessage(conn, SOCK_ERRNO);
-			conn->try_next_addr = true;
-			goto keep_going;
-		}
-		else
-		{
-			conn->status = CONNECTION_STARTED;
-			goto keep_going;
-		}
-	}
-
-	socklen_t	optlen = sizeof(optval);
-
-	if (getsockopt(conn->sock, SOL_SOCKET, SO_ERROR,
-				   (char *) &optval, &optlen) == -1)
-	{
-		db_append_conn_error(conn, "could not get socket error status: %s",
-								SOCK_STRERROR(SOCK_ERRNO, sebuf, sizeof(sebuf)));
-		goto error_return;
-	}
-	else if (optval != 0)
-	{
-		connectFailureMessage(conn, optval);
-		conn->try_next_addr = true;
-		goto keep_going;
-	}
-
-	conn->laddr.salen = sizeof(conn->laddr.addr);
-	if (getsockname(conn->sock,
-					(struct sockaddr *) &conn->laddr.addr,
-					&conn->laddr.salen) < 0)
-	{
-		db_append_conn_error(conn, "could not get client address from socket: %s",
-								SOCK_STRERROR(SOCK_ERRNO, sebuf, sizeof(sebuf)));
-		goto error_return;
-	}
-
-	if (conn->requirepeer && conn->requirepeer[0] &&
-		conn->raddr.addr.ss_family == AF_UNIX)
-	{
-		uid_t		uid;
-		gid_t		gid;
-
-		errno = 0;
-		if (getpeereid(conn->sock, &uid, &gid) != 0)
-		{
-			if (errno == ENOSYS)
-				db_append_conn_error(conn, "requirepeer parameter is not supported on this platform");
 			else
-				db_append_conn_error(conn, "could not get peer credentials: %s",
-										strerror_r(errno, sebuf, sizeof(sebuf)));
-			goto error_return;
+			{
+				close(conn->sock);
+				conn->sock = PGINVALID_SOCKET;
+			}
 		}
-		Assert(false);
 	}
 
 error_return:
+	conn->whichhost = save_whichhost;
+	conn->whichaddr = save_whichaddr;
 	conn->status = CONNECTION_BAD;
 	return false;
 }
-
 
 /*
  * MakeEmptyConn

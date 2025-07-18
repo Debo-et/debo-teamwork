@@ -867,7 +867,7 @@ const char* component_to_string(Component comp) {
         case FLINK: return "Flink";
 
         // Hadoop
-        case HDFS: return "hdfs";
+        case HDFS: return "HDFS";
         // HBase
         case HBASE: return "Hbase";
 

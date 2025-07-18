@@ -8,9 +8,6 @@ void configure_target_component(Component target) {
 	switch(target) {
 		// HDFS Configuration
 		case HDFS:
-			if (start_stdout_capture() != 0) {
-				exit(EXIT_FAILURE);
-			}
 			//	 ZooKeeper Failover Controller settings
 			status = modify_hdfs_config("ha.failover-controller.active-standby-elector.zk.op.retries", "120", "hdfs-site.xml");
 			handle_result(status, "ha.failover-controller.active-standby-elector.zk.op.retries", "120", "hdfs-site.xml");
@@ -1225,14 +1222,10 @@ void configure_target_component(Component target) {
 			handle_result(status, "yarn.resource-types", "", "resource-types.xml");
 			status = modify_hdfs_config("yarn.resource-types.yarn.io_gpu.maximum-allocation", "8", "resource-types.xml");
 			handle_result(status, "yarn.resource-types.yarn.io_gpu.maximum-allocation", "8", "resource-types.xml");
-			stop_stdout_capture();
 			break;
 
 			//			 HBase Configuration
 		case HBASE:
-			if (start_stdout_capture() != 0) {
-				exit(EXIT_FAILURE);
-			}
 			//			 Update simple properties in hbase-site.xml
 			status = update_hbase_config("hbase_log_maxfilesize", "256", "hbase-site.xml");
 			handle_result(status, "hbase_log_maxfilesize", "256", "hbase-site.xml");
@@ -1533,14 +1526,12 @@ void configure_target_component(Component target) {
 			handle_result(status, "ranger.plugin.hbase.policy.cache.dir", "/etc/ranger/{{repo_name}}/policycache", "ranger-hbase-security.xml");
 			status = update_hbase_config("xasecure.hbase.update.xapolicies.on.grant.revoke", "true", "ranger-hbase-security.xml");
 			handle_result(status, "xasecure.hbase.update.xapolicies.on.grant.revoke", "true", "ranger-hbase-security.xml");
-			stop_stdout_capture();
+
 			break;
 
 			//			 Hive Configuration
 		case HIVE:
-			if (start_stdout_capture() != 0) {
-				exit(EXIT_FAILURE);
-			}
+
 			status = modify_hive_config("status", "INFO", "beeline-log4j2.properties");
 			handle_result(status, "status", "INFO", "beeline-log4j2.properties");
 			status = modify_hive_config("name", "BeelineLog4j2", "beeline-log4j2.properties");
@@ -2845,14 +2836,12 @@ void configure_target_component(Component target) {
 			handle_result(status, "rootLogger.appenderRefs", "root", "llap-daemon-log4j2.properties");
 			status = modify_hive_config("rootLogger.appenderRef.root.ref", "${sys:llap.daemon.root.logger}", "llap-daemon-log4j2.properties");
 			handle_result(status, "rootLogger.appenderRef.root.ref", "${sys:llap.daemon.root.logger}", "llap-daemon-log4j2.properties");
-			stop_stdout_capture();
+
 			break;
 
 			//	 Kafka Configuration
 		case KAFKA:
-			if (start_stdout_capture() != 0) {
-				exit(EXIT_FAILURE);
-			}
+
 			//	 Update Kafka configuration parameters in 'server.properties'
 			status = modify_kafka_config("log.dirs", "/kafka-logs", "server.properties");
 			handle_result(status, "log.dirs", "/kafka-logs", "server.properties");
@@ -3466,14 +3455,12 @@ void configure_target_component(Component target) {
 			handle_result(status, "external.kafka.metrics.include.prefix", "kafka.network.RequestMetrics.ResponseQueueTimeMs.request.OffsetCommit.98percentile,kafka.network.RequestMetrics.ResponseQueueTimeMs.request.Offsets.95percentile,kafka.network.RequestMetrics.ResponseSendTimeMs.request.Fetch.95percentile,kafka.network.RequestMetrics.RequestsPerSec.request", "server.properties");
 			status = modify_kafka_config("producer.metrics.enable", "false", "server.properties");
 			handle_result(status, "producer.metrics.enable", "false", "server.properties");
-			stop_stdout_capture();
+
 			break;
 
 			//	 Livy Configuration
 		case LIVY:
-			if (start_stdout_capture() != 0) {
-				exit(EXIT_FAILURE);
-			}
+
 			const char *config_file_livy= "livy.conf";
 			//		 Update Livy environment setting
 			status = set_livy_config("livy.environment", "production", config_file_livy);
@@ -3644,29 +3631,25 @@ void configure_target_component(Component target) {
 					"livy.rsc.server.idle_timeout\n", 
 					config_file_livy
 				     );
-			stop_stdout_capture();
+
 
 			break;
 
 			//	 Storm Configuration
 		case STORM:
-			if (start_stdout_capture() != 0) {
-				exit(EXIT_FAILURE);
-			}
+
 			status = modify_storm_config("storm.zookeeper.servers", "[\"localhost\"]", "storm.yaml");
 			handle_result(status, "storm.zookeeper.servers", "[\"localhost\"]", "storm.yaml");
 			status = modify_storm_config("nimbus.seeds", "[\"localhost\"]", "storm.yaml");
 			handle_result(status, "nimbus.seeds", "[\"localhost\"]", "storm.yaml");
 			status = modify_storm_config("supervisor.slots.ports", "[6700, 6701, 6702, 6703]", "storm.yaml");
 			handle_result(status, "supervisor.slots.ports", "[6700, 6701, 6702, 6703]", "storm.yaml");
-			stop_stdout_capture();
+
 			break;
 
 			//	 Pig Configuration
 		case PIG:
-			if (start_stdout_capture() != 0) {
-				exit(EXIT_FAILURE);
-			}
+
 			status = update_pig_config("pig.default.mapred.partitioner", 
 					"org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.PigTotalOrderPartitioner");
 			handle_result(status, "pig.default.mapred.partitioner", 
@@ -3676,28 +3659,23 @@ void configure_target_component(Component target) {
 			handle_result(status, "pig.tmpfilecompression", "true", "pig.properties");
 			status = update_pig_config("pig.maxCombinedSplitSize", "134217728");
 			handle_result(status, "pig.maxCombinedSplitSize", "134217728", "pig.properties");
-			stop_stdout_capture();
 			break;
 
 			//	 Presto Configuration
 		case PRESTO:
-			if (start_stdout_capture() != 0) {
-				exit(EXIT_FAILURE);
-			}
+
 			status = set_presto_config("http-server.http.port", "8080", "config.properties");
 			handle_result(status, "http-server.http.port", "8080", "config.properties");
 			status = set_presto_config("query.max-memory", "8GB", "config.properties");
 			handle_result(status, "query.max-memory", "8GB", "config.properties");
 			status = set_presto_config("discovery.uri", "http:localhost:8080", "config.properties");
 			handle_result(status, "discovery.uri", "http:localhost:8080", "config.properties");
-			stop_stdout_capture();
+
 			break;
 
 			//	 Atlas Configuration
 		case ATLAS:
-			if (start_stdout_capture() != 0) {
-				exit(EXIT_FAILURE);
-			}
+
 			status = update_atlas_config("atlas.graph.storage.backend", "hbase", "atlas-application.properties");
 			handle_result(status, "atlas.graph.storage.backend", "hbase", "atlas-application.properties");
 			status = update_atlas_config("atlas.graph.storage.hostname", "localhost:2181", "atlas-application.properties");
@@ -3710,28 +3688,24 @@ void configure_target_component(Component target) {
 			handle_result(status, "atlas.graph.index.search.solr.zookeeper-url", "localhost:2181/solr", "atlas-application.properties");
 			status = update_atlas_config("atlas.audit.hbase.zookeeper.quorum", "localhost", "atlas-application.properties");
 			handle_result(status, "atlas.audit.hbase.zookeeper.quorum", "localhost", "atlas-application.properties");
-			stop_stdout_capture();
+
 			break;
 			//
 			//			 Ranger Configuration
 		case RANGER:
-			if (start_stdout_capture() != 0) {
-				exit(EXIT_FAILURE);
-			}
+
 			status = set_ranger_config("ranger.jpa.jdbc.url", "jdbc:mysql:localhost/ranger", "install.properties");
 			handle_result(status, "ranger.jpa.jdbc.url", "jdbc:mysql:localhost/ranger", "install.properties");
 			status = set_ranger_config("ranger.jpa.jdbc.user", "rangeradmin", "install.properties");
 			handle_result(status, "ranger.jpa.jdbc.user", "rangeradmin", "install.properties");
 			status = set_ranger_config("ranger.jpa.jdbc.password", "rangeradmin", "install.properties");
 			handle_result(status, "ranger.jpa.jdbc.password", "rangeradmin", "install.properties");
-			stop_stdout_capture();
+
 			break;
 
 			//			 Solr Configuration
 		case SOLR:
-			if (start_stdout_capture() != 0) {
-				exit(EXIT_FAILURE);
-			}
+
 			//			 Update Solr configuration parameters (from XML translation)
 			status = update_solr_config("log_maxfilesize", "10", "solr_ambari_config.xml");
 			handle_result(status, "update_solr_config: log_maxfilesize", "10", "solr_ambari_config.xml");
@@ -3763,14 +3737,12 @@ void configure_target_component(Component target) {
 			//			 Updates the Solr XML template configuration (external file reference)
 			status = update_solr_config("content", "", "solr_config.xml");
 			handle_result(status, "update_solr_config: content", "", "solr_config.xml");
-			stop_stdout_capture();
+
 			break;
 
 			//			 Spark Configuration
 		case SPARK:
-			if (start_stdout_capture() != 0) {
-				exit(EXIT_FAILURE);
-			}
+
 			const char* config_file ="spark-defaults.conf";
 			const char* log4j_config_file ="spark-log4j.properties";
 			const char* metrics_config_file = "spark-metrics.properties";
@@ -3980,14 +3952,11 @@ void configure_target_component(Component target) {
 			handle_result(status, "update_spark_config: hive.load.data.owner", "spark", hive_site_file);
 			status = update_spark_config("hive.exec.scratchdir", "/tmp/spark", hive_site_file);
 			handle_result(status, "update_spark_config: hive.exec.scratchdir", "/tmp/spark", hive_site_file);
-			stop_stdout_capture();
 			break;
 
 			//Tez Configuration
 		case TEZ:
-			if (start_stdout_capture() != 0) {
-				exit(EXIT_FAILURE);
-			}
+
 			//	 Update Tez configuration parameters
 			status = modify_tez_config("tez.lib.uris.classpath", "{{hadoop_conf_dir}},{{hadoop_home}}/*,{{hadoop_home}}/lib/*,{{hadoop_hdfs_home}}/*,{{hadoop_hdfs_home}}/lib/*,{{hadoop_yarn_home}}/*,{{hadoop_yarn_home}}/lib/*,{{tez_home}}/*,{{tez_home}}/lib/*,{{tez_conf_dir}}", "tez-site.xml");
 			handle_result(status, "modify_tez_config: tez.lib.uris.classpath", "{{hadoop_conf_dir}},{{hadoop_home}}/*,{{hadoop_home}}/lib/*,{{hadoop_hdfs_home}}/*,{{hadoop_hdfs_home}}/lib/*,{{hadoop_yarn_home}}/*,{{hadoop_yarn_home}}/lib/*,{{tez_home}}/*,{{tez_home}}/lib/*,{{tez_conf_dir}}", "tez-site.xml");
@@ -4144,15 +4113,12 @@ void configure_target_component(Component target) {
 
 			status = modify_tez_config("yarn.timeline-service.enabled", "false", "tez-site.xml");
 			handle_result(status, "modify_tez_config: yarn.timeline-service.enabled", "false", "tez-site.xml");
-			stop_stdout_capture();
 
 			break;
 
 			//		 Zeppelin Configuration
 		case ZEPPELIN:
-			if (start_stdout_capture() != 0) {
-				exit(EXIT_FAILURE);
-			}
+
 			char const* filename = "zeppelin-site.xml";
 			//		 Update Zeppelin configuration parameters
 			status = set_zeppelin_config(filename, "zeppelin.server.addr", "0.0.0.0");
@@ -4341,14 +4307,12 @@ void configure_target_component(Component target) {
 
 			status = set_zeppelin_config("zeppelin-shiro.ini", "urls./**", "authc");
 			handle_result(status, "urls./**", "authc", "zeppelin-shiro.ini");
-			stop_stdout_capture();
+
 			break;
 
 			//		 ZooKeeper Configuration
 		case ZOOKEEPER:
-			if (start_stdout_capture() != 0) {
-				exit(EXIT_FAILURE);
-			}
+
 			status = modify_zookeeper_config("tickTime", "3000", "zoo.cfg");
 			handle_result(status, "modify_zookeeper_config: tickTime", "3000", "zoo.cfg");
 
@@ -4453,14 +4417,11 @@ void configure_target_component(Component target) {
 					"%d{ISO8601} - %-5p [%t:%C{1}@%L] - %m%n",
 					"log4j.properties"
 				     );
-			stop_stdout_capture();
 			break;
 
 			//		 Flink Configuration
 		case FLINK:
-			if (start_stdout_capture() != 0) {
-				exit(EXIT_FAILURE);
-			}
+
 			status = update_flink_config("jobmanager.archive.fs.dir", "hdfs:/completed-jobs/", "config.yaml");
 			handle_result(status, "jobmanager.archive.fs.dir", "hdfs:/completed-jobs/", "config.yaml");
 			status = update_flink_config("historyserver.archive.fs.dir", "hdfs:/completed-jobs/", "config.yaml");
@@ -4764,14 +4725,12 @@ void configure_target_component(Component target) {
 			handle_result(status, "logger.runtimeleader.name", "org.apache.flink.runtime.leaderretrieval.ZooKeeperLeaderRetrievalDriver", "log4j-session.properties");
 			status = update_flink_config("logger.runtimeleader.level", "WARN", "log4j-session.properties");
 			handle_result(status, "logger.runtimeleader.level", "WARN", "log4j-session.properties");
-			stop_stdout_capture();
+
 			break;
 
 		default:
 			fprintf(stderr, "Unsupported component: %d\n", target);
 			break;
 	}
-}
-
-
+	}
 

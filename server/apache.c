@@ -1563,11 +1563,6 @@ char *version , char *config_param , char *value) {
 
 
 
-
-
-
-
-
 void
 print_inBuffer(const Conn *conn)
 {
@@ -1613,6 +1608,27 @@ print_inBuffer(const Conn *conn)
     printf("\n");
 }
 
+// Helper function to get required reads for INSTALL based on component
+static int get_required_reads_for_install(Component comp) {
+    const char *comp_str = component_to_string(comp);
+    if (strcasecmp(comp_str, "HDFS") == 0) return 534;
+    if (strcasecmp(comp_str, "HBASE") == 0) return 133;
+    if (strcasecmp(comp_str, "HIVE") == 0) return 566;
+    if (strcasecmp(comp_str, "KAFKA") == 0) return 246;
+    if (strcasecmp(comp_str, "LIVY") == 0) return 37;
+    if (strcasecmp(comp_str, "STORM") == 0) return 4;
+    if (strcasecmp(comp_str, "PIG") == 0) return 4;
+    if (strcasecmp(comp_str, "PRESTO") == 0) return 4;
+    if (strcasecmp(comp_str, "ATLAS") == 0) return 7;
+    if (strcasecmp(comp_str, "RANGER") == 0) return 4;
+    if (strcasecmp(comp_str, "SOLR") == 0) return 14;
+    if (strcasecmp(comp_str, "SPARK") == 0) return 72;
+    if (strcasecmp(comp_str, "TEZ") == 0) return 53;
+    if (strcasecmp(comp_str, "ZEPPELIN") == 0) return 62;
+    if (strcasecmp(comp_str, "ZOOKEEPER") == 0) return 32;
+    if (strcasecmp(comp_str, "FLINK") == 0) return 147;
+    return 1; // Default for unknown components
+}
 static void handle_remote_components(bool ALL, Component component, Action action,
 char *version , char *config_param , char *value) {
     Conn* conn = connect_to_debo(host, port);
@@ -1654,7 +1670,13 @@ char *version , char *config_param , char *value) {
         SendComponentActionCommand(component, action, version, config_param, value, conn);
           // Single read for non-INSTALL actions
             reset_connection_buffers(conn);
-            int dataResult;
+        if (action == INSTALL && !dependency) {
+              if (start_stdout_capture() != 0) {
+                        exit(EXIT_FAILURE);
+               }
+            int num_reads = get_required_reads_for_install(component);
+            for (int i = 0; i < num_reads; i++) {
+                int dataResult;
             do {
                 dataResult = ReadData(conn);
                 if (dataResult < 0) {
@@ -1663,10 +1685,51 @@ char *version , char *config_param , char *value) {
                 }
             } while (dataResult <= 0);
             printTextBlock(conn->inBuffer + conn->inStart, BOLD GREEN, YELLOW);
-        if (action == INSTALL)
-        {
-            configure_target_remote_component(component, host, port);
+            }
+            stop_stdout_capture();
+        } else if (!dependency){
+            int dataResult;
+            do {
+                dataResult = ReadData(conn);
+                if (dataResult < 0) {
+                    fprintf(stderr, "Failed to read from socket\n");
+                    break;
+                }
+            } while (dataResult <= 0);
+              printTextBlock(conn->inBuffer + conn->inStart, BOLD GREEN, YELLOW);
         }
+        else 
+        {
+        // Calculate total iterations = (sum of reads for all dependencies) + (dependency count)
+       int dep_count = 0;
+       Component* dependencies = get_dependencies(component, &dep_count);
+       int total_iterations = dep_count;  // Start with count of dependencies
+
+// Sum required reads for each dependency
+       for (int i = 0; i < dep_count; i++) {
+           total_iterations += get_required_reads_for_install(dependencies[i]);
+       }
+
+       // Execute reading loop for total_iterations
+       int has_error = 0;
+       for (int i = 0; i < total_iterations && !has_error; i++) {
+           int dataResult;
+           do {
+               dataResult = ReadData(conn);
+               if (dataResult < 0) {
+                   fprintf(stderr, "Failed to read from socket\n");
+                   has_error = 1;
+                   break;
+               }
+           } while (dataResult <= 0);
+
+           if (!has_error) {
+               printTextBlock(conn->inBuffer + conn->inStart, BOLD GREEN, YELLOW);
+  
+           }
+         }
+       }
+
  
         if (PutMsgStart(CliMsg_Finish, conn) < 0) {
             fprintf(stderr, "Failed to send finish message\n");

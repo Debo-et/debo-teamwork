@@ -30,7 +30,6 @@
  *		peekbyte		- peek at next byte from connection
  *		flush		- flush pending output
  *		flush_if_writable - flush pending output if writable without blocking
- *		getbyte_if_available - get a byte if available without blockin
  *
  *------------------------
  */
@@ -726,6 +725,7 @@ AcceptConnection(int server_fd, ClientSocket *client_sock)
     return STATUS_OK;
 }
 
+
 /* --------------------------------
  *		recvbuf - load some bytes into the input buffer
  *
@@ -756,7 +756,7 @@ recvbuf(ClientSocket *client_sock)
 
 		errno = 0;
 
-		r = secure_raw_read(client_sock , DbRecvBuffer + DbRecvLength,
+		r = be_gssapi_read(client_sock , DbRecvBuffer + DbRecvLength,
 						RECV_BUFFER_SIZE - DbRecvLength);
 
 		if (r < 0)
@@ -1005,7 +1005,7 @@ internal_flush_buffer(ClientSocket *client_sock , const char *buf, size_t *start
 	{
 		int			r;
 
-		r = secure_raw_write(client_sock ,(char *) bufptr, bufend - bufptr);
+		r = be_gssapi_write(client_sock ,(char *) bufptr, bufend - bufptr);
 
 		if (r <= 0)
 		{

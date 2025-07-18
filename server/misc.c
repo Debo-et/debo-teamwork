@@ -776,7 +776,7 @@ ReadData(Conn *conn)
 
 	/* OK, try to read some data */
 retry3:
-	nread = secure_raw_read(conn, conn->inBuffer + conn->inEnd,
+	nread = pg_GSS_read(conn, conn->inBuffer + conn->inEnd,
 						  conn->inBufSize - conn->inEnd);
 	if (nread < 0)
 	{
@@ -851,7 +851,7 @@ retry3:
 	 * arrived.
 	 */
 retry4:
-	nread = secure_raw_read(conn, conn->inBuffer + conn->inEnd,
+	nread = pg_GSS_read(conn, conn->inBuffer + conn->inEnd,
 						  conn->inBufSize - conn->inEnd);
 	if (nread < 0)
 	{
@@ -967,7 +967,7 @@ SendSome(Conn *conn, int len)
 		int			sent;
 
 #ifndef WIN32
-		sent = secure_raw_write(conn, ptr, len);
+		sent = pg_GSS_write(conn, ptr, len);
 #else
 
 		/*
@@ -975,7 +975,7 @@ SendSome(Conn *conn, int len)
 		 * failure-point appears to be different in different versions of
 		 * Windows, but 64k should always be safe.
 		 */
-		sent = secure_raw_write(conn, ptr, Min(len, 65536));
+		sent = pg_GSS_write(conn, ptr, Min(len, 65536));
 #endif
 
 		if (sent < 0)

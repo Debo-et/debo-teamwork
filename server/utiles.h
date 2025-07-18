@@ -32,6 +32,11 @@ extern const char       *host;
 extern const char       *user;
 extern char *password ;
 
+#define STATUS_OK                               (0)
+#define STATUS_ERROR                    (-1)
+#define STATUS_EOF                              (-2)
+
+
 typedef enum {
     // Flink components
     NONE,
@@ -271,5 +276,4 @@ int create_conf_file(const char *directory_path, const char *conf_file_name);
 int start_stdout_capture(void);
 int stop_stdout_capture(void);
 char* get_component_config_path(Component comp, const char* config_filename);
-
 #endif

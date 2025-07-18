@@ -146,20 +146,20 @@ static const ConfigParam hdfs_configs[] = {
     {"ranger.plugin.hdfs.policy.rest.client.connection.timeoutMs", "^ranger\\.plugin\\.hdfs\\.policy\\.rest\\.client\\.connection\\.timeoutMs$", "ranger-hdfs-security.xml"},
     {"ranger.plugin.hdfs.policy.rest.client.read.timeoutMs", "^ranger\\.plugin\\.hdfs\\.policy\\.rest\\.client\\.read\\.timeoutMs$", "ranger-hdfs-security.xml"},
     {"xasecure.add-hadoop-authorization", "^xasecure\\.add-hadoop-authorization$", "ranger-hdfs-security.xml"},
-    {"log4j.rootLogger", "^log4j\\.rootLogger$", "log4j.properties"},
-    {"log4j.threshhold", "^log4j\\.threshhold$", "log4j.properties"},
-    {"log4j.appender.stdout", "^log4j\\.appender\\.stdout$", "log4j.properties"}, 
-    {"log4j.appender.stdout.layout", "^log4j\\.appender\\.stdout\\.layout$", "log4j.properties"}, 
-    {"log4j.appender.stdout.layout.ConversionPattern", "^log4j\\.appender\\.stdout\\.layout\\.ConversionPattern$", "log4j.properties"},
-    {"log4j.appender.subprocess", "^log4j\\.appender\\.subprocess$", "log4j.properties"}, 
-    {"log4j.appender.subprocess.layout", "^log4j\\.appender\\.subprocess\\.layout$", "log4j.properties"}, 
-    {"log4j.appender.subprocess.layout.ConversionPattern", "^log4j\\.appender\\.subprocess\\.layout\\.ConversionPattern$", "log4j.properties"}, {"log4j.logger.org.apache.hadoop.yarn.registry", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.yarn\\.registry$", "log4j.properties"}, {"log4j.logger.org.apache.hadoop.service", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.service$", "log4j.properties"}, {"log4j.logger.org.apache.hadoop.security.UserGroupInformation", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.security\\.UserGroupInformation$", "log4j.properties"}, {"log4j.logger.org.apache.hadoop.util.NativeCodeLoader", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.util\\.NativeCodeLoader$", "log4j.properties"}, {"log4j.logger.org.apache.hadoop.hdfs.server.datanode.BlockPoolSliceScanner", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.hdfs\\.server\\.datanode\\.BlockPoolSliceScanner$", "log4j.properties"},
-    {"log4j.logger.org.apache.hadoop.hdfs.server.blockmanagement", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.hdfs\\.server\\.blockmanagement$", "log4j.properties"}, {"log4j.logger.org.apache.hadoop.hdfs.server.namenode.FSNamesystem.audit", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.hdfs\\.server\\.namenode\\.FSNamesystem\\.audit$", "log4j.properties"},
-    {"log4j.logger.org.apache.hadoop.hdfs", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.hdfs$", "log4j.properties"}, {"log4j.logger.org.apache.hadoop.yarn.server.nodemanager.containermanager.monitor", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.yarn\\.server\\.nodemanager\\.containermanager\\.monitor$", "log4j.properties"}, 
-    {"log4j.logger.org.apache.hadoop.yarn.server.nodemanager.NodeStatusUpdaterImpl", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.yarn\\.server\\.nodemanager\\.NodeStatusUpdaterImpl$", "log4j.properties"},
-    {"log4j.logger.org.apache.zookeeper", "^log4j\\.logger\\.org\\.apache\\.zookeeper$", "log4j.properties"}, 
-    {"log4j.logger.org.apache.zookeeper.ClientCnxn", "^log4j\\.logger\\.org\\.apache\\.zookeeper\\.ClientCnxn$", "log4j.properties"}, {"log4j.logger.org.apache.hadoop.yarn.server.resourcemanager.security", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.yarn\\.server\\.resourcemanager\\.security$", "log4j.properties"}, 
-    {"log4j.logger.org.apache.hadoop.metrics2", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.metrics2$", "log4j.properties"}, {"log4j.logger.org.apache.hadoop.util.HostsFileReader", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.util\\.HostsFileReader$", "log4j.properties"}, {"log4j.logger.org.apache.hadoop.yarn.event.AsyncDispatcher", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.yarn\\.event\\.AsyncDispatcher$", "log4j.properties"}, {"log4j.logger.org.apache.hadoop.security.token.delegation", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.security\\.token\\.delegation$", "log4j.properties"}, {"log4j.logger.org.apache.hadoop.yarn.util.AbstractLivelinessMonitor", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.yarn\\.util\\.AbstractLivelinessMonitor$", "log4j.properties"}, {"log4j.logger.org.apache.hadoop.yarn.server.nodemanager.security", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.yarn\\.server\\.nodemanager\\.security$", "log4j.properties"}, {"log4j.logger.org.apache.hadoop.yarn.server.resourcemanager.RMNMInfo", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.yarn\\.server\\.resourcemanager\\.RMNMInfo$", "log4j.properties"}, {"log4j.logger.org.apache.curator.framework.imps", "^log4j\\.logger\\.org\\.apache\\.curator\\.framework\\.imps$", "log4j.properties"}, {"log4j.logger.org.apache.curator.framework.state.ConnectionStateManager", "^log4j\\.logger\\.org\\.apache\\.curator\\.framework\\.state\\.ConnectionStateManager$", "log4j.properties"}, {"log4j.logger.org.apache.directory.api.ldap", "^log4j\\.logger\\.org\\.apache\\.directory\\.api\\.ldap$", "log4j.properties"}, {"log4j.logger.org.apache.directory.server", "^log4j\\.logger\\.org\\.apache\\.directory\\.server$", "log4j.properties"},
+    {"log4j.rootLogger", "^log4j\\.rootLogger$", "hdfs-log4j.properties"},
+    {"log4j.threshhold", "^log4j\\.threshhold$", "hdfs-log4j.properties"},
+    {"log4j.appender.stdout", "^log4j\\.appender\\.stdout$", "hdfs-log4j.properties"}, 
+    {"log4j.appender.stdout.layout", "^log4j\\.appender\\.stdout\\.layout$", "hdfs-log4j.properties"}, 
+    {"log4j.appender.stdout.layout.ConversionPattern", "^log4j\\.appender\\.stdout\\.layout\\.ConversionPattern$", "hdfs-log4j.properties"},
+    {"log4j.appender.subprocess", "^log4j\\.appender\\.subprocess$", "hdfs-log4j.properties"}, 
+    {"log4j.appender.subprocess.layout", "^log4j\\.appender\\.subprocess\\.layout$", "hdfs-log4j.properties"}, 
+    {"log4j.appender.subprocess.layout.ConversionPattern", "^log4j\\.appender\\.subprocess\\.layout\\.ConversionPattern$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.yarn.registry", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.yarn\\.registry$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.service", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.service$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.security.UserGroupInformation", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.security\\.UserGroupInformation$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.util.NativeCodeLoader", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.util\\.NativeCodeLoader$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.hdfs.server.datanode.BlockPoolSliceScanner", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.hdfs\\.server\\.datanode\\.BlockPoolSliceScanner$", "hdfs-log4j.properties"},
+    {"log4j.logger.org.apache.hadoop.hdfs.server.blockmanagement", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.hdfs\\.server\\.blockmanagement$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.hdfs.server.namenode.FSNamesystem.audit", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.hdfs\\.server\\.namenode\\.FSNamesystem\\.audit$", "hdfs-log4j.properties"},
+    {"log4j.logger.org.apache.hadoop.hdfs", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.hdfs$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.yarn.server.nodemanager.containermanager.monitor", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.yarn\\.server\\.nodemanager\\.containermanager\\.monitor$", "hdfs-log4j.properties"}, 
+    {"log4j.logger.org.apache.hadoop.yarn.server.nodemanager.NodeStatusUpdaterImpl", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.yarn\\.server\\.nodemanager\\.NodeStatusUpdaterImpl$", "hdfs-log4j.properties"},
+    {"log4j.logger.org.apache.zookeeper", "^log4j\\.logger\\.org\\.apache\\.zookeeper$", "hdfs-log4j.properties"}, 
+    {"log4j.logger.org.apache.zookeeper.ClientCnxn", "^log4j\\.logger\\.org\\.apache\\.zookeeper\\.ClientCnxn$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.yarn.server.resourcemanager.security", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.yarn\\.server\\.resourcemanager\\.security$", "hdfs-log4j.properties"}, 
+    {"log4j.logger.org.apache.hadoop.metrics2", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.metrics2$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.util.HostsFileReader", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.util\\.HostsFileReader$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.yarn.event.AsyncDispatcher", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.yarn\\.event\\.AsyncDispatcher$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.security.token.delegation", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.security\\.token\\.delegation$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.yarn.util.AbstractLivelinessMonitor", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.yarn\\.util\\.AbstractLivelinessMonitor$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.yarn.server.nodemanager.security", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.yarn\\.server\\.nodemanager\\.security$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.yarn.server.resourcemanager.RMNMInfo", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.yarn\\.server\\.resourcemanager\\.RMNMInfo$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.curator.framework.imps", "^log4j\\.logger\\.org\\.apache\\.curator\\.framework\\.imps$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.curator.framework.state.ConnectionStateManager", "^log4j\\.logger\\.org\\.apache\\.curator\\.framework\\.state\\.ConnectionStateManager$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.directory.api.ldap", "^log4j\\.logger\\.org\\.apache\\.directory\\.api\\.ldap$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.directory.server", "^log4j\\.logger\\.org\\.apache\\.directory\\.server$", "hdfs-log4j.properties"},
         // Service-Level Authorization Parameters from hadoop-policy.xml (11 entries)
     {"security.client.protocol.acl", "^security\\.client\\.protocol\\.acl$", "hadoop-policy.xml"},
     {"security.client.datanode.protocol.acl", "^security\\.client\\.datanode\\.protocol\\.acl$", "hadoop-policy.xml"},
@@ -546,70 +546,7 @@ static const ConfigParam hdfs_configs[] = {
     { "REPOSITORY_CONFIG_COMMON_NAME_FOR_CERTIFICATE", "^REPOSITORY_CONFIG_COMMON_NAME_FOR_CERTIFICATE$", "ranger-hdfs-plugin.properties" },
     { "REPOSITORY_CONFIG_POLICY_MGR_SSL_CERTIFICATE", "^REPOSITORY_CONFIG_POLICY_MGR_SSL_CERTIFICATE$", "ranger-hdfs-plugin.properties" },
 
-// Missing parameters to append to hdfs_configs[]
-{"ha.failover-controller.active-standby-elector.zk.op.retries", "^ha\\.failover-controller\\.active-standby-elector\\.zk\\.op\\.retries$", "hdfs-site.xml"},
-{"io.serializations", "^io\\.serializations$", "core-site.xml"},
-{"io.compression.codecs", "^io\\.compression\\.codecs$", "core-site.xml"},
-{"fs.trash.interval", "^fs\\.trash\\.interval$", "core-site.xml"},
-{"ipc.client.idlethreshold", "^ipc\\.client\\.idlethreshold$", "core-site.xml"},
-{"ipc.client.connection.maxidletime", "^ipc\\.client\\.connection\\.maxidletime$", "core-site.xml"},
-{"ipc.client.connect.max.retries", "^ipc\\.client\\.connect\\.max\\.retries$", "core-site.xml"},
-{"ipc.server.tcpnodelay", "^ipc\\.server\\.tcpnodelay$", "core-site.xml"},
-{"mapreduce.jobtracker.webinterface.trusted", "^mapreduce\\.jobtracker\\.webinterface\\.trusted$", "mapred-site.xml"},
-{"hadoop.http.authentication.type", "^hadoop\\.http\\.authentication\\.type$", "core-site.xml"},
-{"hadoop.security.auth_to_local", "^hadoop\\.security\\.auth_to_local$", "core-site.xml"},
-{"net.topology.script.file.name", "^net\\.topology\\.script\\.file\\.name$", "core-site.xml"},
-{"hadoop.proxyuser", "^hadoop\\.proxyuser$", "core-site.xml"},
-{"fs.gs.path.encoding", "^fs\\.gs\\.path\\.encoding$", "core-site.xml"},
-{"fs.gs.working.dir", "^fs\\.gs\\.working\\.dir$", "core-site.xml"},
-{"security.job.client.protocol.acl", "^security\\.job\\.client\\.protocol\\.acl$", "hadoop-policy.xml"},
-{"security.job.task.protocol.acl", "^security\\.job\\.task\\.protocol\\.acl$", "hadoop-policy.xml"},
-{"security.refresh.usertogroups.mappings.protocol.acl", "^security\\.refresh\\.usertogroups\\.mappings\\.protocol\\.acl$", "hadoop-policy.xml"},
-{"hadoop_security_log_max_backup_size", "^hadoop_security_log_max_backup_size$", "log4j.properties"},
-{"hadoop_security_log_number_of_backup_files", "^hadoop_security_log_number_of_backup_files$", "log4j.properties"},
-{"hadoop_log_max_backup_size", "^hadoop_log_max_backup_size$", "log4j.properties"},
-{"hadoop_log_number_of_backup_files", "^hadoop_log_number_of_backup_files$", "log4j.properties"},
-{"dfs.support.append", "^dfs\\.support\\.append$", "hdfs-site.xml"},
-{"dfs.webhdfs.enabled", "^dfs\\.webhdfs\\.enabled$", "hdfs-site.xml"},
-{"dfs.namenode.checkpoint.edits.dir", "^dfs\\.namenode\\.checkpoint\\.edits\\.dir$", "hdfs-site.xml"},
-{"dfs.namenode.checkpoint.txns", "^dfs\\.namenode\\.checkpoint\\.txns$", "hdfs-site.xml"},
-{"dfs.namenode.name.dir.restore", "^dfs\\.namenode\\.name\\.dir\\.restore$", "hdfs-site.xml"},
-{"dfs.namenode.accesstime.precision", "^dfs\\.namenode\\.accesstime\\.precision$", "hdfs-site.xml"},
-{"dfs.namenode.avoid.read.stale.datanode", "^dfs\\.namenode\\.avoid\\.read\\.stale\\.datanode$", "hdfs-site.xml"},
-{"dfs.namenode.avoid.write.stale.datanode", "^dfs\\.namenode\\.avoid\\.write\\.stale\\.datanode$", "hdfs-site.xml"},
-{"dfs.namenode.write.stale.datanode.ratio", "^dfs\\.namenode\\.write\\.stale\\.datanode\\.ratio$", "hdfs-site.xml"},
-{"dfs.namenode.stale.datanode.interval", "^dfs\\.namenode\\.stale\\.datanode\\.interval$", "hdfs-site.xml"},
-{"fs.permissions.umask-mode", "^fs\\.permissions\\.umask-mode$", "core-site.xml"},
-{"dfs.permissions.superusergroup", "^dfs\\.permissions\\.superusergroup$", "hdfs-site.xml"},
-{"dfs.block.access.token.enable", "^dfs\\.block\\.access\\.token\\.enable$", "hdfs-site.xml"},
-{"dfs.cluster.administrators", "^dfs\\.cluster\\.administrators$", "hdfs-site.xml"},
-{"dfs.client.read.shortcircuit.streams.cache.size", "^dfs\\.client\\.read\\.shortcircuit\\.streams\\.cache\\.size$", "hdfs-site.xml"},
-{"manage.include.files", "^manage\\.include\\.files$", "yarn-site.xml"},
-{"xasecure.audit.destination.hdfs", "^xasecure\\.audit\\.destination\\.hdfs$", "ranger-hdfs-audit.xml"},
-{"xasecure.audit.destination.hdfs.dir", "^xasecure\\.audit\\.destination\\.hdfs\\.dir$", "ranger-hdfs-audit.xml"},
-{"xasecure.audit.destination.hdfs.batch.filespool.dir", "^xasecure\\.audit\\.destination\\.hdfs\\.batch\\.filespool\\.dir$", "ranger-hdfs-audit.xml"},
-{"xasecure.audit.destination.solr", "^xasecure\\.audit\\.destination\\.solr$", "ranger-hdfs-audit.xml"},
-{"xasecure.audit.destination.solr.urls", "^xasecure\\.audit\\.destination\\.solr\\.urls$", "ranger-hdfs-audit.xml"},
-{"xasecure.audit.destination.solr.zookeepers", "^xasecure\\.audit\\.destination\\.solr\\.zookeepers$", "ranger-hdfs-audit.xml"},
-{"xasecure.audit.destination.solr.batch.filespool.dir", "^xasecure\\.audit\\.destination\\.solr\\.batch\\.filespool\\.dir$", "ranger-hdfs-audit.xml"},
-{"xasecure.audit.provider.summary.enabled", "^xasecure\\.audit\\.provider\\.summary\\.enabled$", "ranger-hdfs-audit.xml"},
-{"ranger.plugin.hdfs.ambari.cluster.name", "^ranger\\.plugin\\.hdfs\\.ambari\\.cluster\\.name$", "ranger-hdfs-security.xml"},
-{"content.property-file-type", "^content\\.property-file-type$", "container-executor.cfg"},
-{"yarn_rm_summary_log_max_backup_size", "^yarn_rm_summary_log_max_backup_size$", "yarn-log4j.properties"},
-{"yarn_rm_summary_log_number_of_backup_files", "^yarn_rm_summary_log_number_of_backup_files$", "yarn-log4j.properties"},
-{"yarn.scheduler.capacity.maximum-applications", "^yarn\\.scheduler\\.capacity\\.maximum-applications$", "capacity-scheduler.xml"},
-{"yarn.scheduler.capacity.maximum-am-resource-percent", "^yarn\\.scheduler\\.capacity\\.maximum-am-resource-percent$", "capacity-scheduler.xml"},
-{"yarn.scheduler.capacity.root.queues", "^yarn\\.scheduler\\.capacity\\.root\\.queues$", "capacity-scheduler.xml"},
-{"yarn.scheduler.capacity.root.capacity", "^yarn\\.scheduler\\.capacity\\.root\\.capacity$", "capacity-scheduler.xml"},
-{"yarn.scheduler.capacity.root.default.capacity", "^yarn\\.scheduler\\.capacity\\.root\\.default\\.capacity$", "capacity-scheduler.xml"},
-{"yarn.scheduler.capacity.root.default.user-limit-factor", "^yarn\\.scheduler\\.capacity\\.root\\.default\\.user-limit-factor$", "capacity-scheduler.xml"},
-{"yarn.scheduler.capacity.root.default.maximum-capacity", "^yarn\\.scheduler\\.capacity\\.root\\.default\\.maximum-capacity$", "capacity-scheduler.xml"},
-{"yarn.scheduler.capacity.root.default.state", "^yarn\\.scheduler\\.capacity\\.root\\.default\\.state$", "capacity-scheduler.xml"},
-{"yarn.scheduler.capacity.root.default.acl_submit_applications", "^yarn\\.scheduler\\.capacity\\.root\\.default\\.acl_submit_applications$", "capacity-scheduler.xml"},
-{"yarn.scheduler.capacity.root.default.acl_administer_jobs", "^yarn\\.scheduler\\.capacity\\.root\\.default\\.acl_administer_jobs$", "capacity-scheduler.xml"},
-{"yarn.scheduler.capacity.root.acl_administer_queue", "^yarn\\.scheduler\\.capacity\\.root\\.acl_administer_queue$", "capacity-scheduler.xml"},
-{"yarn.scheduler.capacity.node-locality-delay", "^yarn\\.scheduler\\.capacity\\.node-locality-delay$", "capacity-scheduler.xml"},
-{"yarn.scheduler.capacity.default.minimum-user-limit-percent", "^yarn\\.scheduler\\.capacity\\.default\\.minimum-user-limit-percent$", "capacity-scheduler.xml"},
+
 
 };
 
@@ -819,7 +756,7 @@ ConfigResult* find_hdfs_config(const char *param) {
         if (ret != 0) {
             char error_msg[100];
             regerror(ret, &regex, error_msg, sizeof(error_msg));
-            FPRINTF(global_client_socket, "Regex compilation failed for %s: %s\n", hdfs_configs[i].canonicalName, error_msg);
+            fprintf(stderr, "Regex compilation failed for %s: %s\n", hdfs_configs[i].canonicalName, error_msg);
             continue;
         }
 
@@ -844,7 +781,7 @@ ConfigResult* find_hdfs_config(const char *param) {
         } else if (ret != REG_NOMATCH) {
             char error_msg[100];
             regerror(ret, &regex, error_msg, sizeof(error_msg));
-            FPRINTF(global_client_socket, "Regex match error for %s: %s\n", hdfs_configs[i].canonicalName, error_msg);
+            fprintf(stderr, "Regex match error for %s: %s\n", hdfs_configs[i].canonicalName, error_msg);
         }
     }
     return NULL;
@@ -891,7 +828,7 @@ ConfigStatus modify_hdfs_config(const char* config_param, const char* value, con
         return FILE_NOT_FOUND;
     }
 
-    if (strcmp(filename, "log4j.properties") == 0 ||
+    if (strcmp(filename, "hdfs-log4j.properties") == 0 ||
         strcmp(filename, "log4j.properties") == 0 ||
         strcmp(filename, "ranger-hdfs-plugin.properties") == 0 ||
         strcmp(filename, "yarnservice-log4j.properties") == 0 ||

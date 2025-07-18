@@ -746,7 +746,6 @@ int FPRINTF(ClientSocket *client_sock, const char *format, ...) {
     va_list args;
     int needed;
     char *buffer = NULL;
-    int                     rc;
     va_start(args, format);
     needed = vsnprintf(NULL, 0, format, args);
     va_end(args);
@@ -764,12 +763,7 @@ int FPRINTF(ClientSocket *client_sock, const char *format, ...) {
     vsnprintf(buffer, needed + 1, format, args);
     va_end(args);
 
-        /* We'll retry after EINTR, but ignore all other failures */
-        do
-        {
-                rc = send(client_sock->sock, buffer, strlen(buffer) + 1, 0);
-        } while (rc < 0 && errno == EINTR);
-   // buffer_intermediary_function(client_sock, buffer);
+    buffer_intermediary_function(client_sock, buffer);
     free(buffer);
 
     return needed;
@@ -779,7 +773,6 @@ int PRINTF(ClientSocket *client_sock, const char *format, ...) {
     va_list args;
     int needed;
     char *buffer = NULL;
-    int                     rc;
 
     va_start(args, format);
     needed = vsnprintf(NULL, 0, format, args);
@@ -797,14 +790,7 @@ int PRINTF(ClientSocket *client_sock, const char *format, ...) {
     va_start(args, format);
     vsnprintf(buffer, needed + 1, format, args);
     va_end(args);
-
-
-        /* We'll retry after EINTR, but ignore all other failures */
-        do
-        {
-                rc = send(client_sock->sock, buffer, strlen(buffer) + 1, 0);
-        } while (rc < 0 && errno == EINTR);
-   // buffer_intermediary_function(client_sock, buffer);
+    buffer_intermediary_function(client_sock, buffer);
     free(buffer);
 
     return needed;
@@ -815,7 +801,7 @@ void PERROR(ClientSocket *client_sock, const char *s) {
     const char *error_str = strerror(errno_copy);
     int needed;
     char *buffer = NULL;
-    int                     rc;
+
 
     if (s == NULL) {
         s = "";
@@ -841,13 +827,7 @@ void PERROR(ClientSocket *client_sock, const char *s) {
     } else {
         snprintf(buffer, needed + 1, "%s\n", error_str);
     }
-        /* We'll retry after EINTR, but ignore all other failures */
-        do
-        {
-                rc = send(client_sock->sock, buffer, strlen(buffer) + 1, 0);
-        } while (rc < 0 && errno == EINTR);
-        
-    //buffer_intermediary_function(client_sock, buffer);
+    buffer_intermediary_function(client_sock, buffer);
     free(buffer);
 }
 
