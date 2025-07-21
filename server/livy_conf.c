@@ -138,7 +138,7 @@ static const struct {
     { "livy.rsc.job-cancel.trigger-interval", "^livy[._-]rsc[._-]job[._-]cancel[._-]trigger[._-]interval$", "livy-client.conf" },
     { "livy.rsc.job-cancel.timeout", "^livy[._-]rsc[._-]job[._-]cancel[._-]timeout$", "livy-client.conf" },
     { "livy.rsc.retained-statements", "^livy[._-]rsc[._-]retained[._-]statements$", "livy-client.conf" },
-    
+
     /* Spark Blacklist Configuration */
     { "spark.master", "^spark[._-]master$", "spark-blacklist.conf" },
     { "spark.submit.deployMode", "^spark[._-]submit[._-]deployMode$", "spark-blacklist.conf" },
@@ -220,7 +220,7 @@ ValidationResult validateLivyConfigParam(const char *param_name, const char *val
 
 ConfigResult* parse_livy_config_param(const char *input_key, const char *input_value) {
 
-ConfigResult* result = malloc(sizeof(ConfigResult));
+    ConfigResult* result = malloc(sizeof(ConfigResult));
 
     for (size_t i = 0; i < NUM_CANONICAL_PARAMS; i++) {
         const char *canonical = livy_params[i].canonical;

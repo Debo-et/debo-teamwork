@@ -28,19 +28,19 @@
 static void
 pg_GSS_error_int(ExpBuffer str, OM_uint32 stat, int type)
 {
-	OM_uint32	lmin_s;
-	gss_buffer_desc lmsg;
-	OM_uint32	msg_ctx = 0;
+    OM_uint32	lmin_s;
+    gss_buffer_desc lmsg;
+    OM_uint32	msg_ctx = 0;
 
-	do
-	{
-		if (gss_display_status(&lmin_s, stat, type, GSS_C_NO_OID,
-							   &msg_ctx, &lmsg) != GSS_S_COMPLETE)
-			break;
-		appendExpBufferChar(str, ' ');
-		appendBinaryExpBuffer(str, lmsg.value, lmsg.length);
-		gss_release_buffer(&lmin_s, &lmsg);
-	} while (msg_ctx);
+    do
+    {
+        if (gss_display_status(&lmin_s, stat, type, GSS_C_NO_OID,
+                               &msg_ctx, &lmsg) != GSS_S_COMPLETE)
+            break;
+        appendExpBufferChar(str, ' ');
+        appendBinaryExpBuffer(str, lmsg.value, lmsg.length);
+        gss_release_buffer(&lmin_s, &lmsg);
+    } while (msg_ctx);
 }
 
 /*
@@ -48,13 +48,13 @@ pg_GSS_error_int(ExpBuffer str, OM_uint32 stat, int type)
  */
 void
 pg_GSS_error(const char *mprefix, Conn *conn,
-			 OM_uint32 maj_stat, OM_uint32 min_stat)
+             OM_uint32 maj_stat, OM_uint32 min_stat)
 {
-	appendExpBuffer(&conn->errorMessage, "%s:", mprefix);
-	pg_GSS_error_int(&conn->errorMessage, maj_stat, GSS_C_GSS_CODE);
-	appendExpBufferChar(&conn->errorMessage, ':');
-	pg_GSS_error_int(&conn->errorMessage, min_stat, GSS_C_MECH_CODE);
-	appendExpBufferChar(&conn->errorMessage, '\n');
+    appendExpBuffer(&conn->errorMessage, "%s:", mprefix);
+    pg_GSS_error_int(&conn->errorMessage, maj_stat, GSS_C_GSS_CODE);
+    appendExpBufferChar(&conn->errorMessage, ':');
+    pg_GSS_error_int(&conn->errorMessage, min_stat, GSS_C_MECH_CODE);
+    appendExpBufferChar(&conn->errorMessage, '\n');
 }
 
 /*
@@ -63,42 +63,42 @@ pg_GSS_error(const char *mprefix, Conn *conn,
 bool
 pg_GSS_have_cred_cache(gss_cred_id_t *cred_out)
 {
-	OM_uint32	major,
-				minor;
-	gss_cred_id_t cred = GSS_C_NO_CREDENTIAL;
+    OM_uint32	major,
+                minor;
+    gss_cred_id_t cred = GSS_C_NO_CREDENTIAL;
 
-	major = gss_acquire_cred(&minor, GSS_C_NO_NAME, 0, GSS_C_NO_OID_SET,
-							 GSS_C_INITIATE, &cred, NULL, NULL);
-	if (major != GSS_S_COMPLETE)
-	{
-		*cred_out = NULL;
-		return false;
-	}
-	*cred_out = cred;
-	return true;
+    major = gss_acquire_cred(&minor, GSS_C_NO_NAME, 0, GSS_C_NO_OID_SET,
+                             GSS_C_INITIATE, &cred, NULL, NULL);
+    if (major != GSS_S_COMPLETE)
+    {
+        *cred_out = NULL;
+        return false;
+    }
+    *cred_out = cred;
+    return true;
 }
 
 char *
 PQhost(const Conn *conn)
 {
-        if (!conn)
-                return NULL;
+    if (!conn)
+        return NULL;
 
-        if (conn->connhost != NULL)
-        {
-                /*
-                 * Return the verbatim host value provided by user, or hostaddr in its
-                 * lack.
-                 */
-                if (conn->connhost[conn->whichhost].host != NULL &&
-                        conn->connhost[conn->whichhost].host[0] != '\0')
-                        return conn->connhost[conn->whichhost].host;
-                else if (conn->connhost[conn->whichhost].hostaddr != NULL &&
-                                 conn->connhost[conn->whichhost].hostaddr[0] != '\0')
-                        return conn->connhost[conn->whichhost].hostaddr;
-        }
+    if (conn->connhost != NULL)
+    {
+        /*
+         * Return the verbatim host value provided by user, or hostaddr in its
+         * lack.
+         */
+        if (conn->connhost[conn->whichhost].host != NULL &&
+            conn->connhost[conn->whichhost].host[0] != '\0')
+            return conn->connhost[conn->whichhost].host;
+        else if (conn->connhost[conn->whichhost].hostaddr != NULL &&
+                 conn->connhost[conn->whichhost].hostaddr[0] != '\0')
+            return conn->connhost[conn->whichhost].hostaddr;
+    }
 
-        return "";
+    return "";
 }
 
 /*

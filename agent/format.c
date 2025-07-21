@@ -73,18 +73,18 @@
 #define unvolatize(underlying_type, expr) const_cast<underlying_type>(expr)
 #elif defined(HAVE__BUILTIN_TYPES_COMPATIBLE_P)
 #define unconstify(underlying_type, expr) \
-        (StaticAssertExpr(__builtin_types_compatible_p(__typeof(expr), const underlying_type), \
-                                          "wrong cast"), \
-         (underlying_type) (expr))
+    (StaticAssertExpr(__builtin_types_compatible_p(__typeof(expr), const underlying_type), \
+                      "wrong cast"), \
+                      (underlying_type) (expr))
 #define unvolatize(underlying_type, expr) \
-        (StaticAssertExpr(__builtin_types_compatible_p(__typeof(expr), volatile underlying_type), \
-                                          "wrong cast"), \
-         (underlying_type) (expr))
+    (StaticAssertExpr(__builtin_types_compatible_p(__typeof(expr), volatile underlying_type), \
+                      "wrong cast"), \
+                      (underlying_type) (expr))
 #else
 #define unconstify(underlying_type, expr) \
-        ((underlying_type) (expr))
+    ((underlying_type) (expr))
 #define unvolatize(underlying_type, expr) \
-        ((underlying_type) (expr))
+    ((underlying_type) (expr))
 #endif
 
 #define FLEXIBLE_ARRAY_MEMBER   /* empty */
@@ -99,24 +99,24 @@ typedef int32_t int32;
 
 typedef union
 {
-        struct                                          /* Normal varlena (4-byte length) */
-        {
-                uint32          va_header;
-                char            va_data[FLEXIBLE_ARRAY_MEMBER];
-        }                       va_4byte;
-        struct                                          /* Compressed-in-line format */
-        {
-                uint32          va_header;
-                uint32          va_tcinfo;      /* Original data size (excludes header) and
-                                                                 * compression method; see va_extinfo */
-                char            va_data[FLEXIBLE_ARRAY_MEMBER]; /* Compressed data */
-        }                       va_compressed;
+    struct                                          /* Normal varlena (4-byte length) */
+    {
+        uint32          va_header;
+        char            va_data[FLEXIBLE_ARRAY_MEMBER];
+    }                       va_4byte;
+    struct                                          /* Compressed-in-line format */
+    {
+        uint32          va_header;
+        uint32          va_tcinfo;      /* Original data size (excludes header) and
+                                         * compression method; see va_extinfo */
+        char            va_data[FLEXIBLE_ARRAY_MEMBER]; /* Compressed data */
+    }                       va_compressed;
 } varattrib_4b;
 
 #define db_ntoh16(x) (x)
 
 #define SET_VARSIZE_4B(PTR,len) \
-        (((varattrib_4b *) (PTR))->va_4byte.va_header = (len) & 0x3FFFFFFF)
+    (((varattrib_4b *) (PTR))->va_4byte.va_header = (len) & 0x3FFFFFFF)
 
 #define SET_VARSIZE(PTR, len)                           SET_VARSIZE_4B(PTR, len)
 
@@ -128,14 +128,14 @@ typedef union
 void
 beginmessage(StringInfo buf, char msgtype)
 {
-	initStringInfo(buf);
+    initStringInfo(buf);
 
-	/*
-	 * We stash the message type into the buffer's cursor field, expecting
-	 * that the sendXXX routines won't touch it.  We could alternatively
-	 * make it the first byte of the buffer contents, but this seems easier.
-	 */
-	buf->cursor = msgtype;
+    /*
+     * We stash the message type into the buffer's cursor field, expecting
+     * that the sendXXX routines won't touch it.  We could alternatively
+     * make it the first byte of the buffer contents, but this seems easier.
+     */
+    buf->cursor = msgtype;
 }
 
 /* --------------------------------
@@ -149,14 +149,14 @@ beginmessage(StringInfo buf, char msgtype)
 void
 beginmessage_reuse(StringInfo buf, char msgtype)
 {
-	resetStringInfo(buf);
+    resetStringInfo(buf);
 
-	/*
-	 * We stash the message type into the buffer's cursor field, expecting
-	 * that the sendXXX routines won't touch it.  We could alternatively
-	 * make it the first byte of the buffer contents, but this seems easier.
-	 */
-	buf->cursor = msgtype;
+    /*
+     * We stash the message type into the buffer's cursor field, expecting
+     * that the sendXXX routines won't touch it.  We could alternatively
+     * make it the first byte of the buffer contents, but this seems easier.
+     */
+    buf->cursor = msgtype;
 }
 
 /* --------------------------------
@@ -166,8 +166,8 @@ beginmessage_reuse(StringInfo buf, char msgtype)
 void
 sendbytes(StringInfo buf, const void *data, int datalen)
 {
-	/* use variant that maintains a trailing null-byte, out of caution */
-	appendBinaryStringInfo(buf, data, datalen);
+    /* use variant that maintains a trailing null-byte, out of caution */
+    appendBinaryStringInfo(buf, data, datalen);
 }
 
 /* --------------------------------
@@ -212,8 +212,8 @@ sendtext(StringInfo buf, const char *str, int slen)
 void
 sendstring(StringInfo buf, const char *str)
 {
-	int			slen = strlen(str);
-	appendBinaryStringInfoNT(buf, str, slen + 1);
+    int			slen = strlen(str);
+    appendBinaryStringInfoNT(buf, str, slen + 1);
 }
 
 /* --------------------------------
@@ -234,15 +234,15 @@ sendstring(StringInfo buf, const char *str)
 void
 send_ascii_string(StringInfo buf, const char *str)
 {
-	while (*str)
-	{
-		char		ch = *str++;
+    while (*str)
+    {
+        char		ch = *str++;
 
-		if (IS_HIGHBIT_SET(ch))
-			ch = '?';
-		appendStringInfoCharMacro(buf, ch);
-	}
-	appendStringInfoChar(buf, '\0');
+        if (IS_HIGHBIT_SET(ch))
+            ch = '?';
+        appendStringInfoCharMacro(buf, ch);
+    }
+    appendStringInfoChar(buf, '\0');
 }
 
 /* --------------------------------
@@ -259,14 +259,14 @@ send_ascii_string(StringInfo buf, const char *str)
 void
 sendfloat4(StringInfo buf, float4 f)
 {
-	union
-	{
-		float4		f;
-		uint32		i;
-	}			swap;
+    union
+    {
+        float4		f;
+        uint32		i;
+    }			swap;
 
-	swap.f = f;
-	sendint32(buf, swap.i);
+    swap.f = f;
+    sendint32(buf, swap.i);
 }
 
 /* --------------------------------
@@ -283,14 +283,14 @@ sendfloat4(StringInfo buf, float4 f)
 void
 sendfloat8(StringInfo buf, float8 f)
 {
-	union
-	{
-		float8		f;
-		int64		i;
-	}			swap;
+    union
+    {
+        float8		f;
+        int64		i;
+    }			swap;
 
-	swap.f = f;
-	sendint64(buf, swap.i);
+    swap.f = f;
+    sendint64(buf, swap.i);
 }
 
 /* --------------------------------
@@ -303,11 +303,11 @@ sendfloat8(StringInfo buf, float8 f)
 void
 endmessage(StringInfo buf)
 {
-	/* msgtype was saved in cursor field */
-	(void) putmessage(buf->cursor, buf->data, buf->len);
-	/* no need to complain about any failure, since pqcomm.c already did */
-	free(buf->data);
-	buf->data = NULL;
+    /* msgtype was saved in cursor field */
+    (void) putmessage(buf->cursor, buf->data, buf->len);
+    /* no need to complain about any failure, since pqcomm.c already did */
+    free(buf->data);
+    buf->data = NULL;
 }
 
 /* --------------------------------
@@ -321,8 +321,8 @@ endmessage(StringInfo buf)
 void
 endmessage_reuse(StringInfo buf)
 {
-	/* msgtype was saved in cursor field */
-	(void) putmessage(buf->cursor, buf->data, buf->len);
+    /* msgtype was saved in cursor field */
+    (void) putmessage(buf->cursor, buf->data, buf->len);
 }
 
 
@@ -333,12 +333,12 @@ endmessage_reuse(StringInfo buf)
 void
 begintypsend(StringInfo buf)
 {
-	initStringInfo(buf);
-	/* Reserve four bytes for the bytea length word */
-	appendStringInfoCharMacro(buf, '\0');
-	appendStringInfoCharMacro(buf, '\0');
-	appendStringInfoCharMacro(buf, '\0');
-	appendStringInfoCharMacro(buf, '\0');
+    initStringInfo(buf);
+    /* Reserve four bytes for the bytea length word */
+    appendStringInfoCharMacro(buf, '\0');
+    appendStringInfoCharMacro(buf, '\0');
+    appendStringInfoCharMacro(buf, '\0');
+    appendStringInfoCharMacro(buf, '\0');
 }
 
 /* --------------------------------
@@ -353,13 +353,13 @@ begintypsend(StringInfo buf)
 bytea *
 endtypsend(StringInfo buf)
 {
-	bytea	   *result = (bytea *) buf->data;
+    bytea	   *result = (bytea *) buf->data;
 
-	/* Insert correct length into bytea length word */
-	Assert(buf->len >= VARHDRSZ);
-	SET_VARSIZE(result, buf->len);
+    /* Insert correct length into bytea length word */
+    Assert(buf->len >= VARHDRSZ);
+    SET_VARSIZE(result, buf->len);
 
-	return result;
+    return result;
 }
 
 
@@ -374,9 +374,9 @@ endtypsend(StringInfo buf)
 void
 puttextmessage(char msgtype, const char *str)
 {
-	int			slen = strlen(str);
+    int			slen = strlen(str);
 
-	(void) putmessage(msgtype, str, slen + 1);
+    (void) putmessage(msgtype, str, slen + 1);
 }
 
 
@@ -387,7 +387,7 @@ puttextmessage(char msgtype, const char *str)
 void
 putemptymessage(char msgtype)
 {
-	(void) putmessage(msgtype, NULL, 0);
+    (void) putmessage(msgtype, NULL, 0);
 }
 
 
@@ -398,9 +398,9 @@ putemptymessage(char msgtype)
 int
 getmsgbyte(StringInfo msg)
 {
-	if (msg->cursor >= msg->len)
-		  printf("no data left in message");
-	return (unsigned char) msg->data[msg->cursor++];
+    if (msg->cursor >= msg->len)
+        printf("no data left in message");
+    return (unsigned char) msg->data[msg->cursor++];
 }
 
 #define pg_ntoh32(x) (x)
@@ -413,31 +413,31 @@ getmsgbyte(StringInfo msg)
 unsigned int
 getmsgint(StringInfo msg, int b)
 {
-	unsigned int result;
-	unsigned char n8;
-	uint16		n16;
-	uint32		n32;
+    unsigned int result;
+    unsigned char n8;
+    uint16		n16;
+    uint32		n32;
 
-	switch (b)
-	{
-		case 1:
-			copymsgbytes(msg, (char *) &n8, 1);
-			result = n8;
-			break;
-		case 2:
-			copymsgbytes(msg, (char *) &n16, 2);
-			result = db_ntoh16(n16);
-			break;
-		case 4:
-			copymsgbytes(msg, (char *) &n32, 4);
-			result = pg_ntoh32(n32);
-			break;
-		default:
-			fprintf(stderr, "unsupported integer size %d", b);
-			result = 0;			/* keep compiler quiet */
-			break;
-	}
-	return result;
+    switch (b)
+    {
+    case 1:
+        copymsgbytes(msg, (char *) &n8, 1);
+        result = n8;
+        break;
+    case 2:
+        copymsgbytes(msg, (char *) &n16, 2);
+        result = db_ntoh16(n16);
+        break;
+    case 4:
+        copymsgbytes(msg, (char *) &n32, 4);
+        result = pg_ntoh32(n32);
+        break;
+    default:
+        fprintf(stderr, "unsupported integer size %d", b);
+        result = 0;			/* keep compiler quiet */
+        break;
+    }
+    return result;
 }
 
 #define db_ntoh64(x) (x)
@@ -452,11 +452,11 @@ getmsgint(StringInfo msg, int b)
 int64
 getmsgint64(StringInfo msg)
 {
-	uint64		n64;
+    uint64		n64;
 
-	copymsgbytes(msg, (char *) &n64, sizeof(n64));
+    copymsgbytes(msg, (char *) &n64, sizeof(n64));
 
-	return db_ntoh64(n64);
+    return db_ntoh64(n64);
 }
 
 /* --------------------------------
@@ -468,14 +468,14 @@ getmsgint64(StringInfo msg)
 float4
 getmsgfloat4(StringInfo msg)
 {
-	union
-	{
-		float4		f;
-		uint32		i;
-	}			swap;
+    union
+    {
+        float4		f;
+        uint32		i;
+    }			swap;
 
-	swap.i = getmsgint(msg, 4);
-	return swap.f;
+    swap.i = getmsgint(msg, 4);
+    return swap.f;
 }
 
 /* --------------------------------
@@ -487,14 +487,14 @@ getmsgfloat4(StringInfo msg)
 float8
 getmsgfloat8(StringInfo msg)
 {
-	union
-	{
-		float8		f;
-		int64		i;
-	}			swap;
+    union
+    {
+        float8		f;
+        int64		i;
+    }			swap;
 
-	swap.i = getmsgint64(msg);
-	return swap.f;
+    swap.i = getmsgint64(msg);
+    return swap.f;
 }
 
 /* --------------------------------
@@ -507,13 +507,13 @@ getmsgfloat8(StringInfo msg)
 const char *
 getmsgbytes(StringInfo msg, int datalen)
 {
-	const char *result;
+    const char *result;
 
-	if (datalen < 0 || datalen > (msg->len - msg->cursor))
-		  printf("insufficient data left in message");
-	result = &msg->data[msg->cursor];
-	msg->cursor += datalen;
-	return result;
+    if (datalen < 0 || datalen > (msg->len - msg->cursor))
+        printf("insufficient data left in message");
+    result = &msg->data[msg->cursor];
+    msg->cursor += datalen;
+    return result;
 }
 
 /* --------------------------------
@@ -525,10 +525,10 @@ getmsgbytes(StringInfo msg, int datalen)
 void
 copymsgbytes(StringInfo msg, char *buf, int datalen)
 {
-	if (datalen < 0 || datalen > (msg->len - msg->cursor))
-		printf("insufficient data left in message");
-	memcpy(buf, &msg->data[msg->cursor], datalen);
-	msg->cursor += datalen;
+    if (datalen < 0 || datalen > (msg->len - msg->cursor))
+        printf("insufficient data left in message");
+    memcpy(buf, &msg->data[msg->cursor], datalen);
+    msg->cursor += datalen;
 }
 
 /* --------------------------------
@@ -541,19 +541,19 @@ copymsgbytes(StringInfo msg, char *buf, int datalen)
 char *
 getmsgtext(StringInfo msg, int rawbytes, int *nbytes)
 {
-	char	   *str;
-	char	   *p;
+    char	   *str;
+    char	   *p;
 
-	if (rawbytes < 0 || rawbytes > (msg->len - msg->cursor))
-		    printf("insufficient data left in message");
-	str = &msg->data[msg->cursor];
-	msg->cursor += rawbytes;
-	
-	p = (char *) malloc(rawbytes + 1);
-	memcpy(p, str, rawbytes);
-	p[rawbytes] = '\0';
-	*nbytes = rawbytes;
-	return p;
+    if (rawbytes < 0 || rawbytes > (msg->len - msg->cursor))
+        printf("insufficient data left in message");
+    str = &msg->data[msg->cursor];
+    msg->cursor += rawbytes;
+
+    p = (char *) malloc(rawbytes + 1);
+    memcpy(p, str, rawbytes);
+    p[rawbytes] = '\0';
+    *nbytes = rawbytes;
+    return p;
 }
 
 /* --------------------------------
@@ -566,22 +566,22 @@ getmsgtext(StringInfo msg, int rawbytes, int *nbytes)
 const char *
 getmsgstring(StringInfo msg)
 {
-	char	   *str;
-	int			slen;
+    char	   *str;
+    int			slen;
 
-	str = &msg->data[msg->cursor];
+    str = &msg->data[msg->cursor];
 
-	/*
-	 * It's safe to use strlen() here because a StringInfo is guaranteed to
-	 * have a trailing null byte.  But check we found a null inside the
-	 * message.
-	 */
-	slen = strlen(str);
-	if (msg->cursor + slen >= msg->len)
-		    printf("invalid string in message");
-	msg->cursor += slen + 1;
+    /*
+     * It's safe to use strlen() here because a StringInfo is guaranteed to
+     * have a trailing null byte.  But check we found a null inside the
+     * message.
+     */
+    slen = strlen(str);
+    if (msg->cursor + slen >= msg->len)
+        printf("invalid string in message");
+    msg->cursor += slen + 1;
 
-	return unconstify(char *, str);
+    return unconstify(char *, str);
 }
 
 /* --------------------------------
@@ -593,22 +593,22 @@ getmsgstring(StringInfo msg)
 const char *
 getmsgrawstring(StringInfo msg)
 {
-	char	   *str;
-	int			slen;
+    char	   *str;
+    int			slen;
 
-	str = &msg->data[msg->cursor];
+    str = &msg->data[msg->cursor];
 
-	/*
-	 * It's safe to use strlen() here because a StringInfo is guaranteed to
-	 * have a trailing null byte.  But check we found a null inside the
-	 * message.
-	 */
-	slen = strlen(str);
-	if (msg->cursor + slen >= msg->len)
-		  printf("invalid string in message");
-	msg->cursor += slen + 1;
+    /*
+     * It's safe to use strlen() here because a StringInfo is guaranteed to
+     * have a trailing null byte.  But check we found a null inside the
+     * message.
+     */
+    slen = strlen(str);
+    if (msg->cursor + slen >= msg->len)
+        printf("invalid string in message");
+    msg->cursor += slen + 1;
 
-	return str;
+    return str;
 }
 
 /* --------------------------------
@@ -618,6 +618,6 @@ getmsgrawstring(StringInfo msg)
 void
 getmsgend(StringInfo msg)
 {
-	if (msg->cursor != msg->len)
-		   printf("invalid message format");
+    if (msg->cursor != msg->len)
+        printf("invalid message format");
 }

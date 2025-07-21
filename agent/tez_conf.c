@@ -19,18 +19,18 @@ const char *tez_canonical_params[] = {
     "tez.am.container.heap.memory-mb.ratio",
     "tez.am.container.java.opts",
     "tez.am.launch.cmd-opts",
-    
+
     // Queuing and Scheduling
     "tez.queue.name",
     "tez.am.node-blacklisting.enabled",
     "tez.am.node-blacklisting.ignore-threshold.node-percent",
-    
+
     // Execution Control
     "tez.am.container.reuse.enabled",
     "tez.am.container.reuse.rack-fallback.enabled",
     "tez.am.container.idle.release-timeout-min.millis",
     "tez.am.container.idle.release-timeout-max.millis",
-    
+
     // Shuffle and Sorting
     "tez.runtime.io.sort.mb",
     "tez.runtime.io.sort.factor",
@@ -39,24 +39,24 @@ const char *tez_canonical_params[] = {
     "tez.runtime.shuffle.fetch.buffer.percent",
     "tez.runtime.shuffle.merge.percent",
     "tez.runtime.sort.spill.percent",
-    
+
     // Compression
     "tez.runtime.compress",
     "tez.runtime.compress.codec",
     "tez.runtime.shuffle.enable.ssl",
-    
+
     // Grouping and Parallelism
     "tez.grouping.split-count",
     "tez.grouping.max-size",
     "tez.grouping.min-size",
     "tez.grouping.shuffle.enabled",
     "tez.vertex.max.output.consumers",
-    
+
     // Fault Tolerance
     "tez.am.task.max.failed.attempts",
     "tez.task.skip.enable",
     "tez.am.task.preemption.wait.timeout.millis",
-    
+
     // Logging and Monitoring
     "tez.staging-dir",
     "tez.am.application.tag",
@@ -64,43 +64,43 @@ const char *tez_canonical_params[] = {
     "tez.task.log.level",
     "tez.task.profiling.enabled",
     "tez.task.profiling.interval.millis",
-    
+
     // Counters and Limits
     "tez.counters.max",
     "tez.counters.groups.max",
     "tez.task.max.output.limit",
-    
+
     // Session Management
     "tez.session.mode",
     "tez.session.client.timeout.sec",
-    
+
     // Advanced Runtime
     "tez.runtime.transfer.data-via-events.enabled",
     "tez.runtime.pipelined-shuffle.enabled",
     "tez.runtime.optimize.local.fetch",
     "tez.runtime.ifile.readahead",
     "tez.runtime.ifile.readahead.bytes",
-    
+
     // Security
     "tez.am.view-acls",
     "tez.am.modify-acls",
     "tez.am.acls.enabled",
-    
+
     // Speculation
     "tez.am.speculation.enabled",
     "tez.am.speculation.speculative-capacity-factor",
-    
+
     // Recovery
     "tez.am.dag.recovery.enabled",
     "tez.am.dag.recovery.timeout.sec",
-    
+
     // Advanced Configuration
     "tez.task.get.task.sleep.interval-ms.max",
     "tez.am.heartbeat.interval-ms.max",
     "tez.runtime.key.class",
     "tez.runtime.value.class",
     "tez.runtime.key.comparator.class",
-    
+
     // Add more parameters as needed from official documentation
     // (This list covers core parameters but may require updates)
 };

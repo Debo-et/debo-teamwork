@@ -37,7 +37,7 @@
 #define BADARG	':'
 #define EMSG	""
 
-#include <stdbool.h> 
+#include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
 /*
@@ -55,184 +55,184 @@
  */
 int
 getopt_long(int argc, char *const argv[],
-			const char *optstring,
-			const struct option *longopts, int *longindex)
+            const char *optstring,
+            const struct option *longopts, int *longindex)
 {
-	static char *place = EMSG;	/* option letter processing */
-	char	   *oli;			/* option letter list index */
-	static int	nonopt_start = -1;
-	static bool force_nonopt = false;
+    static char *place = EMSG;	/* option letter processing */
+    char	   *oli;			/* option letter list index */
+    static int	nonopt_start = -1;
+    static bool force_nonopt = false;
 
-	if (!*place)
-	{							/* update scanning pointer */
-		char	  **args = (char **) argv;
+    if (!*place)
+    {							/* update scanning pointer */
+        char	  **args = (char **) argv;
 
 retry:
 
-		/*
-		 * If we are out of arguments or only non-options remain, return -1.
-		 */
-		if (optind >= argc || optind == nonopt_start)
-		{
-			place = EMSG;
-			nonopt_start = -1;
-			force_nonopt = false;
-			return -1;
-		}
+        /*
+         * If we are out of arguments or only non-options remain, return -1.
+         */
+        if (optind >= argc || optind == nonopt_start)
+        {
+            place = EMSG;
+            nonopt_start = -1;
+            force_nonopt = false;
+            return -1;
+        }
 
-		place = argv[optind];
+        place = argv[optind];
 
-		/*
-		 * An argument is a non-option if it meets any of the following
-		 * criteria: it follows an argument that is equivalent to the string
-		 * "--", it does not start with '-', or it is equivalent to the string
-		 * "-".  When we encounter a non-option, we move it to the end of argv
-		 * (after shifting all remaining arguments over to make room), and
-		 * then we try again with the next argument.
-		 */
-		if (force_nonopt || place[0] != '-' || place[1] == '\0')
-		{
-			for (int i = optind; i < argc - 1; i++)
-				args[i] = args[i + 1];
-			args[argc - 1] = place;
+        /*
+         * An argument is a non-option if it meets any of the following
+         * criteria: it follows an argument that is equivalent to the string
+         * "--", it does not start with '-', or it is equivalent to the string
+         * "-".  When we encounter a non-option, we move it to the end of argv
+         * (after shifting all remaining arguments over to make room), and
+         * then we try again with the next argument.
+         */
+        if (force_nonopt || place[0] != '-' || place[1] == '\0')
+        {
+            for (int i = optind; i < argc - 1; i++)
+                args[i] = args[i + 1];
+            args[argc - 1] = place;
 
-			if (nonopt_start == -1)
-				nonopt_start = argc - 1;
-			else
-				nonopt_start--;
+            if (nonopt_start == -1)
+                nonopt_start = argc - 1;
+            else
+                nonopt_start--;
 
-			goto retry;
-		}
+            goto retry;
+        }
 
-		place++;
+        place++;
 
-		if (place[0] == '-' && place[1] == '\0')
-		{
-			/* found "--", treat it as end of options */
-			++optind;
-			force_nonopt = true;
-			goto retry;
-		}
+        if (place[0] == '-' && place[1] == '\0')
+        {
+            /* found "--", treat it as end of options */
+            ++optind;
+            force_nonopt = true;
+            goto retry;
+        }
 
-		if (place[0] == '-' && place[1])
-		{
-			/* long option */
-			size_t		namelen;
-			int			i;
+        if (place[0] == '-' && place[1])
+        {
+            /* long option */
+            size_t		namelen;
+            int			i;
 
-			place++;
+            place++;
 
-			namelen = strcspn(place, "=");
-			for (i = 0; longopts[i].name != NULL; i++)
-			{
-				if (strlen(longopts[i].name) == namelen
-					&& strncmp(place, longopts[i].name, namelen) == 0)
-				{
-					int			has_arg = longopts[i].has_arg;
+            namelen = strcspn(place, "=");
+            for (i = 0; longopts[i].name != NULL; i++)
+            {
+                if (strlen(longopts[i].name) == namelen
+                    && strncmp(place, longopts[i].name, namelen) == 0)
+                {
+                    int			has_arg = longopts[i].has_arg;
 
-					if (has_arg != no_argument)
-					{
-						if (place[namelen] == '=')
-							optarg = place + namelen + 1;
-						else if (optind < argc - 1 &&
-								 has_arg == required_argument)
-						{
-							optind++;
-							optarg = argv[optind];
-						}
-						else
-						{
-							if (optstring[0] == ':')
-								return BADARG;
+                    if (has_arg != no_argument)
+                    {
+                        if (place[namelen] == '=')
+                            optarg = place + namelen + 1;
+                        else if (optind < argc - 1 &&
+                                 has_arg == required_argument)
+                        {
+                            optind++;
+                            optarg = argv[optind];
+                        }
+                        else
+                        {
+                            if (optstring[0] == ':')
+                                return BADARG;
 
-							if (opterr && has_arg == required_argument)
-								fprintf(stderr,
-										"%s: option requires an argument -- %s\n",
-										argv[0], place);
+                            if (opterr && has_arg == required_argument)
+                                fprintf(stderr,
+                                        "%s: option requires an argument -- %s\n",
+                                        argv[0], place);
 
-							place = EMSG;
-							optind++;
+                            place = EMSG;
+                            optind++;
 
-							if (has_arg == required_argument)
-								return BADCH;
-							optarg = NULL;
-						}
-					}
-					else
-					{
-						optarg = NULL;
-						if (place[namelen] != 0)
-						{
-							/* XXX error? */
-						}
-					}
+                            if (has_arg == required_argument)
+                                return BADCH;
+                            optarg = NULL;
+                        }
+                    }
+                    else
+                    {
+                        optarg = NULL;
+                        if (place[namelen] != 0)
+                        {
+                            /* XXX error? */
+                        }
+                    }
 
-					optind++;
+                    optind++;
 
-					if (longindex)
-						*longindex = i;
+                    if (longindex)
+                        *longindex = i;
 
-					place = EMSG;
+                    place = EMSG;
 
-					if (longopts[i].flag == NULL)
-						return longopts[i].val;
-					else
-					{
-						*longopts[i].flag = longopts[i].val;
-						return 0;
-					}
-				}
-			}
+                    if (longopts[i].flag == NULL)
+                        return longopts[i].val;
+                    else
+                    {
+                        *longopts[i].flag = longopts[i].val;
+                        return 0;
+                    }
+                }
+            }
 
-			if (opterr && optstring[0] != ':')
-				fprintf(stderr,
-						"%s: illegal option -- %s\n", argv[0], place);
-			place = EMSG;
-			optind++;
-			return BADCH;
-		}
-	}
+            if (opterr && optstring[0] != ':')
+                fprintf(stderr,
+                        "%s: illegal option -- %s\n", argv[0], place);
+            place = EMSG;
+            optind++;
+            return BADCH;
+        }
+    }
 
-	/* short option */
-	optopt = (int) *place++;
+    /* short option */
+    optopt = (int) *place++;
 
-	oli = strchr(optstring, optopt);
-	if (!oli)
-	{
-		if (!*place)
-			++optind;
-		if (opterr && *optstring != ':')
-			fprintf(stderr,
-					"%s: illegal option -- %c\n", argv[0], optopt);
-		return BADCH;
-	}
+    oli = strchr(optstring, optopt);
+    if (!oli)
+    {
+        if (!*place)
+            ++optind;
+        if (opterr && *optstring != ':')
+            fprintf(stderr,
+                    "%s: illegal option -- %c\n", argv[0], optopt);
+        return BADCH;
+    }
 
-	if (oli[1] != ':')
-	{							/* don't need argument */
-		optarg = NULL;
-		if (!*place)
-			++optind;
-	}
-	else
-	{							/* need an argument */
-		if (*place)				/* no white space */
-			optarg = place;
-		else if (argc <= ++optind)
-		{						/* no arg */
-			place = EMSG;
-			if (*optstring == ':')
-				return BADARG;
-			if (opterr)
-				fprintf(stderr,
-						"%s: option requires an argument -- %c\n",
-						argv[0], optopt);
-			return BADCH;
-		}
-		else
-			/* white space */
-			optarg = argv[optind];
-		place = EMSG;
-		++optind;
-	}
-	return optopt;
+    if (oli[1] != ':')
+    {							/* don't need argument */
+        optarg = NULL;
+        if (!*place)
+            ++optind;
+    }
+    else
+    {							/* need an argument */
+        if (*place)				/* no white space */
+            optarg = place;
+        else if (argc <= ++optind)
+        {						/* no arg */
+            place = EMSG;
+            if (*optstring == ':')
+                return BADARG;
+            if (opterr)
+                fprintf(stderr,
+                        "%s: option requires an argument -- %c\n",
+                        argv[0], optopt);
+            return BADCH;
+        }
+        else
+            /* white space */
+            optarg = argv[optind];
+        place = EMSG;
+        ++optind;
+    }
+    return optopt;
 }

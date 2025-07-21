@@ -26,13 +26,13 @@
 typedef struct ClientConnectionInfo
 {
 
-	const char *authn_id;
+    const char *authn_id;
 
-	/*
-	 * The HBA method that determined the above authn_id.  This only has
-	 * meaning if authn_id is not NULL; otherwise it's undefined.
-	 */
-	//UserAuth	auth_method;
+    /*
+     * The HBA method that determined the above authn_id.  This only has
+     * meaning if authn_id is not NULL; otherwise it's undefined.
+     */
+    //UserAuth	auth_method;
 } ClientConnectionInfo;
 
 /*
@@ -57,72 +57,72 @@ typedef struct ClientConnectionInfo
 
 typedef struct Port
 {
-	int	sock;			/* File descriptor */
-	bool		noblock;		/* is the socket in non-blocking mode? */
-	SockAddr	laddr;			/* local addr (postmaster) */
-	SockAddr	raddr;			/* remote addr (client) */
-	char	   *remote_host;	/* name (or ip addr) of remote host */
-	char	   *remote_hostname;	/* name (not ip addr) of remote host, if
-									 * available */
-	int			remote_hostname_resolv; /* see above */
-	int			remote_hostname_errcode;	/* see above */
-	char	   *remote_port;	/* text rep of remote port */
+    int	sock;			/* File descriptor */
+    bool		noblock;		/* is the socket in non-blocking mode? */
+    SockAddr	laddr;			/* local addr (postmaster) */
+    SockAddr	raddr;			/* remote addr (client) */
+    char	   *remote_host;	/* name (or ip addr) of remote host */
+    char	   *remote_hostname;	/* name (not ip addr) of remote host, if
+                                     * available */
+    int			remote_hostname_resolv; /* see above */
+    int			remote_hostname_errcode;	/* see above */
+    char	   *remote_port;	/* text rep of remote port */
 
-	/*
-	 * Information that needs to be saved from the startup packet and passed
-	 * into backend execution.  "char *" fields are NULL if not set.
-	 * guc_options points to a List of alternating option names and values.
-	 */
-	char	   *database_name;
-	char	   *user_name;
-	char	   *cmdline_options;
+    /*
+     * Information that needs to be saved from the startup packet and passed
+     * into backend execution.  "char *" fields are NULL if not set.
+     * guc_options points to a List of alternating option names and values.
+     */
+    char	   *database_name;
+    char	   *user_name;
+    char	   *cmdline_options;
 
-	/*
-	 * The startup packet application name, only used here for the "connection
-	 * authorized" log message. We shouldn't use this post-startup, instead
-	 * the GUC should be used as application can change it afterward.
-	 */
-	char	   *application_name;
+    /*
+     * The startup packet application name, only used here for the "connection
+     * authorized" log message. We shouldn't use this post-startup, instead
+     * the GUC should be used as application can change it afterward.
+     */
+    char	   *application_name;
 
-	/*
-	 * TCP keepalive and user timeout settings.
-	 *
-	 * default values are 0 if AF_UNIX or not yet known; current values are 0
-	 * if AF_UNIX or using the default. Also, -1 in a default value means we
-	 * were unable to find out the default (getsockopt failed).
-	 */
-	int			default_keepalives_idle;
-	int			default_keepalives_interval;
-	int			default_keepalives_count;
-	int			default_tcp_user_timeout;
-	int			keepalives_idle;
-	int			keepalives_interval;
-	int			keepalives_count;
-	int			tcp_user_timeout;
+    /*
+     * TCP keepalive and user timeout settings.
+     *
+     * default values are 0 if AF_UNIX or not yet known; current values are 0
+     * if AF_UNIX or using the default. Also, -1 in a default value means we
+     * were unable to find out the default (getsockopt failed).
+     */
+    int			default_keepalives_idle;
+    int			default_keepalives_interval;
+    int			default_keepalives_count;
+    int			default_tcp_user_timeout;
+    int			keepalives_idle;
+    int			keepalives_interval;
+    int			keepalives_count;
+    int			tcp_user_timeout;
 
-	/*
-	 * SSL structures.
-	 */
-	bool		ssl_in_use;
-	char	   *peer_cn;
-	char	   *peer_dn;
-	bool		peer_cert_valid;
-	bool		alpn_used;
-	bool		last_read_was_eof;
+    /*
+     * SSL structures.
+     */
+    bool		ssl_in_use;
+    char	   *peer_cn;
+    char	   *peer_dn;
+    bool		peer_cert_valid;
+    bool		alpn_used;
+    bool		last_read_was_eof;
 
 
-	/*
-	 * This is a bit of a hack. raw_buf is data that was previously read and
-	 * buffered in a higher layer but then "unread" and needs to be read again
-	 * while establishing an SSL connection via the SSL library layer.
-	 *
-	 * There's no API to "unread", the upper layer just places the data in the
-	 * Port structure in raw_buf and sets raw_buf_remaining to the amount of
-	 * bytes unread and raw_buf_consumed to 0.
-	 */
-	char	   *raw_buf;
-	ssize_t		raw_buf_consumed,
-				raw_buf_remaining;
+    /*
+     * This is a bit of a hack. raw_buf is data that was previously read and
+     * buffered in a higher layer but then "unread" and needs to be read again
+     * while establishing an SSL connection via the SSL library layer.
+     *
+     * There's no API to "unread", the upper layer just places the data in the
+     * Port structure in raw_buf and sets raw_buf_remaining to the amount of
+     * bytes unread and raw_buf_consumed to 0.
+     */
+    char	   *raw_buf;
+    ssize_t		raw_buf_consumed,
+                raw_buf_remaining;
 } Port;
 
 /*
@@ -132,8 +132,8 @@ typedef struct Port
  */
 typedef struct ClientSocket
 {
-	int	sock;			/* File descriptor */
-	SockAddr	raddr;			/* remote addr (client) */
+    int	sock;			/* File descriptor */
+    SockAddr	raddr;			/* remote addr (client) */
 } ClientSocket;
 
 extern ClientSocket *global_client_socket;
@@ -163,12 +163,12 @@ extern int	settcpusertimeout(int timeout, Port *port);
 
 typedef struct
 {
-	void		(*comm_reset) (void);
-	int			(*flush) (void);
-	int			(*flush_if_writable) (void);
-	bool		(*is_send_pending) (void);
-	int			(*putmessage) (char msgtype, const char *s, size_t len);
-	void		(*putmessage_noblock) (char msgtype, const char *s, size_t len);
+    void		(*comm_reset) (void);
+    int			(*flush) (void);
+    int			(*flush_if_writable) (void);
+    bool		(*is_send_pending) (void);
+    int			(*putmessage) (char msgtype, const char *s, size_t len);
+    void		(*putmessage_noblock) (char msgtype, const char *s, size_t len);
 } DBcommMethods;
 
 extern const DBDLLIMPORT DBcommMethods *DbCommMethods;
@@ -178,9 +178,9 @@ extern const DBDLLIMPORT DBcommMethods *DbCommMethods;
 #define flush_if_writable() (DbCommMethods->flush_if_writable())
 #define is_send_pending() (DbCommMethods->is_send_pending())
 #define putmessage(msgtype, s, len) \
-	(DbCommMethods->putmessage(msgtype, s, len))
+    (DbCommMethods->putmessage(msgtype, s, len))
 #define putmessage_noblock(msgtype, s, len) \
-	(DbCommMethods->putmessage_noblock(msgtype, s, len))
+    (DbCommMethods->putmessage_noblock(msgtype, s, len))
 
 /*
  * External functions.
@@ -213,8 +213,8 @@ extern const DBDLLIMPORT DBcommMethods *DbCommMethods;
 
 
 extern int	ListenServerPort(int family, const char *hostName,
-							 unsigned short portNumber,
-							 int ListenSockets[], int *NumListenSockets, int MaxListen);
+                             unsigned short portNumber,
+                             int ListenSockets[], int *NumListenSockets, int MaxListen);
 extern int	AcceptConnection(int server_fd, ClientSocket *client_sock);
 extern void TouchSocketFiles(void);
 extern void RemoveSocketFiles(void);
@@ -250,9 +250,9 @@ ssize_t
 be_gssapi_read(ClientSocket *client_sock, void *ptr, size_t len);
 void
 pg_GSS_error(const char *errmsg,
-			 OM_uint32 maj_stat, OM_uint32 min_stat);
+             OM_uint32 maj_stat, OM_uint32 min_stat);
 void
 pg_store_delegated_credential(gss_cred_id_t cred);
 
 ssize_t secure_open_gssapi(ClientSocket *client_sock);
-#endif	
+#endif

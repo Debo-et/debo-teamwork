@@ -74,7 +74,7 @@ ValidationResult validateAtlasConfigParam(const char *param_name, const char *va
     bool param_exists = false;
     regex_t regex;
     regmatch_t matches[3];
-    
+
     for (size_t i = 0; i < sizeof(predefinedParams)/sizeof(predefinedParams[0]); i++) {
         if (regcomp(&regex, predefinedParams[i].canonicalName, REG_EXTENDED|REG_ICASE) != 0) continue;
         if (regexec(&regex, param_name, 3, matches, 0) == 0) {
@@ -84,7 +84,7 @@ ValidationResult validateAtlasConfigParam(const char *param_name, const char *va
         }
         regfree(&regex);
     }
-    
+
     if (!param_exists) return ERROR_PARAM_NOT_FOUND;
 
     // Check value presence
@@ -238,8 +238,8 @@ static char* determine_file_path(const char *filename) {
 
         if (!is_directory(conf_dir)) continue;
 
-        rc = snprintf(selected_path, sizeof(selected_path), "%s/%s/%s", 
-                     paths[i], conf_subdir, filename);
+        rc = snprintf(selected_path, sizeof(selected_path), "%s/%s/%s",
+                      paths[i], conf_subdir, filename);
         if (rc < 0 || (size_t)rc >= sizeof(selected_path)) continue;
 
         if (access(selected_path, F_OK) == 0) {

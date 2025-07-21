@@ -2,84 +2,84 @@
 
 ConfigResult *get_presto_config_setting(const char *param_name, const char *param_value) {
     // Predefined list of the most impactful Presto configuration parameters
-ConfigParam presto_predefined_params[] = {
-    // node.properties parameters
-    {"node.id", "node.properties", "^node[._-]id$"},
-    {"node.environment", "node.properties", "^node[._-]environment$"},
-    {"node.data-dir", "node.properties", "^node[._-]data[._-]dir$"},
-    {"node.launcher-log-file", "node.properties", "^node[._-]launcher[._-]log[._-]file$"},
-    {"node.server-log-file", "node.properties", "^node[._-]server[._-]log[._-]file$"},
-    {"node.presto-version", "node.properties", "^node[._-]presto[._-]version$"},
-    {"node.allow-version-mismatch", "node.properties", "^node[._-]allow[._-]version[._-]mismatch$"},
+    ConfigParam presto_predefined_params[] = {
+        // node.properties parameters
+        {"node.id", "node.properties", "^node[._-]id$"},
+        {"node.environment", "node.properties", "^node[._-]environment$"},
+        {"node.data-dir", "node.properties", "^node[._-]data[._-]dir$"},
+        {"node.launcher-log-file", "node.properties", "^node[._-]launcher[._-]log[._-]file$"},
+        {"node.server-log-file", "node.properties", "^node[._-]server[._-]log[._-]file$"},
+        {"node.presto-version", "node.properties", "^node[._-]presto[._-]version$"},
+        {"node.allow-version-mismatch", "node.properties", "^node[._-]allow[._-]version[._-]mismatch$"},
 
-    // config.properties - Coordinator & Discovery
-    {"coordinator", "config.properties", "^coordinator$"},
-    {"discovery-server.enabled", "config.properties", "^discovery[._-]server[._-]enabled$"},
-    {"discovery.uri", "config.properties", "^discovery[._-]uri$"},
+        // config.properties - Coordinator & Discovery
+        {"coordinator", "config.properties", "^coordinator$"},
+        {"discovery-server.enabled", "config.properties", "^discovery[._-]server[._-]enabled$"},
+        {"discovery.uri", "config.properties", "^discovery[._-]uri$"},
 
-    // HTTP Server
-    {"http-server.http.port", "config.properties", "^http[._-]server[._-]http[._-]port$"},
-    {"http-server.https.port", "config.properties", "^http[._-]server[._-]https[._-]port$"},
-    {"http-server.https.enabled", "config.properties", "^http[._-]server[._-]https[._-]enabled$"},
-    {"http-server.https.keystore.path", "config.properties", "^http[._-]server[._-]https[._-]keystore[._-]path$"},
-    {"http-server.https.keystore.key", "config.properties", "^http[._-]server[._-]https[._-]keystore[._-]key$"},
-    {"http-server.https.truststore.path", "config.properties", "^http[._-]server[._-]https[._-]truststore[._-]path$"},
-    {"http-server.log.path", "config.properties", "^http[._-]server[._-]log[._-]path$"},
-    {"http-server.log.enabled", "config.properties", "^http[._-]server[._-]log[._-]enabled$"},
-    {"http-server.authentication.type", "config.properties", "^http[._-]server[._-]authentication[._-]type$"},
-    {"http-server.process-forwarded", "config.properties", "^http[._-]server[._-]process[._-]forwarded$"},
+        // HTTP Server
+        {"http-server.http.port", "config.properties", "^http[._-]server[._-]http[._-]port$"},
+        {"http-server.https.port", "config.properties", "^http[._-]server[._-]https[._-]port$"},
+        {"http-server.https.enabled", "config.properties", "^http[._-]server[._-]https[._-]enabled$"},
+        {"http-server.https.keystore.path", "config.properties", "^http[._-]server[._-]https[._-]keystore[._-]path$"},
+        {"http-server.https.keystore.key", "config.properties", "^http[._-]server[._-]https[._-]keystore[._-]key$"},
+        {"http-server.https.truststore.path", "config.properties", "^http[._-]server[._-]https[._-]truststore[._-]path$"},
+        {"http-server.log.path", "config.properties", "^http[._-]server[._-]log[._-]path$"},
+        {"http-server.log.enabled", "config.properties", "^http[._-]server[._-]log[._-]enabled$"},
+        {"http-server.authentication.type", "config.properties", "^http[._-]server[._-]authentication[._-]type$"},
+        {"http-server.process-forwarded", "config.properties", "^http[._-]server[._-]process[._-]forwarded$"},
 
-    // Query Management
-    {"query.max-memory", "config.properties", "^query[._-]max[._-]memory$"},
-    {"query.max-memory-per-node", "config.properties", "^query[._-]max[._-]memory[._-]per[._-]node$"},
-    {"query.max-total-memory-per-node", "config.properties", "^query[._-]max[._-]total[._-]memory[._-]per[._-]node$"},
-    {"query.max-execution-time", "config.properties", "^query[._-]max[._-]execution[._-]time$"},
-    {"query.max-run-time", "config.properties", "^query[._-]max[._-]run[._-]time$"},
-    {"query.client.timeout", "config.properties", "^query[._-]client[._-]timeout$"},
-    {"query.min-expire-age", "config.properties", "^query[._-]min[._-]expire[._-]age$"},
+        // Query Management
+        {"query.max-memory", "config.properties", "^query[._-]max[._-]memory$"},
+        {"query.max-memory-per-node", "config.properties", "^query[._-]max[._-]memory[._-]per[._-]node$"},
+        {"query.max-total-memory-per-node", "config.properties", "^query[._-]max[._-]total[._-]memory[._-]per[._-]node$"},
+        {"query.max-execution-time", "config.properties", "^query[._-]max[._-]execution[._-]time$"},
+        {"query.max-run-time", "config.properties", "^query[._-]max[._-]run[._-]time$"},
+        {"query.client.timeout", "config.properties", "^query[._-]client[._-]timeout$"},
+        {"query.min-expire-age", "config.properties", "^query[._-]min[._-]expire[._-]age$"},
 
-    // Memory Management
-    {"memory.heap-headroom-per-node", "config.properties", "^memory[._-]heap[._-]headroom[._-]per[._-]node$"},
-    {"memory.max-revokable-memory-per-node", "config.properties", "^memory[._-]max[._-]revokable[._-]memory[._-]per[._-]node$"},
+        // Memory Management
+        {"memory.heap-headroom-per-node", "config.properties", "^memory[._-]heap[._-]headroom[._-]per[._-]node$"},
+        {"memory.max-revokable-memory-per-node", "config.properties", "^memory[._-]max[._-]revokable[._-]memory[._-]per[._-]node$"},
 
-    // Task & Scheduler
-    {"task.concurrency", "config.properties", "^task[._-]concurrency$"},
-    {"task.http-response-threads", "config.properties", "^task[._-]http[._-]response[._-]threads$"},
-    {"task.info-update-interval", "config.properties", "^task[._-]info[._-]update[._-]interval$"},
-    {"scheduler.http-client.max-connections", "config.properties", "^scheduler[._-]http[._-]client[._-]max[._-]connections$"},
-    {"scheduler.http-client.max-connections-per-server", "config.properties", "^scheduler[._-]http[._-]client[._-]max[._-]connections[._-]per[._-]server$"},
-    {"scheduler.include-coordinator", "config.properties", "^scheduler[._-]include[._-]coordinator$"},
-    {"node-scheduler.network-topology", "config.properties", "^node[._-]scheduler[._-]network[._-]topology$"},
+        // Task & Scheduler
+        {"task.concurrency", "config.properties", "^task[._-]concurrency$"},
+        {"task.http-response-threads", "config.properties", "^task[._-]http[._-]response[._-]threads$"},
+        {"task.info-update-interval", "config.properties", "^task[._-]info[._-]update[._-]interval$"},
+        {"scheduler.http-client.max-connections", "config.properties", "^scheduler[._-]http[._-]client[._-]max[._-]connections$"},
+        {"scheduler.http-client.max-connections-per-server", "config.properties", "^scheduler[._-]http[._-]client[._-]max[._-]connections[._-]per[._-]server$"},
+        {"scheduler.include-coordinator", "config.properties", "^scheduler[._-]include[._-]coordinator$"},
+        {"node-scheduler.network-topology", "config.properties", "^node[._-]scheduler[._-]network[._-]topology$"},
 
-    // Exchange
-    {"exchange.client-threads", "config.properties", "^exchange[._-]client[._-]threads$"},
-    {"exchange.max-buffer-size", "config.properties", "^exchange[._-]max[._-]buffer[._-]size$"},
+        // Exchange
+        {"exchange.client-threads", "config.properties", "^exchange[._-]client[._-]threads$"},
+        {"exchange.max-buffer-size", "config.properties", "^exchange[._-]max[._-]buffer[._-]size$"},
 
-    // Optimizer
-    {"optimizer.dictionary-aggregation", "config.properties", "^optimizer[._-]dictionary[._-]aggregation$"},
-    {"optimizer.optimize-hash-generation", "config.properties", "^optimizer[._-]optimize[._-]hash[._-]generation$"},
-    {"redistribute-writes", "config.properties", "^redistribute[._-]writes$"},
+        // Optimizer
+        {"optimizer.dictionary-aggregation", "config.properties", "^optimizer[._-]dictionary[._-]aggregation$"},
+        {"optimizer.optimize-hash-generation", "config.properties", "^optimizer[._-]optimize[._-]hash[._-]generation$"},
+        {"redistribute-writes", "config.properties", "^redistribute[._-]writes$"},
 
-    // JMX
-    {"jmx.base-name", "config.properties", "^jmx[._-]base[._-]name$"},
+        // JMX
+        {"jmx.base-name", "config.properties", "^jmx[._-]base[._-]name$"},
 
-    // Security
-    {"internal-communication.https.required", "config.properties", "^internal[._-]communication[._-]https[._-]required$"},
+        // Security
+        {"internal-communication.https.required", "config.properties", "^internal[._-]communication[._-]https[._-]required$"},
 
-    // Experimental/Spilling
-    {"experimental.spiller-spill-path", "config.properties", "^experimental[._-]spiller[._-]spill[._-]path$"},
-    {"spill-enabled", "config.properties", "^spill[._-]enabled$"},
+        // Experimental/Spilling
+        {"experimental.spiller-spill-path", "config.properties", "^experimental[._-]spiller[._-]spill[._-]path$"},
+        {"spill-enabled", "config.properties", "^spill[._-]enabled$"},
 
-    // Resource Management
-    {"resource-manager", "config.properties", "^resource[._-]manager$"},
-    {"resource-group-manager", "config.properties", "^resource[._-]group[._-]manager$"},
+        // Resource Management
+        {"resource-manager", "config.properties", "^resource[._-]manager$"},
+        {"resource-group-manager", "config.properties", "^resource[._-]group[._-]manager$"},
 
-    // Additional parameters
-    {"join-distribution-type", "config.properties", "^join[._-]distribution[._-]type$"},
-    {"task.writer-count", "config.properties", "^task[._-]writer[._-]count$"},
-    {"http-server.https.sni-host-check", "config.properties", "^http[._-]server[._-]https[._-]sni[._-]host[._-]check$"},
-    {"query.max-stage-count", "config.properties", "^query[._-]max[._-]stage[._-]count$"}
-};
+        // Additional parameters
+        {"join-distribution-type", "config.properties", "^join[._-]distribution[._-]type$"},
+        {"task.writer-count", "config.properties", "^task[._-]writer[._-]count$"},
+        {"http-server.https.sni-host-check", "config.properties", "^http[._-]server[._-]https[._-]sni[._-]host[._-]check$"},
+        {"query.max-stage-count", "config.properties", "^query[._-]max[._-]stage[._-]count$"}
+    };
 
     int num_params = sizeof(presto_predefined_params) / sizeof(presto_predefined_params[0]);
 
@@ -128,8 +128,8 @@ ConfigParam presto_predefined_params[] = {
 ValidationResult validatePrestoConfigParam(const char *param_name, const char *value) {
     // Check if parameter exists
     bool param_exists = true;
-    
-    
+
+
     if (!param_exists) return ERROR_PARAM_NOT_FOUND;
 
     // Check value presence

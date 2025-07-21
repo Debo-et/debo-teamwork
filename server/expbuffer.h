@@ -50,9 +50,9 @@
  */
 typedef struct ExpBufferData
 {
-	char	   *data;
-	size_t		len;
-	size_t		maxlen;
+    char	   *data;
+    size_t		len;
+    size_t		maxlen;
 } ExpBufferData;
 /* Define to best printf format archetype, usually gnu_printf if available. */
 #define PRINTF_ATTRIBUTE gnu_printf
@@ -66,7 +66,7 @@ typedef ExpBufferData *ExpBuffer;
  *------------------------
  */
 #define ExpBufferBroken(str)	\
-	((str) == NULL || (str)->maxlen == 0)
+    ((str) == NULL || (str)->maxlen == 0)
 
 /*------------------------
  * Same, but for use when using a static or local ExpBufferData struct.
@@ -74,7 +74,7 @@ typedef ExpBufferData *ExpBuffer;
  *------------------------
  */
 #define ExpBufferDataBroken(buf)	\
-	((buf).maxlen == 0)
+    ((buf).maxlen == 0)
 
 /*------------------------
  * Initial size of the data buffer in a ExpBuffer.
@@ -196,6 +196,6 @@ extern void appendExpBufferChar(ExpBuffer str, char ch);
  * if necessary.
  */
 extern void appendBinaryExpBuffer(ExpBuffer str,
-									const char *data, size_t datalen);
+                                  const char *data, size_t datalen);
 
 #endif							/* EXPBUFFER_H */

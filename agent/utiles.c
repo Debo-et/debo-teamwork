@@ -31,7 +31,7 @@
 
 static char *
 simple_prompt_extended(const char *prompt, bool echo,
-					   PromptInterruptContext *prompt_ctx);
+                       PromptInterruptContext *prompt_ctx);
 char *
 apache_strdup(const char *in);
 void printBorder(const char *start, const char *end, const char *color);
@@ -46,33 +46,33 @@ void printTextBlock(const char *text, const char *textColor, const char *borderC
 FILE *
 win32_popen(const char *command, const char *type)
 {
-        size_t          cmdlen = strlen(command);
-        char       *buf;
-        int                     save_errno;
-        FILE       *res;
+    size_t          cmdlen = strlen(command);
+    char       *buf;
+    int                     save_errno;
+    FILE       *res;
 
-        /*
-         * Create a malloc'd copy of the command string, enclosed with an extra
-         * pair of quotes
-         */
-        buf = malloc(cmdlen + 2 + 1);
-        if (buf == NULL)
-        {
-                errno = ENOMEM;
-                return NULL;
-        }
-        buf[0] = '"';
-        memcpy(&buf[1], command, cmdlen);
-        buf[cmdlen + 1] = '"';
-        buf[cmdlen + 2] = '\0';
+    /*
+     * Create a malloc'd copy of the command string, enclosed with an extra
+     * pair of quotes
+     */
+    buf = malloc(cmdlen + 2 + 1);
+    if (buf == NULL)
+    {
+        errno = ENOMEM;
+        return NULL;
+    }
+    buf[0] = '"';
+    memcpy(&buf[1], command, cmdlen);
+    buf[cmdlen + 1] = '"';
+    buf[cmdlen + 2] = '\0';
 
-        res = _popen(buf, type);
+    res = _popen(buf, type);
 
-        save_errno = errno;
-        free(buf);
-        errno = save_errno;
+    save_errno = errno;
+    free(buf);
+    errno = save_errno;
 
-        return res;
+    return res;
 }
 #endif
 
@@ -88,13 +88,13 @@ win32_popen(const char *command, const char *type)
 int
 strip_crlf(char *str)
 {
-        int                     len = strlen(str);
+    int                     len = strlen(str);
 
-        while (len > 0 && (str[len - 1] == '\n' ||
-                                           str[len - 1] == '\r'))
-                str[--len] = '\0';
+    while (len > 0 && (str[len - 1] == '\n' ||
+                       str[len - 1] == '\r'))
+        str[--len] = '\0';
 
-        return len;
+    return len;
 }
 
 /*
@@ -112,7 +112,7 @@ strip_crlf(char *str)
 char *
 simple_prompt(const char *prompt, bool echo)
 {
-	return simple_prompt_extended(prompt, echo, NULL);
+    return simple_prompt_extended(prompt, echo, NULL);
 }
 
 /*
@@ -126,147 +126,147 @@ simple_prompt(const char *prompt, bool echo)
  */
 static char *
 simple_prompt_extended(const char *prompt, bool echo,
-					   PromptInterruptContext *prompt_ctx)
+                       PromptInterruptContext *prompt_ctx)
 {
-	char	   *result;
-	FILE	   *termin,
-			   *termout;
-	size_t len = 0;
-	ssize_t nread;  // Use ssize_t (signed size_t)
+    char	   *result;
+    FILE	   *termin,
+               *termout;
+    size_t len = 0;
+    ssize_t nread;  // Use ssize_t (signed size_t)
 #if defined(HAVE_TERMIOS_H)
-	struct termios t_orig,
-				t;
+    struct termios t_orig,
+                   t;
 #elif defined(WIN32)
-	HANDLE		t = NULL;
-	DWORD		t_orig = 0;
+    HANDLE		t = NULL;
+    DWORD		t_orig = 0;
 #endif
 
 #ifdef WIN32
 
-	/*
-	 * A Windows console has an "input code page" and an "output code page";
-	 * these usually match each other, but they rarely match the "Windows ANSI
-	 * code page" defined at system boot and expected of "char *" arguments to
-	 * Windows API functions.  The Microsoft CRT write() implementation
-	 * automatically converts text between these code pages when writing to a
-	 * console.  To identify such file descriptors, it calls GetConsoleMode()
-	 * on the underlying HANDLE, which in turn requires GENERIC_READ access on
-	 * the HANDLE.  Opening termout in mode "w+" allows that detection to
-	 * succeed.  Otherwise, write() would not recognize the descriptor as a
-	 * console, and non-ASCII characters would display incorrectly.
-	 *
-	 * XXX fgets() still receives text in the console's input code page.  This
-	 * makes non-ASCII credentials unportable.
-	 *
-	 * Unintuitively, we also open termin in mode "w+", even though we only
-	 * read it; that's needed for SetConsoleMode() to succeed.
-	 */
-	termin = fopen("CONIN$", "w+");
-	termout = fopen("CONOUT$", "w+");
+    /*
+     * A Windows console has an "input code page" and an "output code page";
+     * these usually match each other, but they rarely match the "Windows ANSI
+     * code page" defined at system boot and expected of "char *" arguments to
+     * Windows API functions.  The Microsoft CRT write() implementation
+     * automatically converts text between these code pages when writing to a
+     * console.  To identify such file descriptors, it calls GetConsoleMode()
+     * on the underlying HANDLE, which in turn requires GENERIC_READ access on
+     * the HANDLE.  Opening termout in mode "w+" allows that detection to
+     * succeed.  Otherwise, write() would not recognize the descriptor as a
+     * console, and non-ASCII characters would display incorrectly.
+     *
+     * XXX fgets() still receives text in the console's input code page.  This
+     * makes non-ASCII credentials unportable.
+     *
+     * Unintuitively, we also open termin in mode "w+", even though we only
+     * read it; that's needed for SetConsoleMode() to succeed.
+     */
+    termin = fopen("CONIN$", "w+");
+    termout = fopen("CONOUT$", "w+");
 #else
 
-	/*
-	 * Do not try to collapse these into one "w+" mode file. Doesn't work on
-	 * some platforms (eg, HPUX 10.20).
-	 */
-	termin = fopen("/dev/tty", "r");
-	termout = fopen("/dev/tty", "w");
+    /*
+     * Do not try to collapse these into one "w+" mode file. Doesn't work on
+     * some platforms (eg, HPUX 10.20).
+     */
+    termin = fopen("/dev/tty", "r");
+    termout = fopen("/dev/tty", "w");
 #endif
-	if (!termin || !termout
+    if (!termin || !termout
 #ifdef WIN32
 
-	/*
-	 * Direct console I/O does not work from the MSYS 1.0.10 console.  Writes
-	 * reach nowhere user-visible; reads block indefinitely.  XXX This affects
-	 * most Windows terminal environments, including rxvt, mintty, Cygwin
-	 * xterm, Cygwin sshd, and PowerShell ISE.  Switch to a more-generic test.
-	 */
-		|| (getenv("OSTYPE") && strcmp(getenv("OSTYPE"), "msys") == 0)
+        /*
+         * Direct console I/O does not work from the MSYS 1.0.10 console.  Writes
+         * reach nowhere user-visible; reads block indefinitely.  XXX This affects
+         * most Windows terminal environments, including rxvt, mintty, Cygwin
+         * xterm, Cygwin sshd, and PowerShell ISE.  Switch to a more-generic test.
+         */
+        || (getenv("OSTYPE") && strcmp(getenv("OSTYPE"), "msys") == 0)
 #endif
-		)
-	{
-		if (termin)
-			fclose(termin);
-		if (termout)
-			fclose(termout);
-		termin = stdin;
-		termout = stderr;
-	}
-
-	if (!echo)
-	{
-#if defined(HAVE_TERMIOS_H)
-		/* disable echo via tcgetattr/tcsetattr */
-		tcgetattr(fileno(termin), &t);
-		t_orig = t;
-		t.c_lflag &= ~ECHO;
-		tcsetattr(fileno(termin), TCSAFLUSH, &t);
-#elif defined(WIN32)
-		/* need the file's HANDLE to turn echo off */
-		t = (HANDLE) _get_osfhandle(_fileno(termin));
-
-		/* save the old configuration first */
-		GetConsoleMode(t, &t_orig);
-
-		/* set to the new mode */
-		SetConsoleMode(t, ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT);
-#endif
-	}
-
-	if (prompt)
-	{
-		fputs((prompt), termout);
-		fflush(termout);
-	}
-
-      nread =  getline(&result, &len, termin); 
-      
-      if (nread == -1) {
-    // Handle error or EOF
-    if (ferror(termin)) { // Check for an error
-        perror("getline"); // Print error message
-        // ... error handling ...
-    } else if (feof(termin)) { // Check for EOF
-        // ... handle EOF ...
+       )
+    {
+        if (termin)
+            fclose(termin);
+        if (termout)
+            fclose(termout);
+        termin = stdin;
+        termout = stderr;
     }
-}
 
-	//result = getline(termin, prompt_ctx);
-
-	/* If we failed to read anything, just return an empty string */
-	if (result == NULL)
-		result = apache_strdup("");
-
-	/* strip trailing newline, including \r in case we're on Windows */
-	(void) strip_crlf(result);
-
-	if (!echo)
-	{
-		/* restore previous echo behavior, then echo \n */
+    if (!echo)
+    {
 #if defined(HAVE_TERMIOS_H)
-		tcsetattr(fileno(termin), TCSAFLUSH, &t_orig);
-		fputs("\n", termout);
-		fflush(termout);
+        /* disable echo via tcgetattr/tcsetattr */
+        tcgetattr(fileno(termin), &t);
+        t_orig = t;
+        t.c_lflag &= ~ECHO;
+        tcsetattr(fileno(termin), TCSAFLUSH, &t);
 #elif defined(WIN32)
-		SetConsoleMode(t, t_orig);
-		fputs("\n", termout);
-		fflush(termout);
+        /* need the file's HANDLE to turn echo off */
+        t = (HANDLE) _get_osfhandle(_fileno(termin));
+
+        /* save the old configuration first */
+        GetConsoleMode(t, &t_orig);
+
+        /* set to the new mode */
+        SetConsoleMode(t, ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT);
 #endif
-	}
-	else if (prompt_ctx && prompt_ctx->canceled)
-	{
-		/* also echo \n if prompt was canceled */
-		fputs("\n", termout);
-		fflush(termout);
-	}
+    }
 
-	if (termin != stdin)
-	{
-		fclose(termin);
-		fclose(termout);
-	}
+    if (prompt)
+    {
+        fputs((prompt), termout);
+        fflush(termout);
+    }
 
-	return result;
+    nread =  getline(&result, &len, termin);
+
+    if (nread == -1) {
+        // Handle error or EOF
+        if (ferror(termin)) { // Check for an error
+            perror("getline"); // Print error message
+                               // ... error handling ...
+        } else if (feof(termin)) { // Check for EOF
+                                   // ... handle EOF ...
+        }
+    }
+
+    //result = getline(termin, prompt_ctx);
+
+    /* If we failed to read anything, just return an empty string */
+    if (result == NULL)
+        result = apache_strdup("");
+
+    /* strip trailing newline, including \r in case we're on Windows */
+    (void) strip_crlf(result);
+
+    if (!echo)
+    {
+        /* restore previous echo behavior, then echo \n */
+#if defined(HAVE_TERMIOS_H)
+        tcsetattr(fileno(termin), TCSAFLUSH, &t_orig);
+        fputs("\n", termout);
+        fflush(termout);
+#elif defined(WIN32)
+        SetConsoleMode(t, t_orig);
+        fputs("\n", termout);
+        fflush(termout);
+#endif
+    }
+    else if (prompt_ctx && prompt_ctx->canceled)
+    {
+        /* also echo \n if prompt was canceled */
+        fputs("\n", termout);
+        fflush(termout);
+    }
+
+    if (termin != stdin)
+    {
+        fclose(termin);
+        fclose(termout);
+    }
+
+    return result;
 }
 
 /*
@@ -275,31 +275,31 @@ simple_prompt_extended(const char *prompt, bool echo,
 char *
 apache_strdup(const char *in)
 {
-        char       *tmp;
+    char       *tmp;
 
-        if (!in)
-        {
-                PRINTF(global_client_socket,
-                                ("cannot duplicate null pointer (internal error)\n"));
-                exit(EXIT_FAILURE);
-        }
-        tmp = strdup(in);
-        if (!tmp)
-        {
-                PRINTF(global_client_socket, ("out of memory\n"));
-                exit(EXIT_FAILURE);
-        }
-        return tmp;
+    if (!in)
+    {
+        PRINTF(global_client_socket,
+               ("cannot duplicate null pointer (internal error)\n"));
+        exit(EXIT_FAILURE);
+    }
+    tmp = strdup(in);
+    if (!tmp)
+    {
+        PRINTF(global_client_socket, ("out of memory\n"));
+        exit(EXIT_FAILURE);
+    }
+    return tmp;
 }
 
 bool is_version_format(const char *version) {
     int num_count = 0, dot_count = 0;
-    
+
     // Null or empty string check
     if (!version || *version == '\0') {
         return false;
     }
-    
+
     while (*version) {
         if (isdigit(*version)) {
             num_count++;
@@ -314,7 +314,7 @@ bool is_version_format(const char *version) {
         }
         version++;
     }
-    
+
     // Valid format should have exactly two dots and no trailing dots
     return dot_count == 2 && num_count > 0;
 }
@@ -335,7 +335,7 @@ void printTextBlock(const char *text, const char *textColor, const char *borderC
     while (*start) {
         end = strchr(start, '\n');
         if (end == NULL) end = start + strlen(start);
-        
+
         int length = end - start;
         int maxLength = BOX_WIDTH - 4;  // Reserve space for null terminator
         if (length > maxLength) length = maxLength;  // Prevent overflow
@@ -356,43 +356,43 @@ void printTextBlock(const char *text, const char *textColor, const char *borderC
 const char* component_to_string(Component comp) {
     switch(comp) {
         // Flink
-        case FLINK: return "flink";
+    case FLINK: return "flink";
 
-        // Hadoop
-        case HDFS: return "hdfs";
-        // HBase
-        case HBASE: return "hbase";
+                // Hadoop
+    case HDFS: return "hdfs";
+               // HBase
+    case HBASE: return "hbase";
 
-        // Hive
-        case HIVE: return "hive";
-        // Kafka
-        case KAFKA: return "kafka";
+                // Hive
+    case HIVE: return "hive";
+               // Kafka
+    case KAFKA: return "kafka";
 
-        // Livy
-        case LIVY: return "livy";
+                // Livy
+    case LIVY: return "livy";
 
-        // Phoenix
-        case PHOENIX: return "phoenix";
+               // Phoenix
+    case PHOENIX: return "phoenix";
 
-        // Ranger
-        case RANGER: return "ranger";
+                  // Ranger
+    case RANGER: return "ranger";
 
-        // Solr
-        case SOLR: return "solr";
-        // Tez
-        case TEZ: return "tez";
-        case ATLAS: return "atlas";
-        case STORM: return "storm";
-        case PIG: return "pig";
-        case SPARK: return "spark";
-        case PRESTO: return "presto";
+                 // Solr
+    case SOLR: return "solr";
+               // Tez
+    case TEZ: return "tez";
+    case ATLAS: return "atlas";
+    case STORM: return "storm";
+    case PIG: return "pig";
+    case SPARK: return "spark";
+    case PRESTO: return "presto";
 
-        // Zeppelin
-        case ZEPPELIN: return "zeppelin";
+                 // Zeppelin
+    case ZEPPELIN: return "zeppelin";
 
-        // Zookeeper
-        case ZOOKEEPER: return "zookeeper";
-        default: return NULL;
+                   // Zookeeper
+    case ZOOKEEPER: return "zookeeper";
+    default: return NULL;
     }
 }
 
@@ -401,7 +401,7 @@ Component string_to_component(const char* name) {
     // Flink
     if (strcmp(name, "flink") == 0) return FLINK;
     if (strcmp(name, "hdfs") == 0) return HDFS;
- 
+
     // HBase
     if (strcmp(name, "hbase") == 0) return HBASE;
     // Hive
@@ -434,22 +434,22 @@ Component string_to_component(const char* name) {
 
 const char * action_to_string(Action action) {
     switch(action) {
-        case START:
-            return "Starting...";
-        case STOP:
-            return "Stoping...";
-        case RESTART: 
-            return "Restarting...";
-        case INSTALL: 
-            return "Installing...";
-        case UPGRADE:
-            return "Upgrading...";
-        case UNINSTALL: 
-            return "Uninstalling...";
-        case CONFIGURE:
-            return "Configuring...";  
+    case START:
+        return "Starting...";
+    case STOP:
+        return "Stoping...";
+    case RESTART:
+        return "Restarting...";
+    case INSTALL:
+        return "Installing...";
+    case UPGRADE:
+        return "Upgrading...";
+    case UNINSTALL:
+        return "Uninstalling...";
+    case CONFIGURE:
+        return "Configuring...";
         /* Add cases for all components */
-        default: PRINTF(global_client_socket, "Unknown component\n"); break;
+    default: PRINTF(global_client_socket, "Unknown component\n"); break;
     }
     return NULL;
 }
@@ -559,11 +559,11 @@ int update_component_version(const char* component, const char* new_version) {
                             result = -1;
                             goto cleanup;
                         }
-                        snprintf(new_line, prefix_len + strlen(new_version) + strlen(end + 1) + 2, 
+                        snprintf(new_line, prefix_len + strlen(new_version) + strlen(end + 1) + 2,
                                  "%.*s'%s'%s", (int)prefix_len, lines[j], new_version, end + 1);
                         free(lines[j]);
                         lines[j] = new_line;
-                       // base_line = j;
+                        // base_line = j;
                         result = 0;
                         goto write_back;
                     }
@@ -621,7 +621,7 @@ bool executeSystemCommand(const char *cmd) {
     if (ret == -1) {
         perror("system() execution failed");
         return false;
-    } else 
+    } else
         return true;
 #endif
 }
@@ -648,53 +648,53 @@ bool isComponentVersionSupported(Component component, const char *version) {
     const char **supported_versions = NULL;
 
     switch (component) {
-        case HDFS:
-            supported_versions = hadoop_versions;
-            break;
-        case PRESTO:
-            supported_versions = presto_versions;
-            break;
-        case PIG:
-            supported_versions = pig_versions;
-            break;
-        case HBASE:
-            supported_versions = hbase_versions;
-            break;
-        case HIVE:
-            supported_versions = hive_versions;
-            break;
-        case FLINK:
-            supported_versions = flink_versions;
-            break;
-        case LIVY:
-            supported_versions = livy_versions;
-            break;
-        case TEZ:
-            supported_versions = tez_versions;
-            break;
-        case RANGER:
-            supported_versions = ranger_versions;
-            break;
-        case PHOENIX:
-            supported_versions = phoenix_versions;
-            break;
-        case SOLR:
-            supported_versions = solr_versions;
-            break;
-        case SPARK:
-            supported_versions = spark_versions;
-            break;
-        case ZEPPELIN:
-            supported_versions = zeppelin_versions;
-            break;
-        case KAFKA:
-            supported_versions = kafka_versions;
-            break;
-        case ZOOKEEPER:
-            supported_versions = zookeeper_versions;
-            break;
-        default:
-            return false;
+    case HDFS:
+        supported_versions = hadoop_versions;
+        break;
+    case PRESTO:
+        supported_versions = presto_versions;
+        break;
+    case PIG:
+        supported_versions = pig_versions;
+        break;
+    case HBASE:
+        supported_versions = hbase_versions;
+        break;
+    case HIVE:
+        supported_versions = hive_versions;
+        break;
+    case FLINK:
+        supported_versions = flink_versions;
+        break;
+    case LIVY:
+        supported_versions = livy_versions;
+        break;
+    case TEZ:
+        supported_versions = tez_versions;
+        break;
+    case RANGER:
+        supported_versions = ranger_versions;
+        break;
+    case PHOENIX:
+        supported_versions = phoenix_versions;
+        break;
+    case SOLR:
+        supported_versions = solr_versions;
+        break;
+    case SPARK:
+        supported_versions = spark_versions;
+        break;
+    case ZEPPELIN:
+        supported_versions = zeppelin_versions;
+        break;
+    case KAFKA:
+        supported_versions = kafka_versions;
+        break;
+    case ZOOKEEPER:
+        supported_versions = zookeeper_versions;
+        break;
+    default:
+        return false;
     }
 
     if (version == NULL) {
@@ -721,11 +721,11 @@ void buffer_intermediary_function(ClientSocket *client_sock, char *buf) {
     while (start < buf_len) {
         // Find next newline starting from current position
         char *newline = strchr(buf + start, '\n');
-        
+
         if (newline != NULL) {
             size_t end = newline - buf + 1; // Include the newline
             internal_flush_buffer(client_sock, buf, &start, &end);
-            
+
             // Advance start position based on flush result
             if (start < end) {
                 start = end;
@@ -831,6 +831,66 @@ void PERROR(ClientSocket *client_sock, const char *s) {
     free(buffer);
 }
 
+static bool directory_exists(const char *path) {
+    struct stat info;
+    if (stat(path, &info) != 0) {
+        return false;
+    }
+    return S_ISDIR(info.st_mode);
+}
+
+bool isComponentInstalled(Component comp) {
+    const char *env_var = NULL;
+    const char *base_dir = NULL;
+
+    switch (comp) {
+    case FLINK:     env_var = "FLINK_HOME";     base_dir = "flink";     break;
+    case HDFS:      env_var = "HADOOP_HOME";    base_dir = "hadoop";    break;
+    case YARN:      env_var = "HADOOP_HOME";    base_dir = "hadoop";    break;
+    case HBASE:     env_var = "HBASE_HOME";     base_dir = "hbase";     break;
+    case HIVE:      env_var = "HIVE_HOME";      base_dir = "hive";      break;
+    case KAFKA:     env_var = "KAFKA_HOME";     base_dir = "kafka";     break;
+    case LIVY:      env_var = "LIVY_HOME";      base_dir = "livy";      break;
+    case PHOENIX:   env_var = "PHOENIX_HOME";   base_dir = "phoenix";   break;
+    case STORM:     env_var = "STORM_HOME";     base_dir = "storm";     break;
+    case HUE:       env_var = "HUE_HOME";       base_dir = "hue";       break;
+    case PIG:       env_var = "PIG_HOME";       base_dir = "pig";       break;
+    case OOZIE:     env_var = "OOZIE_HOME";     base_dir = "oozie";     break;
+    case PRESTO:    env_var = "PRESTO_HOME";    base_dir = "presto";    break;
+    case ATLAS:     env_var = "ATLAS_HOME";     base_dir = "atlas";     break;
+    case RANGER:    env_var = "RANGER_HOME";    base_dir = "ranger";    break;
+    case SOLR:      env_var = "SOLR_HOME";      base_dir = "solr";      break;
+    case SPARK:     env_var = "SPARK_HOME";     base_dir = "spark";     break;
+    case TEZ:       env_var = "TEZ_HOME";       base_dir = "tez";       break;
+    case ZEPPELIN:  env_var = "ZEPPELIN_HOME";  base_dir = "zeppelin";  break;
+    case ZOOKEEPER: env_var = "ZOOKEEPER_HOME"; base_dir = "zookeeper"; break;
+    default:
+                    return false;
+    }
+
+    if (env_var) {
+        char *env_path = getenv(env_var);
+        if (env_path && directory_exists(env_path)) {
+            return true;
+        }
+    }
+
+    int is_debian = (access("/etc/debian_version", F_OK) == 0);
+    int is_redhat = (access("/etc/redhat-release", F_OK) == 0) ||
+        (access("/etc/system-release", F_OK) == 0);
+
+    char standard_path[PATH_MAX];
+    if (is_debian) {
+        snprintf(standard_path, sizeof(standard_path), "/usr/local/%s", base_dir);
+    } else if (is_redhat) {
+        snprintf(standard_path, sizeof(standard_path), "/opt/%s", base_dir);
+    } else {
+        return false;
+    }
+
+    return directory_exists(standard_path);
+}
+
 char **split_string(char *input) {
     if (input == NULL) {
         return NULL;
@@ -876,78 +936,78 @@ char **split_string(char *input) {
 
 void handle_result(ConfigStatus status, const char *config_param, const char *config_value, const char *config_file) {
     switch(status) {
-        case SUCCESS:
-            PRINTF(global_client_socket, "Successfully configure '%s' to '%s' in %s\n", 
-                   config_param, config_value, config_file);
-            break;
-            
-        case INVALID_FILE_TYPE:
-            PRINTF(global_client_socket, "Error: File '%s' has invalid type (must be XML)\n", config_file);
-            break;
-            
-        case FILE_NOT_FOUND:
-            PRINTF(global_client_socket, "Error: Configuration file '%s' not found\n", config_file);
-            break;
-            
-        case XML_PARSE_ERROR:
-            PRINTF(global_client_socket, "Error: Failed to parse XML content in '%s'\n", config_file);
-            break;
-            
-        case INVALID_CONFIG_FILE:
-            PRINTF(global_client_socket, "Error: Invalid XML structure in '%s'\n", config_file);
-            break;
-            
-        case XML_UPDATE_ERROR:
-            PRINTF(global_client_socket, "Error: Failed to update parameter '%s' in '%s'\n", 
-                   config_param, config_file);
-            break;
-            
-        case FILE_WRITE_ERROR:
-            PRINTF(global_client_socket, "Error: Could not write to file '%s'\n", config_file);
-            break;
-            
-        case FILE_READ_ERROR:
-            PRINTF(global_client_socket, "Error: Could not read from file '%s'\n", config_file);
-            break;
-            
-        case XML_INVALID_ROOT:
-            PRINTF(global_client_socket, "Error: Missing or invalid root element in '%s'\n", config_file);
-            break;
-            
-        case SAVE_FAILED:
-            PRINTF(global_client_socket, "Error: Failed to save configuration changes to '%s'\n", config_file);
-            break;
-            
-        default:
-            PRINTF(global_client_socket, "Unknown error occurred (status code: %d)\n", status);
-            break;
+    case SUCCESS:
+        PRINTF(global_client_socket, "Successfully configure '%s' to '%s' in %s\n",
+               config_param, config_value, config_file);
+        break;
+
+    case INVALID_FILE_TYPE:
+        PRINTF(global_client_socket, "Error: File '%s' has invalid type (must be XML)\n", config_file);
+        break;
+
+    case FILE_NOT_FOUND:
+        PRINTF(global_client_socket, "Error: Configuration file '%s' not found\n", config_file);
+        break;
+
+    case XML_PARSE_ERROR:
+        PRINTF(global_client_socket, "Error: Failed to parse XML content in '%s'\n", config_file);
+        break;
+
+    case INVALID_CONFIG_FILE:
+        PRINTF(global_client_socket, "Error: Invalid XML structure in '%s'\n", config_file);
+        break;
+
+    case XML_UPDATE_ERROR:
+        PRINTF(global_client_socket, "Error: Failed to update parameter '%s' in '%s'\n",
+               config_param, config_file);
+        break;
+
+    case FILE_WRITE_ERROR:
+        PRINTF(global_client_socket, "Error: Could not write to file '%s'\n", config_file);
+        break;
+
+    case FILE_READ_ERROR:
+        PRINTF(global_client_socket, "Error: Could not read from file '%s'\n", config_file);
+        break;
+
+    case XML_INVALID_ROOT:
+        PRINTF(global_client_socket, "Error: Missing or invalid root element in '%s'\n", config_file);
+        break;
+
+    case SAVE_FAILED:
+        PRINTF(global_client_socket, "Error: Failed to save configuration changes to '%s'\n", config_file);
+        break;
+
+    default:
+        PRINTF(global_client_socket, "Unknown error occurred (status code: %d)\n", status);
+        break;
     }
 }
 
 bool handleValidationResult(ValidationResult result) {
     switch (result) {
-        case VALIDATION_OK:
-            return true;
-            
-        case ERROR_PARAM_NOT_FOUND:
-            PRINTF(global_client_socket, "Error: Parameter not found in  configuration\n");
-            break;
-            
-        case ERROR_VALUE_EMPTY:
-            PRINTF(global_client_socket, "Error: Configuration value cannot be empty\n");
-            break;
-            
-        case ERROR_INVALID_FORMAT:
-            PRINTF(global_client_socket, "Error: Invalid format for configuration parameter\n");
-            break;
-            
-        case ERROR_CONSTRAINT_VIOLATED:
-            PRINTF(global_client_socket, "Error: Parameter value violates constraints\n");
-            break;
-            
-        default:
-            PRINTF(global_client_socket, "Error: Unknown validation error\n");
-            break;
+    case VALIDATION_OK:
+        return true;
+
+    case ERROR_PARAM_NOT_FOUND:
+        PRINTF(global_client_socket, "Error: Parameter not found in  configuration\n");
+        break;
+
+    case ERROR_VALUE_EMPTY:
+        PRINTF(global_client_socket, "Error: Configuration value cannot be empty\n");
+        break;
+
+    case ERROR_INVALID_FORMAT:
+        PRINTF(global_client_socket, "Error: Invalid format for configuration parameter\n");
+        break;
+
+    case ERROR_CONSTRAINT_VIOLATED:
+        PRINTF(global_client_socket, "Error: Parameter value violates constraints\n");
+        break;
+
+    default:
+        PRINTF(global_client_socket, "Error: Unknown validation error\n");
+        break;
     }
     return false;
 }
@@ -969,10 +1029,10 @@ int set_config(const char *filename, const char *key, const char *value) {
             // Allocate and store each line
             char *line = strdup(buffer);
             if (!line) goto cleanup_error;
-            
+
             char **new_lines = realloc(lines, (line_count + 1) * sizeof(char *));
             if (!new_lines) { free(line); goto cleanup_error; }
-            
+
             lines = new_lines;
             lines[line_count++] = line;
         }
@@ -986,28 +1046,28 @@ int set_config(const char *filename, const char *key, const char *value) {
     for (size_t i = 0; i < line_count; i++) {
         char *line = lines[i];
         char *p = line;
-        
+
         // Skip leading whitespace
         while (isspace((unsigned char)*p)) p++;
-        
+
         // Skip comments and empty lines
         if (*p == '#' || *p == ';' || *p == '\0') continue;
-        
+
         // Locate key and validate format
         char *equals = strchr(p, '=');
         if (!equals) continue;
-        
+
         // Extract key segment
         char *key_end = equals;
         while (key_end > p && isspace((unsigned char)*(key_end - 1))) key_end--;
-        
+
         // Compare keys
         size_t key_len = key_end - p;
         if (key_len == strlen(key) && strncmp(p, key, key_len) == 0) {
             // Update the line with new key-value pair
             char *new_line;
             if (asprintf(&new_line, "%s=%s\n", key, value) < 0) goto cleanup_error;
-            
+
             free(lines[i]);
             lines[i] = new_line;
             found = update_occurred = 1;
@@ -1019,10 +1079,10 @@ int set_config(const char *filename, const char *key, const char *value) {
     if (!found) {
         char *new_line;
         if (asprintf(&new_line, "%s=%s\n", key, value) < 0) goto cleanup_error;
-        
+
         char **new_lines = realloc(lines, (line_count + 1) * sizeof(char *));
         if (!new_lines) { free(new_line); goto cleanup_error; }
-        
+
         lines = new_lines;
         lines[line_count++] = new_line;
         update_occurred = 1;
@@ -1032,7 +1092,7 @@ int set_config(const char *filename, const char *key, const char *value) {
     if (update_occurred) {
         file = fopen(filename, "w");
         if (!file) goto cleanup_error;
-        
+
         for (size_t i = 0; i < line_count; i++) {
             fputs(lines[i], file);
         }
@@ -1060,12 +1120,12 @@ static bool is_key_present(const char *line, const char *key) {
     while (*line == ' ' || *line == '\t' || *line == '\f') {
         line++;
     }
-    
+
     // Skip comment lines
     if (*line == '#' || *line == '!') {
         return false;
     }
-    
+
     // Check for key match
     const char *k = key;
     while (*k != '\0') {
@@ -1075,10 +1135,10 @@ static bool is_key_present(const char *line, const char *key) {
         line++;
         k++;
     }
-    
+
     // Verify separator after key
-    return (*line == '=' || *line == ':' || *line == ' ' || 
-            *line == '\t' || *line == '\f' || *line == '\0' || 
+    return (*line == '=' || *line == ':' || *line == ' ' ||
+            *line == '\t' || *line == '\f' || *line == '\0' ||
             *line == '\r' || *line == '\n');
 }
 
@@ -1117,7 +1177,7 @@ int configure_hadoop_property(const char *file_path, const char *key, const char
             }
             sprintf(lines[line_count], "%s=%s\n", key, safe_value);
             key_found = true;
-        } 
+        }
         else {
             // Preserve existing line
             lines[line_count] = strdup(buffer);
@@ -1145,7 +1205,7 @@ int configure_hadoop_property(const char *file_path, const char *key, const char
             goto CLEANUP_READ;
         }
         lines = new_lines;
-        
+
         lines[line_count] = malloc(strlen(key) + strlen(safe_value) + 3);
         if (!lines[line_count]) {
             status = -1;
@@ -1188,13 +1248,13 @@ int updateHadoopConfigXML(const char *filePath, const char *parameterName, const
     xmlInitParser();
     LIBXML_TEST_VERSION
 
-    // Check file accessibility
-    FILE *file = fopen(filePath, "r");
+        // Check file accessibility
+        FILE *file = fopen(filePath, "r");
     if (!file) {
         switch (errno) {
-            case ENOENT: return 1;  // File not found
-            case EACCES: return 2;  // Permission denied
-            default: return 3;      // Other errors
+        case ENOENT: return 1;  // File not found
+        case EACCES: return 2;  // Permission denied
+        default: return 3;      // Other errors
         }
     }
     fclose(file);
@@ -1254,13 +1314,13 @@ int updateHadoopConfigXML(const char *filePath, const char *parameterName, const
 
         xmlNode *nameNode = NULL;
         xmlNode *valueNode = NULL;
-        
+
         // Find name and value nodes
         for (xmlNode *child = prop->children; child; child = child->next) {
             if (child->type != XML_ELEMENT_NODE) continue;
-            if (!xmlStrcmp(child->name, BAD_CAST "name")) 
+            if (!xmlStrcmp(child->name, BAD_CAST "name"))
                 nameNode = child;
-            else if (!xmlStrcmp(child->name, BAD_CAST "value")) 
+            else if (!xmlStrcmp(child->name, BAD_CAST "value"))
                 valueNode = child;
         }
 
@@ -1288,7 +1348,7 @@ int updateHadoopConfigXML(const char *filePath, const char *parameterName, const
         } else {
             xmlNode *nameNode = xmlNewTextChild(newProp, NULL, BAD_CAST "name", BAD_CAST parameterName);
             xmlNode *valueNode = xmlNewTextChild(newProp, NULL, BAD_CAST "value", BAD_CAST parameterValue);
-            
+
             if (!nameNode || !valueNode) {
                 xmlFreeNode(newProp);
                 retCode = 4;
@@ -1467,9 +1527,9 @@ int create_xml_file(const char *directory_path, const char *xml_file_name) {
 
     // Check filename validity
     size_t file_len = strlen(xml_file_name);
-    if (file_len == 0 || file_len > 255 || 
-        strstr(xml_file_name, "..") != NULL || 
-        strchr(xml_file_name, '/') != NULL || 
+    if (file_len == 0 || file_len > 255 ||
+        strstr(xml_file_name, "..") != NULL ||
+        strchr(xml_file_name, '/') != NULL ||
         strchr(xml_file_name, '\\') != NULL) {
         PRINTF(global_client_socket, "Error: Invalid XML file name\n");
         return -1;
@@ -1485,21 +1545,21 @@ int create_xml_file(const char *directory_path, const char *xml_file_name) {
 
     // Create directory with proper permissions
     if (mkdir(directory_path, 0755) != 0 && errno != EEXIST) {
-        PRINTF(global_client_socket, "Error creating directory '%s': %s\n", 
-                directory_path, strerror(errno));
+        PRINTF(global_client_socket, "Error creating directory '%s': %s\n",
+               directory_path, strerror(errno));
         return -1;
     }
 
     // Open file for writing
     FILE *file = fopen(full_path, "wx");
     if (!file) {
-        PRINTF(global_client_socket,"Error opening file '%s': %s\n", 
-                full_path, strerror(errno));
+        PRINTF(global_client_socket,"Error opening file '%s': %s\n",
+               full_path, strerror(errno));
         return -1;
     }
 
     // Define XML content with required structure
-    const char *xml_content = 
+    const char *xml_content =
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
         "<?xml-stylesheet type=\"text/xsl\" href=\"configuration.xsl\"?>\n"
         "<configuration xmlns:xi=\"http://www.w3.org/2001/XInclude\">\n"
@@ -1508,11 +1568,11 @@ int create_xml_file(const char *directory_path, const char *xml_file_name) {
     // Write content to file
     size_t content_length = strlen(xml_content);
     size_t written = fwrite(xml_content, 1, content_length, file);
-    
+
     // Handle write errors
     if (written != content_length) {
-        PRINTF(global_client_socket, "Error writing to file: %s\n", 
-                ferror(file) ? "Write failure" : "Unknown error");
+        PRINTF(global_client_socket, "Error writing to file: %s\n",
+               ferror(file) ? "Write failure" : "Unknown error");
         fclose(file);
         remove(full_path);
         return -1;
@@ -1549,30 +1609,30 @@ int create_properties_file(const char *directory_path, const char *properties_fi
     const char *ext_ini = ".ini";
     size_t ext_properties_len = strlen(ext_properties);
     size_t ext_ini_len = strlen(ext_ini);
-    
+
     int valid_extension = 0;
     // Check for .properties extension
-    if (file_len >= ext_properties_len && 
+    if (file_len >= ext_properties_len &&
         strcmp(properties_file_name + file_len - ext_properties_len, ext_properties) == 0) {
         valid_extension = 1;
     }
     // Check for .ini extension
-    else if (file_len >= ext_ini_len && 
+    else if (file_len >= ext_ini_len &&
              strcmp(properties_file_name + file_len - ext_ini_len, ext_ini) == 0) {
         valid_extension = 1;
     }
 
     // Validate filename length and extension
-    if (file_len == 0 || 
-        file_len > 255 || 
+    if (file_len == 0 ||
+        file_len > 255 ||
         !valid_extension) {
         PRINTF(global_client_socket, "Error: File name must end with '.properties' or '.ini'\n");
         return -1;
     }
 
     // Check for path traversal attempts
-    if (strstr(properties_file_name, "..") != NULL || 
-        strchr(properties_file_name, '/') != NULL || 
+    if (strstr(properties_file_name, "..") != NULL ||
+        strchr(properties_file_name, '/') != NULL ||
         strchr(properties_file_name, '\\') != NULL) {
         PRINTF(global_client_socket, "Error: Invalid characters in file name\n");
         return -1;
@@ -1589,8 +1649,8 @@ int create_properties_file(const char *directory_path, const char *properties_fi
     // Create directory if needed (with secure permissions)
     if (mkdir(directory_path, 0755) != 0) {
         if (errno != EEXIST) {
-            PRINTF(global_client_socket,"Error creating directory '%s': %s\n", 
-                    directory_path, strerror(errno));
+            PRINTF(global_client_socket,"Error creating directory '%s': %s\n",
+                   directory_path, strerror(errno));
             return -1;
         }
         // Directory already exists - verify it's actually a directory
@@ -1606,8 +1666,8 @@ int create_properties_file(const char *directory_path, const char *properties_fi
     // Create file with exclusive mode (fails if file exists)
     FILE *file = fopen(full_path, "w");
     if (file == NULL) {
-        PRINTF(global_client_socket, "Error creating file '%s': %s\n", 
-                full_path, strerror(errno));
+        PRINTF(global_client_socket, "Error creating file '%s': %s\n",
+               full_path, strerror(errno));
         return -1;
     }
 
@@ -1640,12 +1700,12 @@ int create_conf_file(const char *directory_path, const char *conf_file_name) {
     size_t file_len = strlen(conf_file_name);
     const char *extension = ".conf";
     size_t ext_len = strlen(extension);
-    
+
     if (file_len == 0 || file_len >= MAX_FILENAME_LENGTH) {
         PRINTF(global_client_socket, "Error: Invalid filename length (1-%d allowed)\n", MAX_FILENAME_LENGTH-1);
         return -1;
     }
-    
+
     // Ensure filename ends with .conf extension
     if (file_len < ext_len || strcmp(conf_file_name + file_len - ext_len, extension) != 0) {
         PRINTF(global_client_socket, "Error: Filename must end with '.conf' extension\n");
@@ -1653,8 +1713,8 @@ int create_conf_file(const char *directory_path, const char *conf_file_name) {
     }
 
     // Check for invalid characters in filename
-    if (strstr(conf_file_name, "..") != NULL || 
-        strchr(conf_file_name, '/') != NULL || 
+    if (strstr(conf_file_name, "..") != NULL ||
+        strchr(conf_file_name, '/') != NULL ||
         strchr(conf_file_name, '\\') != NULL ||
         strchr(conf_file_name, ':') != NULL ||
         strchr(conf_file_name, '*') != NULL ||
@@ -1678,19 +1738,19 @@ int create_conf_file(const char *directory_path, const char *conf_file_name) {
     // Create directory if needed (with secure permissions)
     if (mkdir(directory_path, 0755) != 0) {
         if (errno != EEXIST) {
-            PRINTF(global_client_socket, "Error creating directory '%s': %s\n", 
-                    directory_path, strerror(errno));
+            PRINTF(global_client_socket, "Error creating directory '%s': %s\n",
+                   directory_path, strerror(errno));
             return -1;
         }
-        
+
         // Verify existing path is a directory
         struct stat path_stat;
         if (stat(directory_path, &path_stat) != 0) {
             PRINTF(global_client_socket, "Error accessing directory '%s': %s\n",
-                    directory_path, strerror(errno));
+                   directory_path, strerror(errno));
             return -1;
         }
-        
+
         if (!S_ISDIR(path_stat.st_mode)) {
             PRINTF(global_client_socket,"Error: Path exists but is not a directory\n");
             return -1;
@@ -1704,16 +1764,16 @@ int create_conf_file(const char *directory_path, const char *conf_file_name) {
         if (errno == EEXIST) {
             PRINTF(global_client_socket, "Error: File '%s' already exists\n", full_path);
         } else {
-            PRINTF(global_client_socket, "Error creating file '%s': %s\n", 
-                    full_path, strerror(errno));
+            PRINTF(global_client_socket, "Error creating file '%s': %s\n",
+                   full_path, strerror(errno));
         }
         return -1;
     }
 
     // Close file handle (creating empty file)
     if (fclose(file) != 0) {
-        PRINTF(global_client_socket, "Error closing file '%s': %s\n", 
-                full_path, strerror(errno));
+        PRINTF(global_client_socket, "Error closing file '%s': %s\n",
+               full_path, strerror(errno));
         remove(full_path);  // Clean up empty file
         return -1;
     }
@@ -1721,7 +1781,7 @@ int create_conf_file(const char *directory_path, const char *conf_file_name) {
     // Set restrictive permissions (owner read/write only)
     if (chmod(full_path, 0600) != 0) {
         PRINTF(global_client_socket,"Warning: Failed to set permissions on '%s': %s\n",
-                full_path, strerror(errno));
+               full_path, strerror(errno));
         // Not fatal, but warn about potential permission issues
     }
 
@@ -1775,7 +1835,7 @@ char *trim(char *str) {
     *(end + 1) = '\0';
 
     return str;
-  }
+}
 
 int mkdir_p(const char *path) {
     char tmp[MAX_PATH_LEN];
@@ -1898,10 +1958,10 @@ bool isDataSize(const char *value) {
     char *end;
     strtol(value, &end, 10);
     if (*end == '\0') return true;
-    
+
     if (end == value) return false;
-    return tolower(*end) == 'k' || tolower(*end) == 'm' || 
-           tolower(*end) == 'g' || tolower(*end) == 't';
+    return tolower(*end) == 'k' || tolower(*end) == 'm' ||
+        tolower(*end) == 'g' || tolower(*end) == 't';
 }
 
 bool isValidDuration(const char *value) {
@@ -1940,7 +2000,7 @@ bool isValidHostPortList(const char *value) {
     char *copy = strdup(value);
     char *token = strtok(copy, ",");
     bool valid = true;
-    
+
     while (token != NULL) {
         char *colon = strchr(token, ':');
         if (!colon) {
@@ -1953,16 +2013,16 @@ bool isValidHostPortList(const char *value) {
         }
         token = strtok(NULL, ",");
     }
-    
+
     free(copy);
     return valid;
 }
 
 // New helper for URL validation
 bool isValidUrl(const char *value) {
-    return strncmp(value, "http://", 7) == 0 || 
-           strncmp(value, "https://", 8) == 0 ||
-           strncmp(value, "jceks://", 8) == 0;
+    return strncmp(value, "http://", 7) == 0 ||
+        strncmp(value, "https://", 8) == 0 ||
+        strncmp(value, "jceks://", 8) == 0;
 }
 
 // New helper for directory/file paths
@@ -1979,11 +2039,11 @@ bool isValidHBaseDuration(const char *value) {
     if (num <= 0) return false;
     if (*end == '\0') return true; // Assume milliseconds
     if (strlen(end) > 2) return false;
-    
+
     // Allow ms/s/min/h/d suffixes
     return strcmp(end, "ms") == 0 || strcmp(end, "s") == 0 ||
-           strcmp(end, "min") == 0 || strcmp(end, "h") == 0 ||
-           strcmp(end, "d") == 0;
+        strcmp(end, "min") == 0 || strcmp(end, "h") == 0 ||
+        strcmp(end, "d") == 0;
 }
 
 bool isValidPrincipalFormat(const char *value) {
@@ -1995,8 +2055,8 @@ bool isDataSizeWithUnit(const char *value) {
     strtol(value, &end, 10);
     if (*end == '\0') return true; // No unit = bytes
     if (end == value) return false;
-    return tolower(*end) == 'k' || tolower(*end) == 'm' || 
-           tolower(*end) == 'g' || tolower(*end) == 't';
+    return tolower(*end) == 'k' || tolower(*end) == 'm' ||
+        tolower(*end) == 'g' || tolower(*end) == 't';
 }
 
 bool isValidEncoding(const char *value) {
@@ -2014,18 +2074,18 @@ bool isValidSparkDuration(const char *value) {
     if (num <= 0) return false;
     if (*end == '\0') return true; // Assume seconds
     if (strlen(end) > 2) return false;
-    
+
     // Allow s/min/h/d suffixes
-    return strcmp(end, "s") == 0 || strcmp(end, "min") == 0 || 
-           strcmp(end, "h") == 0 || strcmp(end, "d") == 0 ||
-           strcmp(end, "ms") == 0;
+    return strcmp(end, "s") == 0 || strcmp(end, "min") == 0 ||
+        strcmp(end, "h") == 0 || strcmp(end, "d") == 0 ||
+        strcmp(end, "ms") == 0;
 }
 
 bool isValidSparkMasterFormat(const char *value) {
     return strncmp(value, "local", 5) == 0 ||
-           strncmp(value, "yarn", 4) == 0 ||
-           strncmp(value, "spark://", 8) == 0 ||
-           strncmp(value, "k8s://", 6) == 0;
+        strncmp(value, "yarn", 4) == 0 ||
+        strncmp(value, "spark://", 8) == 0 ||
+        strncmp(value, "k8s://", 6) == 0;
 }
 
 
@@ -2075,8 +2135,8 @@ bool isMemorySize(const char *value) {
     strtol(value, &end, 10);
     if (*end == '\0') return true; // bytes
     if (end == value) return false;
-    return tolower(*end) == 'k' || tolower(*end) == 'm' || 
-           tolower(*end) == 'g' || tolower(*end) == 't';
+    return tolower(*end) == 'k' || tolower(*end) == 'm' ||
+        tolower(*end) == 'g' || tolower(*end) == 't';
 }
 
 bool isValidURI(const char *value) {
@@ -2124,7 +2184,7 @@ bool isCommaSeparatedList(const char *value) {
 // Storm-specific helper functions
 bool isMemorySizeMB(const char *value) {
     char *end;
-     (void)strtol(value, &end, 10);
+    (void)strtol(value, &end, 10);
     if (*end == '\0') return true;
     if (strcasecmp(end, "mb") == 0) return true;
     return false;
@@ -2171,9 +2231,9 @@ bool isValidAuthType(const char *value) {
 
 bool isValidSparkMaster(const char *value) {
     return strncmp(value, "local", 5) == 0 ||
-           strncmp(value, "yarn", 4) == 0 ||
-           strncmp(value, "k8s://", 5) == 0 ||
-           strstr(value, "spark://") != NULL;
+        strncmp(value, "yarn", 4) == 0 ||
+        strncmp(value, "k8s://", 5) == 0 ||
+        strstr(value, "spark://") != NULL;
 }
 
 // Solr-specific helper functions
@@ -2181,7 +2241,7 @@ bool isValidZKHostList(const char *value) {
     char *copy = strdup(value);
     char *token = strtok(copy, ",");
     bool valid = true;
-    
+
     while (token != NULL) {
         char *colon = strchr(token, ':');
         if (!colon || !isValidPort(colon + 1)) {
@@ -2190,7 +2250,7 @@ bool isValidZKHostList(const char *value) {
         }
         token = strtok(NULL, ",");
     }
-    
+
     free(copy);
     return valid;
 }
@@ -2204,15 +2264,15 @@ bool isValidLogLevel(const char *value) {
 }
 
 bool isValidContextPath(const char *value) {
-    return value[0] == '/' && strchr(value, ' ') == NULL && 
-           strchr(value, ';') == NULL && strchr(value, '\\') == NULL;
+    return value[0] == '/' && strchr(value, ' ') == NULL &&
+        strchr(value, ';') == NULL && strchr(value, '\\') == NULL;
 }
 
 bool isZKQuorum(const char *value) {
     char *copy = strdup(value);
     char *token = strtok(copy, ",");
     bool valid = true;
-    
+
     while (token != NULL) {
         char *colon = strchr(token, ':');
         if (!colon || !isValidPort(colon + 1)) {
@@ -2221,7 +2281,7 @@ bool isZKQuorum(const char *value) {
         }
         token = strtok(NULL, ",");
     }
-    
+
     free(copy);
     return valid;
 }
@@ -2273,7 +2333,7 @@ bool isHostPortList(const char *value) {
     char *copy = strdup(value);
     char *token = strtok(copy, ",");
     bool valid = true;
-    
+
     while (token != NULL) {
         char *colon = strchr(token, ':');
         if (!colon || !isValidPort(colon + 1)) {
@@ -2282,7 +2342,7 @@ bool isHostPortList(const char *value) {
         }
         token = strtok(NULL, ",");
     }
-    
+
     free(copy);
     return valid;
 }

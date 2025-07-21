@@ -59,10 +59,10 @@
  */
 typedef struct StringInfoData
 {
-	char	   *data;
-	int			len;
-	int			maxlen;
-	int			cursor;
+    char	   *data;
+    int			len;
+    int			maxlen;
+    int			cursor;
 } StringInfoData;
 
 typedef StringInfoData *StringInfo;
@@ -143,10 +143,10 @@ extern void initStringInfo(StringInfo str);
 static inline void
 initReadOnlyStringInfo(StringInfo str, char *data, int len)
 {
-	str->data = data;
-	str->len = len;
-	str->maxlen = 0;			/* read-only */
-	str->cursor = 0;
+    str->data = data;
+    str->len = len;
+    str->maxlen = 0;			/* read-only */
+    str->cursor = 0;
 }
 
 /*------------------------
@@ -161,12 +161,12 @@ initReadOnlyStringInfo(StringInfo str, char *data, int len)
 static inline void
 initStringInfoFromString(StringInfo str, char *data, int len)
 {
-	Assert(data[len] == '\0');
+    Assert(data[len] == '\0');
 
-	str->data = data;
-	str->len = len;
-	str->maxlen = len + 1;
-	str->cursor = 0;
+    str->data = data;
+    str->len = len;
+    str->maxlen = len + 1;
+    str->cursor = 0;
 }
 
 /*------------------------
@@ -216,9 +216,9 @@ extern void appendStringInfoChar(StringInfo str, char ch);
  * Caution: str argument will be evaluated multiple times.
  */
 #define appendStringInfoCharMacro(str,ch) \
-	(((str)->len + 1 >= (str)->maxlen) ? \
-	 appendStringInfoChar(str, ch) : \
-	 (void)((str)->data[(str)->len] = (ch), (str)->data[++(str)->len] = '\0'))
+    (((str)->len + 1 >= (str)->maxlen) ? \
+     appendStringInfoChar(str, ch) : \
+     (void)((str)->data[(str)->len] = (ch), (str)->data[++(str)->len] = '\0'))
 
 /*------------------------
  * appendStringInfoSpaces
@@ -232,7 +232,7 @@ extern void appendStringInfoSpaces(StringInfo str, int count);
  * if necessary.
  */
 extern void appendBinaryStringInfo(StringInfo str,
-								   const void *data, int datalen);
+                                   const void *data, int datalen);
 
 /*------------------------
  * appendBinaryStringInfoNT
@@ -240,7 +240,7 @@ extern void appendBinaryStringInfo(StringInfo str,
  * if necessary. Does not ensure a trailing null-byte exists.
  */
 extern void appendBinaryStringInfoNT(StringInfo str,
-									 const void *data, int datalen);
+                                     const void *data, int datalen);
 
 /*------------------------
  * enlargeStringInfo

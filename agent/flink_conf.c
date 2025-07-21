@@ -86,7 +86,7 @@ ConfigParam flink_params[] = {
     { "metrics.reporter.prom.class", "^metrics[._-]reporter[._-]prom[._-]class$", "config.yaml" },
     { "metrics.reporter.prom.port", "^metrics[._-]reporter[._-]prom[._-]port$", "config.yaml" },
     { "metrics.system-resource", "^metrics[._-]system[._-]resource$", "config.yaml" },
-        // Parameters from log4j-cli.properties (28 entries)
+    // Parameters from log4j-cli.properties (28 entries)
     { "monitorInterval", "^monitorInterval$", "log4j-cli.properties" },
     { "rootLogger.level", "^rootLogger[._-]level$", "log4j-cli.properties" },
     { "rootLogger.appenderRef.file.ref", "^rootLogger[._-]appenderRef[._-]file[._-]ref$", "log4j-cli.properties" },
@@ -120,7 +120,7 @@ ConfigParam flink_params[] = {
     { "logger.hadoopnative.level", "^logger[._-]hadoopnative[._-]level$", "log4j-cli.properties" },
     { "logger.netty.name", "^logger[._-]netty[._-]name$", "log4j-cli.properties" },
     { "logger.netty.level", "^logger[._-]netty[._-]level$", "log4j-cli.properties" },
-    
+
     // New parameters from log4j-console.properties (35 entries)
     { "monitorInterval", "^monitorInterval$", "log4j-console.properties" },
     { "rootLogger.level", "^rootLogger[._-]level$", "log4j-console.properties" },
@@ -185,13 +185,13 @@ ConfigParam flink_params[] = {
     { "appender.main.strategy.max", "^appender[._-]main[._-]strategy[._-]max$", "log4j.properties" },
     { "logger.netty.name", "^logger[._-]netty[._-]name$", "log4j.properties" },
     { "logger.netty.level", "^logger[._-]netty[._-]level$", "log4j.properties" },
-    { "monitorInterval", "^monitorInterval$", "log4j-session.properties" }, 
-    { "rootLogger.level", "^rootLogger[._-]level$", "log4j-session.properties" }, 
+    { "monitorInterval", "^monitorInterval$", "log4j-session.properties" },
+    { "rootLogger.level", "^rootLogger[._-]level$", "log4j-session.properties" },
     { "rootLogger.appenderRef.console.ref", "^rootLogger[._-]appenderRef[._-]console[._-]ref$", "log4j-session.properties" },
-    { "appender.console.name", "^appender[._-]console[._-]name$", "log4j-session.properties" }, 
-    { "appender.console.type", "^appender[._-]console[._-]type$", "log4j-session.properties" }, 
-    { "appender.console.layout.type", "^appender[._-]console[._-]layout[._-]type$", "log4j-session.properties" }, 
-    { "appender.console.layout.pattern", "^appender[._-]console[._-]layout[._-]pattern$", "log4j-session.properties" }, 
+    { "appender.console.name", "^appender[._-]console[._-]name$", "log4j-session.properties" },
+    { "appender.console.type", "^appender[._-]console[._-]type$", "log4j-session.properties" },
+    { "appender.console.layout.type", "^appender[._-]console[._-]layout[._-]type$", "log4j-session.properties" },
+    { "appender.console.layout.pattern", "^appender[._-]console[._-]layout[._-]pattern$", "log4j-session.properties" },
     { "logger.netty.name", "^logger[._-]netty[._-]name$", "log4j-session.properties" },
     { "logger.netty.level", "^logger[._-]netty[._-]level$", "log4j-session.properties" },
     { "logger.zookeeper.name", "^logger[._-]zookeeper[._-]name$", "log4j-session.properties" },
@@ -199,12 +199,12 @@ ConfigParam flink_params[] = {
     { "logger.shaded_zookeeper.name", "^logger[._-]shaded_zookeeper[._-]name$", "log4j-session.properties" },
     { "logger.shaded_zookeeper.level", "^logger[._-]shaded_zookeeper[._-]level$", "log4j-session.properties" },
     { "logger.curator.name", "^logger[._-]curator[._-]name$", "log4j-session.properties" },
-    { "logger.curator.level", "^logger[._-]curator[._-]level$", "log4j-session.properties" }, 
-    { "logger.runtimeutils.name", "^logger[._-]runtimeutils[._-]name$", "log4j-session.properties" }, 
-    { "logger.runtimeutils.level", "^logger[._-]runtimeutils[._-]level$", "log4j-session.properties" }, 
+    { "logger.curator.level", "^logger[._-]curator[._-]level$", "log4j-session.properties" },
+    { "logger.runtimeutils.name", "^logger[._-]runtimeutils[._-]name$", "log4j-session.properties" },
+    { "logger.runtimeutils.level", "^logger[._-]runtimeutils[._-]level$", "log4j-session.properties" },
     { "logger.runtimeleader.name", "^logger[._-]runtimeleader[._-]name$", "log4j-session.properties" },
     { "logger.runtimeleader.level", "^logger[._-]runtimeleader[._-]level$", "log4j-session.properties" },
-    
+
 };
 
 ValidationResult validateFlinkConfigParam(const char *param_name, const char *value) {
@@ -390,11 +390,11 @@ ConfigStatus update_flink_config(const char *param, const char *value , const ch
     char config_path[PATH_MAX];
     if (!find_flink_config(config_path, filename)) {
         return FILE_NOT_FOUND; // Config file not found
-   }
-   
+    }
+
     if (strcmp(filename, "log4j-cli.properties") == 0 ||
         strcmp(filename, "log4j-console.properties") == 0 ||
-        strcmp(filename, "log4j-session.properties") == 0 || 
+        strcmp(filename, "log4j-session.properties") == 0 ||
         strcmp(filename, "log4j.properties")) {
         configure_hadoop_property(config_path, param, value);
         return SUCCESS;
@@ -418,7 +418,7 @@ ConfigStatus update_flink_config(const char *param, const char *value , const ch
         if (strncmp(buffer, param, param_len) == 0 && buffer[param_len] == ':') {
             char new_line[1024];
             snprintf(new_line, sizeof(new_line), "%s: %s\n", param, value);
-            
+
             // Allocate space for new line
             char **temp = realloc(lines, (line_count + 1) * sizeof(char *));
             if (!temp) {
@@ -426,7 +426,7 @@ ConfigStatus update_flink_config(const char *param, const char *value , const ch
                 return SAVE_FAILED; // Memory allocation failed
             }
             lines = temp;
-            
+
             lines[line_count] = strdup(new_line);
             if (!lines[line_count]) {
                 fclose(file);
@@ -435,7 +435,7 @@ ConfigStatus update_flink_config(const char *param, const char *value , const ch
             }
             line_count++;
             param_found = 1;
-     } else {
+        } else {
             // Keep original line
             char **temp = realloc(lines, (line_count + 1) * sizeof(char *));
             if (!temp) {
@@ -443,7 +443,7 @@ ConfigStatus update_flink_config(const char *param, const char *value , const ch
                 return SAVE_FAILED;
             }
             lines = temp;
-            
+
             lines[line_count] = strdup(buffer);
             if (!lines[line_count]) {
                 fclose(file);
@@ -459,11 +459,11 @@ ConfigStatus update_flink_config(const char *param, const char *value , const ch
     if (!param_found) {
         char new_line[1024];
         snprintf(new_line, sizeof(new_line), "%s: %s\n", param, value);
-        
+
         char **temp = realloc(lines, (line_count + 1) * sizeof(char *));
         if (!temp) return SAVE_FAILED;
         lines = temp;
-        
+
         lines[line_count] = strdup(new_line);
         if (!lines[line_count]) {
             for (size_t i = 0; i < line_count; i++) free(lines[i]);

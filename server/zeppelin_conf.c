@@ -76,7 +76,7 @@ ConfigParam zeppelin_predefined_params[] = {
     // External Systems Integration
     {"zeppelin.config.fs.dir", "zeppelin-config-fs-dir", "zeppelin-site.xml"},
     {"zeppelin.credentials.file", "zeppelin-credentials-file", "zeppelin-site.xml"},
-        // New Configuration Parameters (from log4j.properties)
+    // New Configuration Parameters (from log4j.properties)
     {"log4j.rootLogger", "log4j-rootLogger", "log4j.properties"},
     {"log4j.appender.stdout", "log4j-appender-stdout", "log4j.properties"},
     {"log4j.appender.stdout.layout", "log4j-appender-stdout-layout", "log4j.properties"},
@@ -89,7 +89,7 @@ ConfigParam zeppelin_predefined_params[] = {
     {"log4j.appender.dailyfile.layout.ConversionPattern", "log4j-appender-dailyfile-layout-ConversionPattern", "log4j.properties"},
     {"log4j.logger.org.apache.zeppelin.python", "log4j-logger-org-apache-zeppelin-python", "log4j.properties"},
     {"log4j.logger.org.apache.zeppelin.spark", "log4j-logger-org-apache-zeppelin-spark", "log4j.properties"},
-        // New entries from shiro.ini
+    // New entries from shiro.ini
     // [users] section
     {"shiro.user.user1", "password2, role1, role2", "shiro.ini"},
     {"shiro.user.user2", "password3, role3", "shiro.ini"},
@@ -175,7 +175,7 @@ ValidationResult validateZeppelinConfigParam(const char *param_name, const char 
     }
     else if (strcmp(param_name, "zeppelin.spark.master") == 0) {
         return strstr(value, "local") != NULL || strstr(value, "spark://") != NULL ||
-               strstr(value, "yarn") != NULL || strstr(value, "mesos") != NULL
+            strstr(value, "yarn") != NULL || strstr(value, "mesos") != NULL
             ? VALIDATION_OK : ERROR_CONSTRAINT_VIOLATED;
     }
 
@@ -299,7 +299,7 @@ ConfigStatus set_zeppelin_config(const char *config_file, const char *param, con
             return status; /* Return last error status */
         }
     }
-    
+
     if (strcmp(config_file, "log4j.properties") == 0) {
         configure_hadoop_property(config_path, param, value);
         return SUCCESS;
@@ -309,7 +309,7 @@ ConfigStatus set_zeppelin_config(const char *config_file, const char *param, con
         configure_hadoop_property(config_path, param, value);
         return SUCCESS;
     }
-    
+
     /* Determine if handling XML or INI */
     bool is_xml = strcmp(config_file, "zeppelin-site.xml") == 0;
 

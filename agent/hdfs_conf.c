@@ -131,12 +131,12 @@ static const ConfigParam hdfs_configs[] = {
     {"xasecure.audit.solr.async.max.queue.size", "^xasecure\\.audit\\.solr\\.async\\.max\\.queue\\.size$", "ranger-hdfs-audit.xml"},
     {"xasecure.audit.solr.async.max.flush.interval.ms", "^xasecure\\.audit\\.solr\\.async\\.max\\.flush\\.interval\\.ms$", "ranger-hdfs-audit.xml"},
     {"xasecure.audit.solr.solr_url", "^xasecure\\.audit\\.solr\\.solr_url$", "ranger-hdfs-audit.xml"},
-        // SSL configuration parameters from ranger-policymgr-ssl.xml
+    // SSL configuration parameters from ranger-policymgr-ssl.xml
     {"xasecure.policymgr.clientssl.keystore", "^xasecure\\.policymgr\\.clientssl\\.keystore$", "ranger-policymgr-ssl.xml"},
     {"xasecure.policymgr.clientssl.truststore", "^xasecure\\.policymgr\\.clientssl\\.truststore$", "ranger-policymgr-ssl.xml"},
     {"xasecure.policymgr.clientssl.keystore.credential.file", "^xasecure\\.policymgr\\.clientssl\\.keystore\\.credential\\.file$", "ranger-policymgr-ssl.xml"},
     {"xasecure.policymgr.clientssl.truststore.credential.file", "^xasecure\\.policymgr\\.clientssl\\.truststore\\.credential\\.file$", "ranger-policymgr-ssl.xml"},
-        // Ranger security parameters from ranger-hdfs-security.xml
+    // Ranger security parameters from ranger-hdfs-security.xml
     {"ranger.plugin.hdfs.service.name", "^ranger\\.plugin\\.hdfs\\.service\\.name$", "ranger-hdfs-security.xml"},
     {"ranger.plugin.hdfs.policy.source.impl", "^ranger\\.plugin\\.hdfs\\.policy\\.source\\.impl$", "ranger-hdfs-security.xml"},
     {"ranger.plugin.hdfs.policy.rest.url", "^ranger\\.plugin\\.hdfs\\.policy\\.rest\\.url$", "ranger-hdfs-security.xml"},
@@ -148,19 +148,19 @@ static const ConfigParam hdfs_configs[] = {
     {"xasecure.add-hadoop-authorization", "^xasecure\\.add-hadoop-authorization$", "ranger-hdfs-security.xml"},
     {"log4j.rootLogger", "^log4j\\.rootLogger$", "hdfs-log4j.properties"},
     {"log4j.threshhold", "^log4j\\.threshhold$", "hdfs-log4j.properties"},
-    {"log4j.appender.stdout", "^log4j\\.appender\\.stdout$", "hdfs-log4j.properties"}, 
-    {"log4j.appender.stdout.layout", "^log4j\\.appender\\.stdout\\.layout$", "hdfs-log4j.properties"}, 
+    {"log4j.appender.stdout", "^log4j\\.appender\\.stdout$", "hdfs-log4j.properties"},
+    {"log4j.appender.stdout.layout", "^log4j\\.appender\\.stdout\\.layout$", "hdfs-log4j.properties"},
     {"log4j.appender.stdout.layout.ConversionPattern", "^log4j\\.appender\\.stdout\\.layout\\.ConversionPattern$", "hdfs-log4j.properties"},
-    {"log4j.appender.subprocess", "^log4j\\.appender\\.subprocess$", "hdfs-log4j.properties"}, 
-    {"log4j.appender.subprocess.layout", "^log4j\\.appender\\.subprocess\\.layout$", "hdfs-log4j.properties"}, 
+    {"log4j.appender.subprocess", "^log4j\\.appender\\.subprocess$", "hdfs-log4j.properties"},
+    {"log4j.appender.subprocess.layout", "^log4j\\.appender\\.subprocess\\.layout$", "hdfs-log4j.properties"},
     {"log4j.appender.subprocess.layout.ConversionPattern", "^log4j\\.appender\\.subprocess\\.layout\\.ConversionPattern$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.yarn.registry", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.yarn\\.registry$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.service", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.service$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.security.UserGroupInformation", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.security\\.UserGroupInformation$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.util.NativeCodeLoader", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.util\\.NativeCodeLoader$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.hdfs.server.datanode.BlockPoolSliceScanner", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.hdfs\\.server\\.datanode\\.BlockPoolSliceScanner$", "hdfs-log4j.properties"},
     {"log4j.logger.org.apache.hadoop.hdfs.server.blockmanagement", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.hdfs\\.server\\.blockmanagement$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.hdfs.server.namenode.FSNamesystem.audit", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.hdfs\\.server\\.namenode\\.FSNamesystem\\.audit$", "hdfs-log4j.properties"},
-    {"log4j.logger.org.apache.hadoop.hdfs", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.hdfs$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.yarn.server.nodemanager.containermanager.monitor", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.yarn\\.server\\.nodemanager\\.containermanager\\.monitor$", "hdfs-log4j.properties"}, 
+    {"log4j.logger.org.apache.hadoop.hdfs", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.hdfs$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.yarn.server.nodemanager.containermanager.monitor", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.yarn\\.server\\.nodemanager\\.containermanager\\.monitor$", "hdfs-log4j.properties"},
     {"log4j.logger.org.apache.hadoop.yarn.server.nodemanager.NodeStatusUpdaterImpl", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.yarn\\.server\\.nodemanager\\.NodeStatusUpdaterImpl$", "hdfs-log4j.properties"},
-    {"log4j.logger.org.apache.zookeeper", "^log4j\\.logger\\.org\\.apache\\.zookeeper$", "hdfs-log4j.properties"}, 
-    {"log4j.logger.org.apache.zookeeper.ClientCnxn", "^log4j\\.logger\\.org\\.apache\\.zookeeper\\.ClientCnxn$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.yarn.server.resourcemanager.security", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.yarn\\.server\\.resourcemanager\\.security$", "hdfs-log4j.properties"}, 
+    {"log4j.logger.org.apache.zookeeper", "^log4j\\.logger\\.org\\.apache\\.zookeeper$", "hdfs-log4j.properties"},
+    {"log4j.logger.org.apache.zookeeper.ClientCnxn", "^log4j\\.logger\\.org\\.apache\\.zookeeper\\.ClientCnxn$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.yarn.server.resourcemanager.security", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.yarn\\.server\\.resourcemanager\\.security$", "hdfs-log4j.properties"},
     {"log4j.logger.org.apache.hadoop.metrics2", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.metrics2$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.util.HostsFileReader", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.util\\.HostsFileReader$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.yarn.event.AsyncDispatcher", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.yarn\\.event\\.AsyncDispatcher$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.security.token.delegation", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.security\\.token\\.delegation$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.yarn.util.AbstractLivelinessMonitor", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.yarn\\.util\\.AbstractLivelinessMonitor$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.yarn.server.nodemanager.security", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.yarn\\.server\\.nodemanager\\.security$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.hadoop.yarn.server.resourcemanager.RMNMInfo", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.yarn\\.server\\.resourcemanager\\.RMNMInfo$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.curator.framework.imps", "^log4j\\.logger\\.org\\.apache\\.curator\\.framework\\.imps$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.curator.framework.state.ConnectionStateManager", "^log4j\\.logger\\.org\\.apache\\.curator\\.framework\\.state\\.ConnectionStateManager$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.directory.api.ldap", "^log4j\\.logger\\.org\\.apache\\.directory\\.api\\.ldap$", "hdfs-log4j.properties"}, {"log4j.logger.org.apache.directory.server", "^log4j\\.logger\\.org\\.apache\\.directory\\.server$", "hdfs-log4j.properties"},
-        // Service-Level Authorization Parameters from hadoop-policy.xml (11 entries)
+    // Service-Level Authorization Parameters from hadoop-policy.xml (11 entries)
     {"security.client.protocol.acl", "^security\\.client\\.protocol\\.acl$", "hadoop-policy.xml"},
     {"security.client.datanode.protocol.acl", "^security\\.client\\.datanode\\.protocol\\.acl$", "hadoop-policy.xml"},
     {"security.datanode.protocol.acl", "^security\\.datanode\\.protocol\\.acl$", "hadoop-policy.xml"},
@@ -232,7 +232,7 @@ static const ConfigParam hdfs_configs[] = {
     {"dfs.federation.router.mount-table.cache.update.timeout", "^dfs\\.federation\\.router\\.mount-table\\.cache\\.update\\.timeout$", "hdfs-rbf-site.xml"},
     {"dfs.federation.router.mount-table.cache.update.client.max.time", "^dfs\\.federation\\.router\\.mount-table\\.cache\\.update\\.client\\.max\\.time$", "hdfs-rbf-site.xml"},
     {"dfs.federation.router.secret.manager.class", "^dfs\\.federation\\.router\\.secret\\.manager\\.class$", "hdfs-rbf-site.xml"},
-        // New SSL client parameters from ssl-client.xml (7 entries)
+    // New SSL client parameters from ssl-client.xml (7 entries)
     {"ssl.client.truststore.location", "^ssl\\.client\\.truststore\\.location$", "ssl-client.xml"},
     {"ssl.client.truststore.type", "^ssl\\.client\\.truststore\\.type$", "ssl-client.xml"},
     {"ssl.client.truststore.password", "^ssl\\.client\\.truststore\\.password$", "ssl-client.xml"},
@@ -248,7 +248,7 @@ static const ConfigParam hdfs_configs[] = {
     {"ssl.server.keystore.location", "^ssl\\.server\\.keystore\\.location$", "ssl-server.xml"},
     {"ssl.server.keystore.password", "^ssl\\.server\\.keystore\\.password$", "ssl-server.xml"},
     {"ssl.server.keystore.keypassword", "^ssl\\.server\\.keystore\\.keypassword$", "ssl-server.xml"},
-    
+
     // YARN parameters from yarn-site.xml
     {"yarn.resourcemanager.hostname", "^yarn\\.resourcemanager\\.hostname$", "yarn-site.xml"},
     {"yarn.resourcemanager.resource-tracker.address", "^yarn\\.resourcemanager\\.resource-tracker\\.address$", "yarn-site.xml"},
@@ -412,7 +412,7 @@ static const ConfigParam hdfs_configs[] = {
     {"hadoop.registry.dns.bind-address", "^hadoop\\.registry\\.dns\\.bind-address$", "yarn-site.xml"},
     {"hadoop.http.cross-origin.allowed-origins", "^hadoop\\.http\\.cross-origin\\.allowed-origins$", "yarn-site.xml"},
     {"yarn.nodemanager.resourcemanager.connect.wait.secs", "^yarn\\.nodemanager\\.resourcemanager\\.connect\\.wait\\.secs$", "yarn-site.xml"},
-        // Log4j properties parameters (71)
+    // Log4j properties parameters (71)
     {"hadoop.root.logger", "^hadoop\\.root\\.logger$", "log4j.properties"},
     {"hadoop.log.dir", "^hadoop\\.log\\.dir$", "log4j.properties"},
     {"hadoop.log.file", "^hadoop\\.log\\.file$", "log4j.properties"},
@@ -484,7 +484,7 @@ static const ConfigParam hdfs_configs[] = {
     {"log4j.appender.EventCounter", "^log4j\\.appender\\.EventCounter$", "log4j.properties"},
     {"log4j.logger.org.apache.hadoop.conf.Configuration.deprecation", "^log4j\\.logger\\.org\\.apache\\.hadoop\\.conf\\.Configuration\\.deprecation$", "log4j.properties"},
     {"log4j.logger.org.apache.commons.beanutils", "^log4j\\.logger\\.org\\.apache\\.commons\\.beanutils$", "log4j.properties"},
-    
+
     // New MapRed parameters from mapred-site.xml
     {"mapreduce.task.io.sort.mb", "^mapreduce\\.task\\.io\\.sort\\.mb$", "mapred-site.xml"},
     {"mapreduce.map.sort.spill.percent", "^mapreduce\\.map\\.sort\\.spill\\.percent$", "mapred-site.xml"},
@@ -526,7 +526,7 @@ static const ConfigParam hdfs_configs[] = {
     {"mapreduce.output.fileoutputformat.compress", "^mapreduce\\.output\\.fileoutputformat\\.compress$", "mapred-site.xml"},
     {"mapreduce.jobhistory.http.policy", "^mapreduce\\.jobhistory\\.http\\.policy$", "mapred-site.xml"},
     {"mapreduce.job.queuename", "^mapreduce\\.job\\.queuename$", "mapred-site.xml"},
-    
+
     { "REPOSITORY_CONFIG_USERNAME", "^REPOSITORY_CONFIG_USERNAME$", "ranger-hdfs-plugin.properties" },
     { "REPOSITORY_CONFIG_PASSWORD", "^REPOSITORY_CONFIG_PASSWORD$", "ranger-hdfs-plugin.properties" },
     { "REPOSITORY_CONFIG_USER_PASSWORD", "^REPOSITORY_CONFIG_USER_PASSWORD$", "ranger-hdfs-plugin.properties" },
@@ -568,18 +568,18 @@ ValidationResult validateHdfsConfigParam(const char *param_name, const char *val
     if (strcmp(param_name, "dfs.replication") == 0) {
         return isPositiveInteger(value) ? VALIDATION_OK : ERROR_CONSTRAINT_VIOLATED;
     }
-    
-   // =======================================================================
+
+    // =======================================================================
     // Ranger-specific validations
     // =======================================================================
-    
+
     // Boolean parameters
     if (strstr(param_name, ".is.enabled") != NULL ||
         strstr(param_name, ".is.async") != NULL ||
         strcmp(param_name, "xasecure.add-hadoop-authorization") == 0) {
         return isValidBoolean(value) ? VALIDATION_OK : ERROR_CONSTRAINT_VIOLATED;
     }
-    
+
     // Positive integers (queue sizes, counts, etc)
     if (strstr(param_name, ".max.queue.size") != NULL ||
         strstr(param_name, ".max.file.count") != NULL ||
@@ -590,24 +590,24 @@ ValidationResult validateHdfsConfigParam(const char *param_name, const char *val
         strstr(param_name, ".interval.seconds") != NULL) {
         return isPositiveInteger(value) ? VALIDATION_OK : ERROR_CONSTRAINT_VIOLATED;
     }
-    
+
     // Data sizes (buffer sizes)
     if (strstr(param_name, ".buffer.size") != NULL) {
         return isDataSize(value) ? VALIDATION_OK : ERROR_INVALID_FORMAT;
     }
-    
+
     // Host:port lists
     if (strcmp(param_name, "xasecure.audit.kafka.broker_list") == 0) {
         return isValidHostPortList(value) ? VALIDATION_OK : ERROR_INVALID_FORMAT;
     }
-    
+
     // URLs (policy REST, Solr, credential stores)
     if (strstr(param_name, ".rest.url") != NULL ||
         strstr(param_name, ".solr_url") != NULL ||
         strstr(param_name, ".credential.file") != NULL) {
         return isValidUrl(value) ? VALIDATION_OK : ERROR_INVALID_FORMAT;
     }
-    
+
     // Paths and directories
     if (strstr(param_name, ".directory") != NULL ||
         strstr(param_name, ".file") != NULL ||
@@ -617,22 +617,22 @@ ValidationResult validateHdfsConfigParam(const char *param_name, const char *val
         strstr(param_name, ".config.file") != NULL) {
         return isValidPath(value) ? VALIDATION_OK : ERROR_INVALID_FORMAT;
     }
-    
+
     // Service name validation
     if (strcmp(param_name, "ranger.plugin.hdfs.service.name") == 0) {
         return (strlen(value) > 0) ? VALIDATION_OK : ERROR_INVALID_FORMAT;
     }
-    
+
     // Policy source implementation
     if (strcmp(param_name, "ranger.plugin.hdfs.policy.source.impl") == 0) {
         return (strstr(value, ".") != NULL) ? VALIDATION_OK : ERROR_INVALID_FORMAT;
     }
-    
+
     // Encoding can be empty but not NULL
     if (strcmp(param_name, "xasecure.audit.hdfs.config.encoding") == 0) {
         return VALIDATION_OK; // Empty string is allowed
     }
-    
+
     else if (strcmp(param_name, "dfs.namenode.name.dir") == 0 ||
              strcmp(param_name, "dfs.datanode.data.dir") == 0 ||
              strcmp(param_name, "hadoop.tmp.dir") == 0 ||
@@ -678,11 +678,11 @@ ValidationResult validateHdfsConfigParam(const char *param_name, const char *val
         return isValidPort(value) ? VALIDATION_OK : ERROR_CONSTRAINT_VIOLATED;
     }
     else if (strcmp(param_name, "hadoop.security.authentication") == 0) {
-        return (strcmp(value, "simple") == 0 || strcmp(value, "kerberos") == 0) 
+        return (strcmp(value, "simple") == 0 || strcmp(value, "kerberos") == 0)
             ? VALIDATION_OK : ERROR_CONSTRAINT_VIOLATED;
     }
     else if (strcmp(param_name, "hadoop.rpc.protection") == 0) {
-        return (strcmp(value, "authentication") == 0 || 
+        return (strcmp(value, "authentication") == 0 ||
                 strcmp(value, "integrity") == 0 ||
                 strcmp(value, "privacy") == 0)
             ? VALIDATION_OK : ERROR_CONSTRAINT_VIOLATED;
@@ -725,8 +725,8 @@ ValidationResult validateHdfsConfigParam(const char *param_name, const char *val
         return (value[0] == '/') ? VALIDATION_OK : ERROR_INVALID_FORMAT;
     }
     else if (strcmp(param_name, "dfs.storage.policy.satisfier.mode") == 0) {
-        return (strcmp(value, "none") == 0 || strcmp(value, "all") == 0 || 
-               strcmp(value, "random") == 0) ? VALIDATION_OK : ERROR_CONSTRAINT_VIOLATED;
+        return (strcmp(value, "none") == 0 || strcmp(value, "all") == 0 ||
+                strcmp(value, "random") == 0) ? VALIDATION_OK : ERROR_CONSTRAINT_VIOLATED;
     }
     else if (strcmp(param_name, "dfs.encrypt.data.transfer.algorithm") == 0) {
         return (strcmp(value, "AES/CTR/NoPadding") == 0) ? VALIDATION_OK : ERROR_CONSTRAINT_VIOLATED;
@@ -739,8 +739,8 @@ ValidationResult validateHdfsConfigParam(const char *param_name, const char *val
         return isValidCommaSeparatedList(value) ? VALIDATION_OK : ERROR_INVALID_FORMAT;
     }
     else if (strcmp(param_name, "dfs.image.compression.codec") == 0) {
-        return (strcmp(value, "zlib") == 0 || strcmp(value, "lz4") == 0 || 
-               strcmp(value, "snappy") == 0) ? VALIDATION_OK : ERROR_CONSTRAINT_VIOLATED;
+        return (strcmp(value, "zlib") == 0 || strcmp(value, "lz4") == 0 ||
+                strcmp(value, "snappy") == 0) ? VALIDATION_OK : ERROR_CONSTRAINT_VIOLATED;
     }
 
     // Default validation for parameters without specific rules
@@ -766,17 +766,17 @@ ConfigResult* find_hdfs_config(const char *param) {
         if (ret == 0) {
             ConfigResult *result = malloc(sizeof(ConfigResult));
             if (!result) return NULL;
-            
+
             result->canonical_name = strdup(hdfs_configs[i].canonicalName);
             result->config_file = strdup(hdfs_configs[i].configFile);
-            
+
             if (!result->canonical_name || !result->config_file) {
                 free(result->canonical_name);
                 free(result->config_file);
                 free(result);
                 return NULL;
             }
-            
+
             return result;
         } else if (ret != REG_NOMATCH) {
             char error_msg[100];
@@ -837,7 +837,7 @@ ConfigStatus modify_hdfs_config(const char* config_param, const char* value, con
         free(file_path);
         return SUCCESS;
     }
-    
+
     if (strcmp(filename, "container-executor.cfg") == 0) {
         update_config( config_param, value, file_path);
         free(file_path);
@@ -915,7 +915,7 @@ ConfigStatus modify_hdfs_config(const char* config_param, const char* value, con
 
     // Save the XML document with formatting
     int save_result = xmlSaveFormatFileEnc(file_path, doc, "UTF-8", 1);
-    
+
     // Restore original indentation setting
     xmlIndentTreeOutput = oldIndent;
 

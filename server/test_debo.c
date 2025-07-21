@@ -45,60 +45,60 @@ char* capture_command_output(const char* command) {
     } else {
         // Parent process
         close(pipefd[1]);  // Close unused write end
-        
+
         char* output = NULL;
         size_t total_size = 0;
         char buffer[4096];
         ssize_t n;
-        
+
         while ((n = read(pipefd[0], buffer, sizeof(buffer)-1)) {
-            if (n == -1) {
-                perror("read");
-                exit(EXIT_FAILURE);
-            }
-            buffer[n] = '\0';
-            char* new_output = realloc(output, total_size + n + 1);
-            if (!new_output) {
-                perror("realloc");
-                free(output);
-                exit(EXIT_FAILURE);
-            }
-            output = new_output;
-            strcpy(output + total_size, buffer);
-            total_size += n;
-        }
-        
-        close(pipefd[0]);
-        waitpid(pid, NULL, 0);
-        
-        // Remove ANSI escape sequences if output is not empty
-        if (output) {
-            char *src = output;
-            char *dst = output;
-            while (*src) {
-                if (src[0] == 0x1B && src[1] == '[') {
-                    // Skip the escape character and '['
-                    src += 2;
-                    // Skip intermediate characters until a terminator (0x40-0x7E)
-                    while (*src && (*src < 0x40 || *src > 0x7E)) {
-                        src++;
-                    }
-                    // Skip the terminator if found
-                    if (*src) src++;
-                } else {
-                    *dst++ = *src++;
-                }
-            }
-            *dst = '\0';
-            
-            // Reallocate memory to fit the cleaned string
-            size_t new_length = dst - output;
-            char *cleaned_output = realloc(output, new_length + 1);
-            if (cleaned_output) {
-                output = cleaned_output;
-            }
-        }
-        return output;
+               if (n == -1) {
+               perror("read");
+               exit(EXIT_FAILURE);
+               }
+               buffer[n] = '\0';
+               char* new_output = realloc(output, total_size + n + 1);
+               if (!new_output) {
+               perror("realloc");
+               free(output);
+               exit(EXIT_FAILURE);
+               }
+               output = new_output;
+               strcpy(output + total_size, buffer);
+               total_size += n;
+               }
+
+               close(pipefd[0]);
+               waitpid(pid, NULL, 0);
+
+               // Remove ANSI escape sequences if output is not empty
+               if (output) {
+                   char *src = output;
+                   char *dst = output;
+                   while (*src) {
+                       if (src[0] == 0x1B && src[1] == '[') {
+                           // Skip the escape character and '['
+                           src += 2;
+                           // Skip intermediate characters until a terminator (0x40-0x7E)
+                           while (*src && (*src < 0x40 || *src > 0x7E)) {
+                               src++;
+                           }
+                           // Skip the terminator if found
+                           if (*src) src++;
+                       } else {
+                           *dst++ = *src++;
+                       }
+                   }
+                   *dst = '\0';
+
+                   // Reallocate memory to fit the cleaned string
+                   size_t new_length = dst - output;
+                   char *cleaned_output = realloc(output, new_length + 1);
+                   if (cleaned_output) {
+                       output = cleaned_output;
+                   }
+               }
+               return output;
     }
 }
 // Common utility to find Hadoop installation
@@ -109,14 +109,14 @@ const char* get_hadoop_path() {
         "/usr/local/hadoop",  // Debian path
         "/opt/hadoop"         // RHEL path
     };
-    
+
     for (size_t i = 0; i < sizeof(candidates)/sizeof(candidates[0]); i++) {
         if (!candidates[i]) continue;
-        
+
         struct stat st;
         char bin_path[PATH_MAX];
         snprintf(bin_path, sizeof(bin_path), "%s/bin/hdfs", candidates[i]);
-        
+
         if (stat(bin_path, &st) == 0 && S_ISREG(st.st_mode)) {
             strncpy(path, candidates[i], sizeof(path));
             return path;
@@ -128,7 +128,7 @@ const char* get_hadoop_path() {
 // Revised installation test
 void test_install_hdfs() {
     printf("Running HDFS installation test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --install --hdfs");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -161,9 +161,9 @@ void test_install_hdfs() {
 
     // Flexible success message check
     char expected_suffix[256];
-    snprintf(expected_suffix, sizeof(expected_suffix), 
+    snprintf(expected_suffix, sizeof(expected_suffix),
              "Hadoop installed successfully to %s\n", expected_path);
-             
+
     if (strstr(actual_output, expected_suffix)) {
         printf("Test PASSED\n");
     } else {
@@ -178,11 +178,11 @@ void test_install_hdfs() {
 // Common service test template
 void test_hdfs_service(const char* action, const char* expected_msg) {
     printf("Running HDFS %s test...\n", action);
-    
+
     char cmd[256];
     snprintf(cmd, sizeof(cmd), "./debo --%s --hdfs", action);
     char* actual_output = capture_command_output(cmd);
-    
+
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -191,7 +191,7 @@ void test_hdfs_service(const char* action, const char* expected_msg) {
     // Verify service state through process check
     char* jps_output = capture_command_output("jps");
     int service_running = 0;
-    
+
     if (jps_output) {
         const char* processes[] = {"NameNode", "DataNode", "ResourceManager"};
         for (size_t i = 0; i < sizeof(processes)/sizeof(processes[0]); i++) {
@@ -235,7 +235,7 @@ void test_restart_hdfs() {
 // Enhanced HDFS report test
 void test_hdfs_report() {
     printf("Testing HDFS reporting...\n");
-    
+
     char* debo_output = capture_command_output("./debo --hdfs");
     if (!debo_output) {
         fprintf(stderr, "Error: Failed to execute ./debo --hdfs\n");
@@ -252,7 +252,7 @@ void test_hdfs_report() {
     char cmd[512];
     snprintf(cmd, sizeof(cmd), "%s/bin/hdfs dfsadmin -report 2>&1", hadoop_path);
     char* hdfs_output = capture_command_output(cmd);
-    
+
     if (!hdfs_output) {
         fprintf(stderr, "Error: Failed to execute hdfs dfsadmin -report\n");
         free(debo_output);
@@ -266,7 +266,7 @@ void test_hdfs_report() {
         "DFS Remaining:",
         "Live datanodes"
     };
-    
+
     int metrics_match = 1;
     for (size_t i = 0; i < sizeof(metrics)/sizeof(metrics[0]); i++) {
         if (strstr(debo_output, metrics[i]) != strstr(hdfs_output, metrics[i])) {
@@ -290,7 +290,7 @@ void test_hdfs_report() {
 // Uninstallation test
 void test_uninstall_hdfs() {
     printf("Running HDFS uninstalling test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --uninstall --hdfs");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -300,14 +300,14 @@ void test_uninstall_hdfs() {
     // Verify removal
     const char* expected_path = get_hadoop_path();
     int dir_removed = expected_path ? access(expected_path, F_OK) != 0 : 1;
-    
+
     // Check environment cleanup
     char* env_check = capture_command_output("grep HADOOP_HOME ~/.bashrc");
     int env_cleaned = env_check == NULL;
 
     const char* expected_msg = "Hadoop uninstallation completed";
     int output_ok = strstr(actual_output, expected_msg) != NULL;
-    
+
     if (output_ok && dir_removed && env_cleaned) {
         printf("Test PASSED\n");
     } else {
@@ -323,7 +323,7 @@ void test_uninstall_hdfs() {
 // Test function for HDFS installation
 void test_configure_hdfs() {
     printf("Running HDFS configuration test...\n");
-    
+
     // Capture output of the command
     char* actual_output = capture_command_output("./debo  --hdfs --configure=\"fs.defaultFS\" --value=\"hdfs://localhost:9000\" ");
     if (!actual_output) {
@@ -334,7 +334,7 @@ void test_configure_hdfs() {
     // Construct expected output
     char expected_output[1024];
     snprintf(expected_output, sizeof(expected_output),
-        "Operation completed successfully\n");
+             "Operation completed successfully\n");
 
     // Compare outputs
     if (strcmp(actual_output, expected_output) == 0) {
@@ -352,7 +352,7 @@ void test_configure_hdfs() {
 static const char* get_base_path() {
     if (system("command -v apt >/dev/null 2>&1") == 0) {
         return "/usr/local";
-    } else if (system("command -v yum >/dev/null 2>&1") == 0 || 
+    } else if (system("command -v yum >/dev/null 2>&1") == 0 ||
                system("command -v dnf >/dev/null 2>&1") == 0) {
         return "/opt";
     }
@@ -362,7 +362,7 @@ static const char* get_base_path() {
 // Test function for HBase installation
 void test_install_hbase() {
     printf("Running hbase installation test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --install --hbase 2>&1");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -378,7 +378,7 @@ void test_install_hbase() {
 
     char expected_output[1024];
     snprintf(expected_output, sizeof(expected_output),
-        "HBase successfully installed to %s/hbase\n", base_path);
+             "HBase successfully installed to %s/hbase\n", base_path);
 
     if (strstr(actual_output, expected_output) != NULL) {
         printf("Test PASSED\n");
@@ -394,7 +394,7 @@ void test_install_hbase() {
 // Test function for starting HBase
 void test_start_hbase() {
     printf("Running hbase start test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --start --hbase 2>&1");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -402,7 +402,7 @@ void test_start_hbase() {
     }
 
     const char* expected_output = "Hbase start successfully\n";
-    
+
     if (strstr(actual_output, expected_output) != NULL) {
         printf("Test PASSED\n");
     } else {
@@ -417,7 +417,7 @@ void test_start_hbase() {
 // Test function for stopping HBase
 void test_stop_hbase() {
     printf("Running hbase stop test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --stop --hbase 2>&1");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -425,7 +425,7 @@ void test_stop_hbase() {
     }
 
     const char* expected_output = "Hbase stop successfully\n";
-    
+
     if (strstr(actual_output, expected_output) != NULL) {
         printf("Test PASSED\n");
     } else {
@@ -440,7 +440,7 @@ void test_stop_hbase() {
 // Test function for restarting HBase
 void test_restart_hbase() {
     printf("Running hbase restart test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --restart --hbase 2>&1");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -448,7 +448,7 @@ void test_restart_hbase() {
     }
 
     const char* expected_output = "Hbase restart successfully\n";
-    
+
     if (strstr(actual_output, expected_output) != NULL) {
         printf("Test PASSED\n");
     } else {
@@ -463,7 +463,7 @@ void test_restart_hbase() {
 // Test function for HBase status report
 void test_hbase_report() {
     printf("Testing hbase reporting...\n");
-    
+
     char* debo_output = capture_command_output("./debo --hbase 2>&1");
     if (!debo_output) {
         fprintf(stderr, "Error: Failed to execute ./debo --hbase\n");
@@ -482,7 +482,7 @@ void test_hbase_report() {
     if (strstr(debo_output, "ERROR") || strstr(debo_output, "error")) {
         success = 0;
     }
-    
+
     if (strstr(hbase_output, "ERROR") || strstr(hbase_output, "error")) {
         success = 0;
     }
@@ -502,7 +502,7 @@ void test_hbase_report() {
 // Test function for HBase uninstallation
 void test_uninstall_hbase() {
     printf("Running hbase uninstall test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --uninstall --hbase 2>&1");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -510,7 +510,7 @@ void test_uninstall_hbase() {
     }
 
     const char* expected_output = "HBase uninstallation completed: Removed installation directory and cleaned environment variables\n";
-    
+
     if (strstr(actual_output, expected_output) != NULL) {
         printf("Test PASSED\n");
     } else {
@@ -527,8 +527,8 @@ void test_uninstall_hbase() {
 const char* detect_spark_path() {
     if (access("/etc/debian_version", F_OK) == 0) {
         return "/usr/local/spark";
-    } else if (access("/etc/redhat-release", F_OK) == 0 || 
-             access("/etc/system-release", F_OK) == 0) {
+    } else if (access("/etc/redhat-release", F_OK) == 0 ||
+               access("/etc/system-release", F_OK) == 0) {
         return "/opt/spark";
     }
     return NULL;
@@ -538,7 +538,7 @@ const char* detect_spark_path() {
 void run_spark_command_test(const char* test_name, const char* command, const char* expected) {
     printf("Running %s...\n", test_name);
     char* actual_output = capture_command_output(command);
-    
+
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -563,38 +563,38 @@ void test_install_spark() {
         printf("Test skipped: Unsupported OS\n");
         return;
     }
-    
+
     // Cleanup potential previous installation
     char cleanup[256];
     snprintf(cleanup, sizeof(cleanup), "sudo rm -rf %s", os_path);
     system(cleanup);
-    
-    run_spark_command_test("spark installation test", 
-                          "./debo --install --spark",
-                          "Spark installed successfully\n");
+
+    run_spark_command_test("spark installation test",
+                           "./debo --install --spark",
+                           "Spark installed successfully\n");
 }
 
 void test_start_spark() {
     run_spark_command_test("spark starting test",
-                          "./debo --start --spark",
-                          "Spark service started successfully\n");
+                           "./debo --start --spark",
+                           "Spark service started successfully\n");
 }
 
 void test_stop_spark() {  // Renamed from test_stop_hbase
     run_spark_command_test("spark stopping test",
-                          "./debo --stop --spark",
-                          "Spark service stopped successfully\n");
+                           "./debo --stop --spark",
+                           "Spark service stopped successfully\n");
 }
 
 void test_restart_spark() {
     run_spark_command_test("spark restarting test",
-                          "./debo --restart --spark",
-                          "Spark service restarted successfully\n");
+                           "./debo --restart --spark",
+                           "Spark service restarted successfully\n");
 }
 
 void test_spark_report() {
     printf("Testing Spark reporting...\n");
-    
+
     // Capture and compare outputs
     char* debo_output = capture_command_output("./debo --spark");
     if (!debo_output) {
@@ -612,7 +612,7 @@ void test_spark_report() {
     // Check if version string exists in both outputs
     char* version_tag = strstr(spark_output, "version");
     int passed = 0;
-    
+
     if (version_tag && strstr(debo_output, version_tag)) {
         passed = 1;
     }
@@ -635,18 +635,18 @@ void test_uninstall_spark() {
         printf("Test skipped: Unsupported OS\n");
         return;
     }
-    
+
     // Ensure Spark is installed first
     system("./debo --install --spark > /dev/null 2>&1");
-    
+
     run_spark_command_test("spark uninstallation test",
-                          "./debo --uninstall --spark",
-                          "Uninstallation complete. Verification:\n");
+                           "./debo --uninstall --spark",
+                           "Uninstallation complete. Verification:\n");
 }
 // Test function for HDFS installation
 void test_configure_spark() {
     printf("Running HDFS installation test...\n");
-    
+
     // Capture output of the command
     char* actual_output = capture_command_output("./debo  --hbase --configure=\"spark.master\" --value=\"local\" ");
     if (!actual_output) {
@@ -656,17 +656,17 @@ void test_configure_spark() {
 
 
     if (!(system("command -v apt >/dev/null 2>&1") == 0 ||
-         system("command -v yum >/dev/null 2>&1") == 0 ||
-         system("command -v dnf >/dev/null 2>&1") == 0)) {
-               printf("Test skipped: Unsupported OS\n");
-               free(actual_output);
-               return;
-         }
+          system("command -v yum >/dev/null 2>&1") == 0 ||
+          system("command -v dnf >/dev/null 2>&1") == 0)) {
+        printf("Test skipped: Unsupported OS\n");
+        free(actual_output);
+        return;
+    }
 
     // Construct expected output
     char expected_output[1024];
     snprintf(expected_output, sizeof(expected_output),
-        "Operation completed successfully\n");
+             "Operation completed successfully\n");
 
     // Compare outputs
     if (strcmp(actual_output, expected_output) == 0) {
@@ -685,7 +685,7 @@ void test_configure_spark() {
 const char* get_kafka_path() {
     static const char* debian_path = "/usr/local/kafka";
     static const char* redhat_path = "/opt/kafka";
-    
+
     if (access("/etc/debian_version", F_OK) == 0) {
         return debian_path;
     } else if (access("/etc/redhat-release", F_OK) == 0) {
@@ -702,10 +702,10 @@ int is_kafka_installed() {
 
 void test_install_kafka() {
     printf("Running Kafka installation test...\n");
-    
+
     // Uninstall first for clean state
     system("./debo --uninstall --kafka >/dev/null 2>&1");
-    
+
     char* actual_output = capture_command_output("./debo --install --kafka");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -721,7 +721,7 @@ void test_install_kafka() {
 
     char expected_output[1024];
     snprintf(expected_output, sizeof(expected_output),
-        "\nKafka installed successfully to %s\n", expected_path);
+             "\nKafka installed successfully to %s\n", expected_path);
 
     // Verify output and actual installation
     int path_exists = access(expected_path, F_OK) == 0;
@@ -745,12 +745,12 @@ void test_install_kafka() {
 
 void test_start_kafka() {
     printf("Running Kafka start test...\n");
-    
+
     if (!is_kafka_installed()) {
         printf("Test skipped: Kafka not installed\n");
         return;
     }
-    
+
     // Ensure Kafka is stopped first
     system("./debo --stop --kafka >/dev/null 2>&1");
     sleep(2);
@@ -783,12 +783,12 @@ void test_start_kafka() {
 
 void test_stop_kafka() {  // Renamed from test_stop_hbase
     printf("Running Kafka stop test...\n");
-    
+
     if (!is_kafka_installed()) {
         printf("Test skipped: Kafka not installed\n");
         return;
     }
-    
+
     // Ensure Kafka is running first
     system("./debo --start --kafka >/dev/null 2>&1");
     sleep(2);
@@ -821,12 +821,12 @@ void test_stop_kafka() {  // Renamed from test_stop_hbase
 
 void test_restart_kafka() {
     printf("Running Kafka restart test...\n");
-    
+
     if (!is_kafka_installed()) {
         printf("Test skipped: Kafka not installed\n");
         return;
     }
-    
+
     // Get initial PID
     system("pgrep -f kafka.Kafka > /tmp/pid_before 2>/dev/null");
 
@@ -840,7 +840,7 @@ void test_restart_kafka() {
     sleep(2);
     int status = system("pgrep -f kafka.Kafka >/dev/null");
     int is_running = WIFEXITED(status) && WEXITSTATUS(status) == 0;
-    
+
     // Verify new PID was created
     int pid_changed = system("diff /tmp/pid_before <(pgrep -f kafka.Kafka) >/dev/null") != 0;
 
@@ -858,12 +858,12 @@ void test_restart_kafka() {
 
 void test_kafka_report() {
     printf("Testing Kafka reporting...\n");
-    
+
     if (!is_kafka_installed()) {
         printf("Test skipped: Kafka not installed\n");
         return;
     }
-    
+
     // Ensure Kafka is running
     system("./debo --start --kafka >/dev/null 2>&1");
     sleep(3);
@@ -883,10 +883,10 @@ void test_kafka_report() {
 
     char jmx_command[1024];
     snprintf(jmx_command, sizeof(jmx_command),
-        "%s/bin/kafka-run-class.sh kafka.tools.JmxTool "
-        "--object-name \"kafka.server:type=KafkaServer,name=BrokerState\" "
-        "--attributes Value --one-time true 2>&1",
-        kafka_home);
+             "%s/bin/kafka-run-class.sh kafka.tools.JmxTool "
+             "--object-name \"kafka.server:type=KafkaServer,name=BrokerState\" "
+             "--attributes Value --one-time true 2>&1",
+             kafka_home);
 
     char* jmx_output = capture_command_output(jmx_command);
     if (!jmx_output) {
@@ -896,9 +896,9 @@ void test_kafka_report() {
     }
 
     // Compare essential content (BrokerState value)
-    int match = strstr(debo_output, "BrokerState") && 
-                strstr(jmx_output, "BrokerState") &&
-                (strstr(debo_output, "3") || strstr(debo_output, "RunningAsController"));
+    int match = strstr(debo_output, "BrokerState") &&
+        strstr(jmx_output, "BrokerState") &&
+        (strstr(debo_output, "3") || strstr(debo_output, "RunningAsController"));
 
     if (match) {
         printf("Test PASSED\n");
@@ -914,7 +914,7 @@ void test_kafka_report() {
 
 void test_uninstall_kafka() {
     printf("Running Kafka uninstall test...\n");
-    
+
     if (!is_kafka_installed()) {
         printf("Test skipped: Kafka not installed\n");
         return;
@@ -933,9 +933,9 @@ void test_uninstall_kafka() {
         return;
     }
 
-    const char* expected_output = 
+    const char* expected_output =
         "Kafka uninstallation completed: Removed installation directory and cleaned environment variables\n";
-    
+
     int path_exists = access(expected_path, F_OK) == 0;
     int output_matches = strcmp(actual_output, expected_output) == 0;
 
@@ -957,7 +957,7 @@ void test_uninstall_kafka() {
 
 void test_configure_kafka() {
     printf("Running kafka configuration test...\n");
-    
+
     // Capture output of the command
     char* actual_output = capture_command_output("./debo  --kafka --configure=\"bootstrap.servers\" --value=\"local\" ");
     if (!actual_output) {
@@ -966,7 +966,7 @@ void test_configure_kafka() {
     }
 
     // Determine expected installation path
-    
+
     if (!(system("command -v apt >/dev/null 2>&1") == 0 ||
           system("command -v yum >/dev/null 2>&1") == 0 ||
           system("command -v dnf >/dev/null 2>&1") == 0)) {
@@ -978,7 +978,7 @@ void test_configure_kafka() {
     // Construct expected output
     char expected_output[1024];
     snprintf(expected_output, sizeof(expected_output),
-        "Operation completed successfully\n");
+             "Operation completed successfully\n");
 
     // Compare outputs
     if (strcmp(actual_output, expected_output) == 0) {
@@ -1020,7 +1020,7 @@ int verify_flink_service_state(int should_be_running) {
     char cmd[256];
     snprintf(cmd, sizeof(cmd), "%s/bin/flink list >/dev/null 2>&1", base_path);
     int status = system(cmd);
-    
+
     if (WIFEXITED(status)) {
         int exit_code = WEXITSTATUS(status);
         return (should_be_running) ? (exit_code == 0) : (exit_code != 0);
@@ -1030,10 +1030,10 @@ int verify_flink_service_state(int should_be_running) {
 
 void test_install_flink() {
     printf("Running flink installation test...\n");
-    
+
     // Cleanup any previous installation
     system("./debo --uninstall --flink >/dev/null 2>&1");
-    
+
     // Capture output
     char* output = capture_command_output("./debo --install --flink");
     if (!output) {
@@ -1044,13 +1044,13 @@ void test_install_flink() {
     // Verify installation
     const char* base_path = get_flink_base_path();
     int success = 0;
-    
+
     if (base_path && directory_exists(base_path)) {
         // Check for key directories and files
         char conf_path[256], bin_path[256];
         snprintf(conf_path, sizeof(conf_path), "%s/conf", base_path);
         snprintf(bin_path, sizeof(bin_path), "%s/bin/flink", base_path);
-        
+
         if (directory_exists(conf_path) && access(bin_path, X_OK) == 0) {
             success = 1;
         }
@@ -1073,17 +1073,17 @@ void test_install_flink() {
 
 void test_start_flink() {
     printf("Running flink start test...\n");
-    
+
     // Ensure installation exists
     const char* base_path = get_flink_base_path();
     if (!base_path || !directory_exists(base_path)) {
         printf("Test skipped: Flink not installed\n");
         return;
     }
-    
+
     // Stop if already running
     system("./debo --stop --flink >/dev/null 2>&1");
-    
+
     // Capture output
     char* output = capture_command_output("./debo --start --flink");
     if (!output) {
@@ -1108,12 +1108,12 @@ void test_start_flink() {
 
 void test_stop_flink() {
     printf("Running flink stop test...\n");
-    
+
     // Ensure service is running
     if (verify_flink_service_state(1) != 1) {
         system("./debo --start --flink >/dev/null 2>&1");
     }
-    
+
     // Capture output
     char* output = capture_command_output("./debo --stop --flink");
     if (!output) {
@@ -1138,12 +1138,12 @@ void test_stop_flink() {
 
 void test_restart_flink() {
     printf("Running flink restart test...\n");
-    
+
     // Ensure service is running
     if (verify_flink_service_state(1) != 1) {
         system("./debo --start --flink >/dev/null 2>&1");
     }
-    
+
     // Capture output
     char* output = capture_command_output("./debo --restart --flink");
     if (!output) {
@@ -1168,12 +1168,12 @@ void test_restart_flink() {
 
 void test_flink_report() {
     printf("Testing flink reporting...\n");
-    
+
     // Ensure service is running
     if (verify_flink_service_state(1) != 1) {
         system("./debo --start --flink >/dev/null 2>&1");
     }
-    
+
     // Capture outputs
     char* debo_output = capture_command_output("./debo --flink");
     if (!debo_output) {
@@ -1191,7 +1191,7 @@ void test_flink_report() {
     char cmd[256];
     snprintf(cmd, sizeof(cmd), "%s/bin/flink list 2>&1", base_path);
     char* flink_output = capture_command_output(cmd);
-    
+
     if (!flink_output) {
         fprintf(stderr, "Error: Failed to execute flink list\n");
         free(debo_output);
@@ -1199,11 +1199,11 @@ void test_flink_report() {
     }
 
     // Validate report structure
-    int debo_valid = strstr(debo_output, "Running Jobs") != NULL || 
-                     strstr(debo_output, "Scheduled Jobs") != NULL;
-    
-    int flink_valid = strstr(flink_output, "Running Jobs") != NULL || 
-                      strstr(flink_output, "Scheduled Jobs") != NULL;
+    int debo_valid = strstr(debo_output, "Running Jobs") != NULL ||
+        strstr(debo_output, "Scheduled Jobs") != NULL;
+
+    int flink_valid = strstr(flink_output, "Running Jobs") != NULL ||
+        strstr(flink_output, "Scheduled Jobs") != NULL;
 
     if (debo_valid && flink_valid) {
         printf("Test PASSED\n");
@@ -1219,13 +1219,13 @@ void test_flink_report() {
 
 void test_uninstall_flink() {
     printf("Running flink uninstall test...\n");
-    
+
     // Ensure installation exists
     const char* base_path = get_flink_base_path();
     if (!base_path || !directory_exists(base_path)) {
         system("./debo --install --flink >/dev/null 2>&1");
     }
-    
+
     // Capture output
     char* output = capture_command_output("./debo --uninstall --flink");
     if (!output) {
@@ -1256,7 +1256,7 @@ void test_uninstall_flink() {
 
 void test_configure_flink() {
     printf("Running flink configuration test...\n");
-    
+
     // Capture output of the command
     char* actual_output = capture_command_output("./debo  --flink --configure=\"jobmanager.rpc.address\" --value=\"localhost\" ");
     if (!actual_output) {
@@ -1276,7 +1276,7 @@ void test_configure_flink() {
     // Construct expected output
     char expected_output[1024];
     snprintf(expected_output, sizeof(expected_output),
-        "Operation completed successfully\n");
+             "Operation completed successfully\n");
 
     // Compare outputs
     if (strcmp(actual_output, expected_output) == 0) {
@@ -1292,7 +1292,7 @@ void test_configure_flink() {
 
 void test_install_zookeeper() {
     printf("Running zookeeper installation test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --install --zookeeper");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -1302,7 +1302,7 @@ void test_install_zookeeper() {
     // Simplified validation - check for success message
     const char* expected_success = "Zookeeper installed successfully\n";
     const char* expected_failure = "downloading failed";
-    
+
     if (strstr(actual_output, expected_success) != NULL) {
         printf("Test PASSED\n");
     } else if (strstr(actual_output, expected_failure) != NULL) {
@@ -1317,7 +1317,7 @@ void test_install_zookeeper() {
 
 void test_start_zookeeper() {
     printf("Running zookeeper start test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --start --zookeeper");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -1327,7 +1327,7 @@ void test_start_zookeeper() {
     // Validate service start confirmation
     const char* expected_success = "Zookeeper started successfully\n";
     const char* expected_failure = "Failed to start Zookeeper";
-    
+
     if (strstr(actual_output, expected_success) != NULL) {
         printf("Test PASSED\n");
     } else if (strstr(actual_output, expected_failure) != NULL) {
@@ -1342,7 +1342,7 @@ void test_start_zookeeper() {
 
 void test_stop_zookeeper() {
     printf("Running zookeeper stop test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --stop --zookeeper");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -1352,7 +1352,7 @@ void test_stop_zookeeper() {
     // Validate service stop confirmation
     const char* expected_success = "Zookeeper stopped successfully\n";
     const char* expected_failure = "Failed to stop Zookeeper";
-    
+
     if (strstr(actual_output, expected_success) != NULL) {
         printf("Test PASSED\n");
     } else if (strstr(actual_output, expected_failure) != NULL) {
@@ -1367,7 +1367,7 @@ void test_stop_zookeeper() {
 
 void test_restart_zookeeper() {
     printf("Running zookeeper restart test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --restart --zookeeper");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -1377,7 +1377,7 @@ void test_restart_zookeeper() {
     // Validate service restart confirmation
     const char* expected_success = "Zookeeper restarted successfully\n";
     const char* expected_failure = "Failed to start Zookeeper during restart";
-    
+
     if (strstr(actual_output, expected_success) != NULL) {
         printf("Test PASSED\n");
     } else if (strstr(actual_output, expected_failure) != NULL) {
@@ -1394,10 +1394,10 @@ void test_restart_zookeeper() {
 char* normalize_zk_output(char* output) {
     char* start = strstr(output, "Connecting to");
     if (!start) return output;
-    
+
     char* end = strstr(start, "WATCHER::");
     if (!end) return output;
-    
+
     // Calculate normalized length
     size_t len = end - start;
     char* normalized = malloc(len + 1);
@@ -1410,7 +1410,7 @@ char* normalize_zk_output(char* output) {
 
 void test_report_zookeeper() {
     printf("Testing zookeeper reporting...\n");
-    
+
     char* debo_output = capture_command_output("./debo --zookeeper");
     if (!debo_output) {
         fprintf(stderr, "Error: Failed to execute ./debo --zookeeper\n");
@@ -1445,7 +1445,7 @@ void test_report_zookeeper() {
 
 void test_uninstall_zookeeper() {
     printf("Running zookeeper uninstall test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --uninstall --zookeeper");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -1455,7 +1455,7 @@ void test_uninstall_zookeeper() {
     // Validate uninstall confirmation
     const char* expected_success = "Uninstallation complete. Manual verification recommended.\n";
     const char* expected_failure = "Error:";
-    
+
     if (strstr(actual_output, expected_success) != NULL) {
         printf("Test PASSED\n");
     } else if (strstr(actual_output, expected_failure) != NULL) {
@@ -1471,7 +1471,7 @@ void test_uninstall_zookeeper() {
 
 void test_configure_zookeeper() {
     printf("Running zookeeper configuration test...\n");
-    
+
     // Capture output of the command
     char* actual_output = capture_command_output("./debo  --zookeeper --configure=\"clientPort\" --value=\"8765\" ");
     if (!actual_output) {
@@ -1491,7 +1491,7 @@ void test_configure_zookeeper() {
     // Construct expected output
     char expected_output[1024];
     snprintf(expected_output, sizeof(expected_output),
-        "Operation completed successfully\n");
+             "Operation completed successfully\n");
 
     // Compare outputs
     if (strcmp(actual_output, expected_output) == 0) {
@@ -1509,7 +1509,7 @@ void test_configure_zookeeper() {
 // Revised test functions
 void test_install_storm() {
     printf("Running storm installation test...\n");
-    
+
     // Capture output
     char* actual_output = capture_command_output("./debo --install --storm");
     if (!actual_output) {
@@ -1542,7 +1542,7 @@ void test_install_storm() {
 
 void test_start_storm() {
     printf("Running storm start test...\n");
-    
+
     // Capture output
     char* actual_output = capture_command_output("./debo --start --storm");
     if (!actual_output) {
@@ -1558,7 +1558,7 @@ void test_start_storm() {
     int test_passed = 0;
     if (strstr(actual_output, "All services started successfully") && services_running) {
         test_passed = 1;
-    } 
+    }
     else if (strstr(actual_output, "Some services failed to start") && !services_running) {
         test_passed = 1;
     }
@@ -1577,10 +1577,10 @@ void test_start_storm() {
 
 void test_stop_storm() {
     printf("Running storm stop test...\n");
-    
+
     // First ensure services are running
     system("./debo --start --storm >/dev/null 2>&1");
-    
+
     // Capture output
     char* actual_output = capture_command_output("./debo --stop --storm");
     if (!actual_output) {
@@ -1596,7 +1596,7 @@ void test_stop_storm() {
     int test_passed = 0;
     if (strstr(actual_output, "All services stopped successfully") && services_stopped) {
         test_passed = 1;
-    } 
+    }
     else if (strstr(actual_output, "Some services failed to stop") && !services_stopped) {
         test_passed = 1;
     }
@@ -1615,7 +1615,7 @@ void test_stop_storm() {
 
 void test_restart_storm() {
     printf("Running storm restart test...\n");
-    
+
     // Capture output
     char* actual_output = capture_command_output("./debo --restart --storm");
     if (!actual_output) {
@@ -1644,11 +1644,11 @@ void test_restart_storm() {
 
 void test_report_storm() {
     printf("Running storm report test...\n");
-    
+
     // Start services to ensure reportability
     system("./debo --start --storm >/dev/null 2>&1");
     sleep(2);  // Allow services to initialize
-    
+
     // Capture outputs
     char* debo_output = capture_command_output("./debo --storm");
     if (!debo_output) {
@@ -1672,7 +1672,7 @@ void test_report_storm() {
         }
         return output;
     }
-    
+
     // Compare essential content
     int test_passed = (strstr(normalize(debo_output), normalize(storm_output)) != NULL);
 
@@ -1690,7 +1690,7 @@ void test_report_storm() {
 
 void test_uninstall_storm() {
     printf("Running storm uninstall test...\n");
-    
+
     // Capture output
     char* actual_output = capture_command_output("./debo --uninstall --storm");
     if (!actual_output) {
@@ -1723,7 +1723,7 @@ void test_uninstall_storm() {
 
 void test_configure_storm() {
     printf("Running storm configuration test...\n");
-    
+
     // Capture output of the command
     char* actual_output = capture_command_output("./debo  --storm --configure=\"storm.zookeeper.servers\" --value=\"localhost\" ");
     if (!actual_output) {
@@ -1743,7 +1743,7 @@ void test_configure_storm() {
     // Construct expected output
     char expected_output[1024];
     snprintf(expected_output, sizeof(expected_output),
-        "Operation completed successfully\n");
+             "Operation completed successfully\n");
 
     // Compare outputs
     if (strcmp(actual_output, expected_output) == 0) {
@@ -1760,7 +1760,7 @@ void test_configure_storm() {
 
 void test_install_hive() {
     printf("Running hive installation test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --install --hive");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -1771,7 +1771,7 @@ void test_install_hive() {
     const char* expected_path;
     if (system("command -v apt >/dev/null 2>&1") == 0) {
         expected_path = "/usr/local/hive";
-    } else if (system("command -v yum >/dev/null 2>&1") == 0 || 
+    } else if (system("command -v yum >/dev/null 2>&1") == 0 ||
                system("command -v dnf >/dev/null 2>&1") == 0) {
         expected_path = "/opt/hive";
     } else {
@@ -1781,10 +1781,10 @@ void test_install_hive() {
     }
 
     // Construct expected output
-    char expected_output[1024]; 
+    char expected_output[1024];
     snprintf(expected_output, sizeof(expected_output),
-        "Hive has been successfully installed to %s.\n",
-        expected_path);
+             "Hive has been successfully installed to %s.\n",
+             expected_path);
 
     // Compare outputs
     if (strcmp(actual_output, expected_output) == 0) {
@@ -1800,7 +1800,7 @@ void test_install_hive() {
 
 void test_start_hive() {
     printf("Running hive starting test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --start --hive");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -1823,7 +1823,7 @@ void test_start_hive() {
 
 void test_stop_hive() {
     printf("Running hive stopping test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --stop --hive");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -1846,7 +1846,7 @@ void test_stop_hive() {
 
 void test_restart_hive() {
     printf("Running hive restarting test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --restart --hive");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -1871,10 +1871,10 @@ void test_restart_hive() {
 char* normalize_output(char* output) {
     char* start = strstr(output, "Hive version");
     if (!start) return output;
-    
+
     char* end = strstr(start, "\n");
     if (!end) return output;
-    
+
     // Move the normalized part to the beginning
     size_t len = end - start;
     memmove(output, start, len);
@@ -1884,7 +1884,7 @@ char* normalize_output(char* output) {
 
 void test_report_hive() {
     printf("Testing hive reporting...\n");
-    
+
     char* debo_output = capture_command_output("./debo --hive");
     if (!debo_output) {
         fprintf(stderr, "Error: Failed to execute ./debo --hive\n");
@@ -1917,7 +1917,7 @@ void test_report_hive() {
 
 void test_uninstall_hive() {
     printf("Running hive uninstalling test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --uninstall --hive");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -1940,7 +1940,7 @@ void test_uninstall_hive() {
 
 void test_configure_hive() {
     printf("Running hive configuration test...\n");
-    
+
     // Capture output of the command
     char* actual_output = capture_command_output("./debo  --hive --configure=\"hive.exec.parallel\" --value=\"true\" ");
     if (!actual_output) {
@@ -1959,7 +1959,7 @@ void test_configure_hive() {
     // Construct expected output
     char expected_output[1024];
     snprintf(expected_output, sizeof(expected_output),
-        "Operation completed successfully\n");
+             "Operation completed successfully\n");
 
     // Compare outputs
     if (strcmp(actual_output, expected_output) == 0) {
@@ -1980,7 +1980,7 @@ static const char* find_livy_installation() {
         "/usr/local/livy",
         NULL
     };
-    
+
     struct stat st;
     for (int i = 0; paths[i]; i++) {
         if (paths[i] && stat(paths[i], &st) == 0 && S_ISDIR(st.st_mode)) {
@@ -1999,7 +1999,7 @@ static const char* get_expected_install_path() {
 
 void test_install_livy() {
     printf("Running Livy installation test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --install --livy");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -2015,8 +2015,8 @@ void test_install_livy() {
 
     char expected_output[1024];
     snprintf(expected_output, sizeof(expected_output),
-        "Livy installed successfully to %s\n",
-        expected_path);
+             "Livy installed successfully to %s\n",
+             expected_path);
 
     if (strcmp(actual_output, expected_output) == 0) {
         printf("Test PASSED\n");
@@ -2031,7 +2031,7 @@ void test_install_livy() {
 // Unified test for start/stop/restart
 void test_livy_service(const char* action_name, const char* expected_msg) {
     printf("Running Livy %s test...\n", action_name);
-    
+
     // Skip if Livy not installed
     if (!find_livy_installation()) {
         printf("Test skipped: Livy not installed\n");
@@ -2041,7 +2041,7 @@ void test_livy_service(const char* action_name, const char* expected_msg) {
     char command[64];
     snprintf(command, sizeof(command), "./debo --%s --livy", action_name);
     char* actual_output = capture_command_output(command);
-    
+
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -2072,7 +2072,7 @@ void test_restart_livy() {
 
 void test_uninstall_livy() {
     printf("Running Livy uninstall test...\n");
-    
+
     // Skip if not installed
     if (!find_livy_installation()) {
         printf("Test skipped: Livy not installed\n");
@@ -2098,7 +2098,7 @@ void test_uninstall_livy() {
 
 void test_report_livy() {
     printf("Testing livy reporting...\n");
-    
+
     char* debo_output = capture_command_output("./debo --livy");
     if (!debo_output) {
         fprintf(stderr, "Error: Failed to execute ./debo --livy\n");
@@ -2128,7 +2128,7 @@ void test_report_livy() {
 
 void test_configure_livy() {
     printf("Running livy configuration test...\n");
-    
+
     // Capture output of the command
     char* actual_output = capture_command_output("./debo  --livy --configure=\"livy.server.port\" --value=\"3546\" ");
     if (!actual_output) {
@@ -2147,7 +2147,7 @@ void test_configure_livy() {
     // Construct expected output
     char expected_output[1024];
     snprintf(expected_output, sizeof(expected_output),
-        "Operation completed successfully\n");
+             "Operation completed successfully\n");
 
     // Compare outputs
     if (strcmp(actual_output, expected_output) == 0) {
@@ -2169,7 +2169,7 @@ int dir_exists(const char *path) {
 
 void test_install_phoenix() {
     printf("Running phoenix installation test...\n");
-    
+
     // Capture output including stderr
     char* actual_output = capture_command_output("./debo --install --phoenix 2>&1");
     if (!actual_output) {
@@ -2193,7 +2193,7 @@ void test_install_phoenix() {
     // Validate output pattern (version independent)
     const char* pattern = "Apache Phoenix ";
     const char* pattern2 = " installed. Server JAR copied to HBase and client configured.";
-    
+
     if (strstr(actual_output, pattern) && strstr(actual_output, pattern2)) {
         printf("Test PASSED\n");
     } else {
@@ -2206,7 +2206,7 @@ void test_install_phoenix() {
 
 void test_start_phoenix() {
     printf("Running phoenix starting test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --start --phoenix 2>&1");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -2228,7 +2228,7 @@ void test_start_phoenix() {
 
 void test_stop_phoenix() {
     printf("Running phoenix stopping test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --stop --phoenix 2>&1");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -2250,7 +2250,7 @@ void test_stop_phoenix() {
 
 void test_restart_phoenix() {
     printf("Running phoenix restarting test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --restart --phoenix 2>&1");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -2272,7 +2272,7 @@ void test_restart_phoenix() {
 
 void test_report_phoenix() {
     printf("Testing Phoenix status reporting...\n");
-    
+
     char* debo_output = capture_command_output("./debo --report --phoenix 2>&1");
     if (!debo_output) {
         fprintf(stderr, "Error: Failed to execute ./debo --report --phoenix\n");
@@ -2300,7 +2300,7 @@ void test_report_phoenix() {
 
 void test_uninstall_phoenix() {
     printf("Running phoenix uninstalling test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --uninstall --phoenix 2>&1");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -2322,7 +2322,7 @@ void test_uninstall_phoenix() {
 
 void test_configure_phoenix() {
     printf("Running phoenix configuration test...\n");
-    
+
     // Capture output of the command
     char* actual_output = capture_command_output("./debo  --phoenix --configure=\"livy.server.port\" --value=\"3546\" ");
     if (!actual_output) {
@@ -2341,7 +2341,7 @@ void test_configure_phoenix() {
     // Construct expected output
     char expected_output[1024];
     snprintf(expected_output, sizeof(expected_output),
-        "Operation completed successfully\n");
+             "Operation completed successfully\n");
 
     // Compare outputs
     if (strcmp(actual_output, expected_output) == 0) {
@@ -2369,7 +2369,7 @@ static const char* get_expected_solr_path() {
 
 void test_install_solr() {
     printf("Running solr installation test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --install --solr");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -2385,7 +2385,7 @@ void test_install_solr() {
 
     char expected_output[1024];
     snprintf(expected_output, sizeof(expected_output),
-        "Solr installed successfully at %s\n", expected_path);
+             "Solr installed successfully at %s\n", expected_path);
 
     if (strcmp(actual_output, expected_output) == 0) {
         printf("Test PASSED\n");
@@ -2400,7 +2400,7 @@ void test_install_solr() {
 
 void test_start_solr() {
     printf("Running solr starting test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --start --solr");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -2408,7 +2408,7 @@ void test_start_solr() {
     }
 
     const char* expected_output = "Solr started successfully\n";
-    
+
     if (strcmp(actual_output, expected_output) == 0) {
         printf("Test PASSED\n");
     } else {
@@ -2422,7 +2422,7 @@ void test_start_solr() {
 
 void test_stop_solr() {
     printf("Running solr stopping test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --stop --solr");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -2430,7 +2430,7 @@ void test_stop_solr() {
     }
 
     const char* expected_output = "Solr stopped successfully\n";
-    
+
     if (strcmp(actual_output, expected_output) == 0) {
         printf("Test PASSED\n");
     } else {
@@ -2444,7 +2444,7 @@ void test_stop_solr() {
 
 void test_restart_solr() {
     printf("Running solr restarting test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --restart --solr");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -2452,7 +2452,7 @@ void test_restart_solr() {
     }
 
     const char* expected_output = "Solr restarted successfully\n";
-    
+
     if (strcmp(actual_output, expected_output) == 0) {
         printf("Test PASSED\n");
     } else {
@@ -2466,7 +2466,7 @@ void test_restart_solr() {
 
 void test_report_solr() {
     printf("Testing solr reporting...\n");
-    
+
     // Check if Solr is running
     if (system("curl --silent --fail -o /dev/null http://localhost:8983/solr/ >/dev/null 2>&1") != 0) {
         printf("Test skipped: Solr is not running\n");
@@ -2500,7 +2500,7 @@ void test_report_solr() {
 
 void test_uninstall_solr() {
     printf("Running solr uninstalling test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --uninstall --solr");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -2508,7 +2508,7 @@ void test_uninstall_solr() {
     }
 
     const char* expected_phrase = "Solr uninstallation process completed";
-    
+
     if (strstr(actual_output, expected_phrase) != NULL) {
         printf("Test PASSED\n");
     } else {
@@ -2522,7 +2522,7 @@ void test_uninstall_solr() {
 
 void test_configure_solr() {
     printf("Running solr configuration test...\n");
-    
+
     // Capture output of the command
     char* actual_output = capture_command_output("./debo  --solr --configure=\"zkHost\" --value=\"3546\" ");
     if (!actual_output) {
@@ -2541,7 +2541,7 @@ void test_configure_solr() {
     // Construct expected output
     char expected_output[1024];
     snprintf(expected_output, sizeof(expected_output),
-        "Operation completed successfully\n");
+             "Operation completed successfully\n");
 
     // Compare outputs
     if (strcmp(actual_output, expected_output) == 0) {
@@ -2561,17 +2561,17 @@ static int is_debian_based() {
 }
 
 static int is_redhat_based() {
-    return access("/etc/redhat-release", F_OK) == 0 || 
-           access("/etc/system-release", F_OK) == 0;
+    return access("/etc/redhat-release", F_OK) == 0 ||
+        access("/etc/system-release", F_OK) == 0;
 }
 
 // OS check function pointer type
 typedef int (*OSCheckFunc)();
 
-void run_zeppelin_test(const char* test_name, const char* command, 
+void run_zeppelin_test(const char* test_name, const char* command,
                        const char* expected_output, OSCheckFunc os_check) {
     printf("Running %s...\n", test_name);
-    
+
     if (os_check && !os_check()) {
         printf("Test skipped: Unsupported OS\n");
         return;
@@ -2597,8 +2597,8 @@ void run_zeppelin_test(const char* test_name, const char* command,
 // Individual test functions
 void test_install_zeppelin() {
     const char* expected_path = is_debian_based() ? "/usr/local/zeppelin" :
-                                is_redhat_based() ? "/opt/zeppelin" : NULL;
-    
+        is_redhat_based() ? "/opt/zeppelin" : NULL;
+
     if (!expected_path) {
         printf("Test skipped: Unsupported OS\n");
         return;
@@ -2608,7 +2608,7 @@ void test_install_zeppelin() {
     snprintf(expected_output, sizeof(expected_output),
              "Apache Zeppelin installed successfully at %s\n", expected_path);
 
-    run_zeppelin_test("zeppelin installation test", 
+    run_zeppelin_test("zeppelin installation test",
                       "./debo --install --zeppelin",
                       expected_output, NULL);
 }
@@ -2636,7 +2636,7 @@ void test_restart_zeppelin() {
 
 void test_report_zeppelin() {
     printf("Testing zeppelin reporting...\n");
-    
+
     char* debo_output = capture_command_output("./debo --zeppelin");
     if (!debo_output) {
         fprintf(stderr, "Error: Failed to get debo report\n");
@@ -2671,7 +2671,7 @@ void test_uninstall_zeppelin() {
 }
 void test_configure_zeppelin() {
     printf("Running zeppelin configuration test...\n");
-    
+
     // Capture output of the command
     char* actual_output = capture_command_output("./debo  --zeppelin --configure=\"zeppelin.server.port\" --value=\"3546\" ");
     if (!actual_output) {
@@ -2690,7 +2690,7 @@ void test_configure_zeppelin() {
     // Construct expected output
     char expected_output[1024];
     snprintf(expected_output, sizeof(expected_output),
-        "Operation completed successfully\n");
+             "Operation completed successfully\n");
 
     // Compare outputs
     if (strcmp(actual_output, expected_output) == 0) {
@@ -2717,7 +2717,7 @@ int is_ranger_running() {
 
 void test_install_ranger() {
     printf("Running ranger installation test...\n");
-    
+
     // Capture output
     char* output = capture_command_output("./debo --install --ranger");
     if (!output) {
@@ -2737,8 +2737,8 @@ void test_install_ranger() {
     }
 
     // Check for key files
-    int valid_install = path_exists(path) && 
-                        path_exists(strcat(path, "/embeddedwebserver/scripts"));
+    int valid_install = path_exists(path) &&
+        path_exists(strcat(path, "/embeddedwebserver/scripts"));
 
     // Validate output contains success message
     int success = strstr(output, "success") != NULL;
@@ -2756,11 +2756,11 @@ void test_install_ranger() {
 
 void test_service_action(const char* action) {
     printf("Running ranger %s test...\n", action);
-    
+
     char command[256];
     snprintf(command, sizeof(command), "./debo --%s --ranger", action);
     char* output = capture_command_output(command);
-    
+
     if (!output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -2768,7 +2768,7 @@ void test_service_action(const char* action) {
 
     // Check for success pattern
     int success = strstr(output, "success") != NULL;
-    
+
     // Verify service state matches action
     int state_ok = 0;
     if (strcmp(action, "start") == 0) {
@@ -2776,7 +2776,7 @@ void test_service_action(const char* action) {
     } else if (strcmp(action, "stop") == 0) {
         state_ok = !is_ranger_running();
     } else {  // restart
-        // Should be running after restart
+              // Should be running after restart
         state_ok = is_ranger_running();
     }
 
@@ -2798,7 +2798,7 @@ void test_restart_ranger() { test_service_action("restart"); }
 
 void test_report_ranger() {
     printf("Testing ranger reporting...\n");
-    
+
     char* debo_output = capture_command_output("./debo --ranger");
     if (!debo_output) {
         fprintf(stderr, "Error: Failed to execute ./debo --ranger\n");
@@ -2807,9 +2807,9 @@ void test_report_ranger() {
 
     // Verify report contains status information
     int valid_report = strstr(debo_output, "Ranger") != NULL &&
-                      (strstr(debo_output, "running") || 
-                       strstr(debo_output, "stopped") ||
-                       strstr(debo_output, "not found"));
+        (strstr(debo_output, "running") ||
+         strstr(debo_output, "stopped") ||
+         strstr(debo_output, "not found"));
 
     if (valid_report) {
         printf("Test PASSED\n");
@@ -2823,7 +2823,7 @@ void test_report_ranger() {
 
 void test_uninstall_ranger() {
     printf("Running ranger uninstall test...\n");
-    
+
     char* output = capture_command_output("./debo --uninstall --ranger");
     if (!output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -2831,8 +2831,8 @@ void test_uninstall_ranger() {
     }
 
     // Verify uninstallation
-    int uninstalled = !path_exists("/usr/local/ranger") && 
-                      !path_exists("/opt/ranger");
+    int uninstalled = !path_exists("/usr/local/ranger") &&
+        !path_exists("/opt/ranger");
 
     // Check for success message
     int success = strstr(output, "complete") != NULL;
@@ -2851,7 +2851,7 @@ void test_uninstall_ranger() {
 
 void test_configure_ranger() {
     printf("Running ranger configuration test...\n");
-    
+
     // Capture output of the command
     char* actual_output = capture_command_output("./debo  --ranger --configure=\"ranger.admin.${1}.port\" --value=\"3546\" ");
     if (!actual_output) {
@@ -2870,7 +2870,7 @@ void test_configure_ranger() {
     // Construct expected output
     char expected_output[1024];
     snprintf(expected_output, sizeof(expected_output),
-        "Operation completed successfully\n");
+             "Operation completed successfully\n");
 
     // Compare outputs
     if (strcmp(actual_output, expected_output) == 0) {
@@ -2886,7 +2886,7 @@ void test_configure_ranger() {
 
 void test_install_atlas() {
     printf("Running atlas installation test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --install --atlas");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -2897,7 +2897,7 @@ void test_install_atlas() {
     const char* expected_path = NULL;
     if (system("command -v apt >/dev/null 2>&1") == 0) {
         expected_path = "/usr/local/atlas";
-    } else if (system("command -v yum >/dev/null 2>&1") == 0 || 
+    } else if (system("command -v yum >/dev/null 2>&1") == 0 ||
                system("command -v dnf >/dev/null 2>&1") == 0) {
         expected_path = "/opt/atlas";
     } else {
@@ -2922,10 +2922,10 @@ void test_install_atlas() {
     }
 
     // Construct dynamic expected output
-    char expected_output[1024]; 
+    char expected_output[1024];
     snprintf(expected_output, sizeof(expected_output),
-        "Apache Atlas %s installed successfully at %s/atlas-%s\n",
-        version, expected_path, version);
+             "Apache Atlas %s installed successfully at %s/atlas-%s\n",
+             version, expected_path, version);
 
     // Compare outputs
     if (strstr(actual_output, expected_output) != NULL) {
@@ -2941,7 +2941,7 @@ void test_install_atlas() {
 
 void test_start_atlas() {
     printf("Running atlas start test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --start --atlas");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -2963,7 +2963,7 @@ void test_start_atlas() {
 
 void test_stop_atlas() {
     printf("Running atlas stop test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --stop --atlas");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -2985,7 +2985,7 @@ void test_stop_atlas() {
 
 void test_restart_atlas() {
     printf("Running atlas restart test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --restart --atlas");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -3015,7 +3015,7 @@ char* normalize_json_output(char* output) {
 
 void test_report_atlas() {
     printf("Testing atlas reporting...\n");
-    
+
     char* debo_output = capture_command_output("./debo --atlas");
     if (!debo_output) {
         fprintf(stderr, "Error: Failed to execute ./debo --atlas\n");
@@ -3024,8 +3024,8 @@ void test_report_atlas() {
 
     char* curl_output = capture_command_output(
         "curl -s -u admin:admin -X GET http://localhost:21000/api/atlas/v2/entity/bulk"
-    );
-    
+        );
+
     if (!curl_output) {
         fprintf(stderr, "Error: Failed to execute curl command\n");
         free(debo_output);
@@ -3054,7 +3054,7 @@ void test_report_atlas() {
 
 void test_uninstall_atlas() {
     printf("Running atlas uninstall test...\n");
-    
+
     char* actual_output = capture_command_output("./debo --uninstall --atlas");
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
@@ -3076,7 +3076,7 @@ void test_uninstall_atlas() {
 
 void test_configure_atlas() {
     printf("Running atlas configuration test...\n");
-    
+
     // Capture output of the command
     char* actual_output = capture_command_output("./debo  --atlas --configure=\"atlas.server.http.port\" --value=\"3546\" ");
     if (!actual_output) {
@@ -3095,7 +3095,7 @@ void test_configure_atlas() {
     // Construct expected output
     char expected_output[1024];
     snprintf(expected_output, sizeof(expected_output),
-        "Operation completed successfully\n");
+             "Operation completed successfully\n");
 
     // Compare outputs
     if (strcmp(actual_output, expected_output) == 0) {
@@ -3138,11 +3138,11 @@ static command_result capture_tez_command_output(const char* command) {
 // Unified test function for Tez actions
 static void test_tez_action(const char* action, const char* expected) {
     printf("Testing Tez %s...\n", action);
-    
+
     char command[256];
     snprintf(command, sizeof(command), "./debo --%s --tez", action);
     command_result result = capture_tez_command_output(command);
-    
+
     if (!result.output) {
         fprintf(stderr, "Error: Command execution failed\n");
         return;
@@ -3162,11 +3162,11 @@ static void test_tez_action(const char* action, const char* expected) {
 // Test installation with OS-specific path check
 void test_install_tez() {
     printf("Testing Tez installation...\n");
-    
+
     char command[256];
     snprintf(command, sizeof(command), "./debo --install --tez");
     command_result result = capture_tez_command_output(command);
-    
+
     if (!result.output) {
         fprintf(stderr, "Error: Command execution failed\n");
         return;
@@ -3176,7 +3176,7 @@ void test_install_tez() {
     const char* expected_path = NULL;
     if (system("command -v apt >/dev/null 2>&1") == 0) {
         expected_path = "/usr/local/tez";
-    } else if (system("command -v yum >/dev/null 2>&1") == 0 || 
+    } else if (system("command -v yum >/dev/null 2>&1") == 0 ||
                system("command -v dnf >/dev/null 2>&1") == 0) {
         expected_path = "/opt/tez";
     } else {
@@ -3203,7 +3203,7 @@ void test_install_tez() {
 // Test status reporting with proper validation
 void test_report_tez() {
     printf("Testing Tez status reporting...\n");
-    
+
     command_result debo_result = capture_tez_command_output("./debo --tez");
     if (!debo_result.output) {
         fprintf(stderr, "Error: Failed to get Debo status\n");
@@ -3212,10 +3212,10 @@ void test_report_tez() {
 
     command_result yarn_result = capture_tez_command_output(
         "yarn application -list -appTypes TEZ 2>&1"
-    );
+        );
 
     char* expected = NULL;
-    if (yarn_result.exit_status != 0 || 
+    if (yarn_result.exit_status != 0 ||
         (yarn_result.output && yarn_result.output[0] == '\0')) {
         expected = "TEZ is not started";
     } else if (yarn_result.output) {
@@ -3255,7 +3255,7 @@ void test_uninstall_tez() {
 
 void test_configure_tez() {
     printf("Running tez configuration test...\n");
-    
+
     // Capture output of the command
     char* actual_output = capture_command_output("./debo  --tez --configure=\"tez.am.resource.memory.mb\" --value=\"3546mb\" ");
     if (!actual_output) {
@@ -3274,7 +3274,7 @@ void test_configure_tez() {
     // Construct expected output
     char expected_output[1024];
     snprintf(expected_output, sizeof(expected_output),
-        "Operation completed successfully\n");
+             "Operation completed successfully\n");
 
     // Compare outputs
     if (strcmp(actual_output, expected_output) == 0) {
@@ -3293,7 +3293,7 @@ void test_configure_tez() {
 const char* detect_pig_path() {
     if (system("command -v apt >/dev/null 2>&1") == 0) {
         return "/usr/local/pig";
-    } else if (system("command -v yum >/dev/null 2>&1") == 0 || 
+    } else if (system("command -v yum >/dev/null 2>&1") == 0 ||
                system("command -v dnf >/dev/null 2>&1") == 0) {
         return "/opt/pig";
     }
@@ -3303,11 +3303,11 @@ const char* detect_pig_path() {
 // Common test runner for install/start/stop/restart
 void run_pig_service_test(const char* action, const char* expected_success_msg) {
     printf("Running pig %s test...\n", action);
-    
+
     char command[256];
     snprintf(command, sizeof(command), "./debo --%s --pig", action);
     char* actual_output = capture_command_output(command);
-    
+
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -3355,7 +3355,7 @@ void test_uninstall_pig() {
 // Revised report test
 void test_report_pig() {
     printf("Testing pig reporting...\n");
-    
+
     char* debo_output = capture_command_output("./debo --pig");
     if (!debo_output) {
         fprintf(stderr, "Error: Failed to execute ./debo --pig\n");
@@ -3374,7 +3374,7 @@ void test_report_pig() {
     if (version_start) {
         char* version_end = strchr(version_start, '\n');
         if (version_end) *version_end = '\0';
-        
+
         if (strstr(debo_output, version_start)) {
             printf("Test PASSED\n");
         } else {
@@ -3392,7 +3392,7 @@ void test_report_pig() {
 
 void test_configure_pig() {
     printf("Running pig configuration test...\n");
-    
+
     // Capture output of the command
     char* actual_output = capture_command_output("./debo  --tez --configure=\"pig.exec.mapPartAgg\" --value=\"3546\" ");
     if (!actual_output) {
@@ -3411,7 +3411,7 @@ void test_configure_pig() {
     // Construct expected output
     char expected_output[1024];
     snprintf(expected_output, sizeof(expected_output),
-        "Operation completed successfully\n");
+             "Operation completed successfully\n");
 
     // Compare outputs
     if (strcmp(actual_output, expected_output) == 0) {
@@ -3429,7 +3429,7 @@ void test_configure_pig() {
 const char* detect_presto_os() {
     if (system("command -v apt >/dev/null 2>&1") == 0) {
         return "debian";
-    } else if (system("command -v yum >/dev/null 2>&1") == 0 || 
+    } else if (system("command -v yum >/dev/null 2>&1") == 0 ||
                system("command -v dnf >/dev/null 2>&1") == 0) {
         return "redhat";
     }
@@ -3439,11 +3439,11 @@ const char* detect_presto_os() {
 // Common test runner for Presto service actions
 void run_presto_service_test(const char* action, const char* expected_success_msg) {
     printf("Running Presto %s test...\n", action);
-    
+
     char command[256];
     snprintf(command, sizeof(command), "./debo --%s --presto", action);
     char* actual_output = capture_command_output(command);
-    
+
     if (!actual_output) {
         fprintf(stderr, "Error: No output captured\n");
         return;
@@ -3491,7 +3491,7 @@ void test_uninstall_presto() {
 // Revised report test for Presto
 void test_report_presto() {
     printf("Testing Presto reporting...\n");
-    
+
     char* debo_output = capture_command_output("./debo --presto");
     if (!debo_output) {
         fprintf(stderr, "Error: Failed to execute ./debo --presto\n");
@@ -3510,14 +3510,14 @@ void test_report_presto() {
         "Memory allocation error",
         "Failed to execute Presto command"
     };
-    
+
     for (size_t i = 0; i < sizeof(valid_patterns)/sizeof(valid_patterns[0]); i++) {
         if (strstr(debo_output, valid_patterns[i]) != NULL) {
             passed = 1;
             break;
         }
     }
-    
+
     if (passed) {
         printf("Test PASSED\n");
     } else {
@@ -3537,14 +3537,14 @@ int main() {
     test_hdfs_report();
     test_configure_hdfs();
     test_uninstall_hdfs();
-    
+
     test_install_hbase();
     test_start_hbase();
     test_stop_hbase();
     test_restart_hbase();
     test_hbase_report();
     test_uninstall_hbase();
-    
+
     test_install_spark();
     test_start_spark();
     test_stop_spark();
@@ -3552,7 +3552,7 @@ int main() {
     test_spark_report();
     test_configure_spark();
     test_uninstall_spark();
-    
+
     test_install_kafka();
     test_start_kafka();
     test_stop_kafka();
@@ -3560,7 +3560,7 @@ int main() {
     test_kafka_report();
     test_configure_kafka();
     test_uninstall_kafka();
-    
+
     test_install_flink();
     test_start_flink();
     test_stop_flink();
@@ -3568,7 +3568,7 @@ int main() {
     test_flink_report();
     test_configure_flink();
     test_uninstall_flink();
-    
+
     test_install_zookeeper();
     test_start_zookeeper();
     test_stop_zookeeper();
@@ -3576,7 +3576,7 @@ int main() {
     test_report_zookeeper();
     test_configure_zookeeper();
     test_uninstall_zookeeper();
-    
+
     test_install_storm();
     test_start_storm();
     test_stop_storm();
@@ -3584,7 +3584,7 @@ int main() {
     test_report_storm();
     test_configure_storm();
     test_uninstall_storm();
-    
+
     test_install_hive();
     test_start_hive();
     test_stop_hive();
@@ -3592,7 +3592,7 @@ int main() {
     test_report_hive();
     test_configure_hive();
     test_uninstall_hive();
-    
+
     test_install_livy();
     test_start_livy();
     test_stop_livy();
@@ -3600,7 +3600,7 @@ int main() {
     test_report_livy();
     test_configure_livy();
     test_uninstall_livy();
-    
+
     test_install_phoenix();
     test_start_phoenix();
     test_stop_phoenix();
@@ -3608,7 +3608,7 @@ int main() {
     test_report_phoenix();
     test_configure_phoenix();
     test_uninstall_phoenix();
-    
+
     test_install_solr();
     test_start_solr();
     test_stop_solr();
@@ -3616,7 +3616,7 @@ int main() {
     test_report_solr();
     test_configure_solr();
     test_uninstall_solr();
-    
+
     test_install_zeppelin();
     test_start_zeppelin();
     test_stop_zeppelin();
@@ -3624,7 +3624,7 @@ int main() {
     test_report_zeppelin();
     test_configure_zeppelin();
     test_uninstall_zeppelin();
-    
+
     test_install_ranger();
     test_start_ranger();
     test_stop_ranger();
@@ -3632,7 +3632,7 @@ int main() {
     test_report_ranger();
     test_configure_ranger();
     test_uninstall_ranger();
-    
+
     test_install_atlas();
     test_start_atlas();
     test_stop_atlas();
@@ -3640,7 +3640,7 @@ int main() {
     test_report_atlas();
     test_configure_atlas();
     test_uninstall_atlas();
-    
+
     test_install_tez();
     test_start_tez();
     test_stop_tez();
@@ -3648,17 +3648,17 @@ int main() {
     test_report_tez();
     test_configure_tez();
     test_uninstall_tez();
-    
-    
-    
-//    test_install_pig();
-//    test_start_pig();
-//    test_stop_pig();
-//    test_restart_pig();
-//    test_report_pig();
- //   test_configure_pig();
- //   test_uninstall_pig();
-    
+
+
+
+    //    test_install_pig();
+    //    test_start_pig();
+    //    test_stop_pig();
+    //    test_restart_pig();
+    //    test_report_pig();
+    //   test_configure_pig();
+    //   test_uninstall_pig();
+
     test_install_presto();
     test_start_presto();
     test_stop_presto();

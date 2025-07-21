@@ -26,8 +26,8 @@
 
 
 static int	getaddrinfo_unix(const char *path,
-							 const struct addrinfo *hintsp,
-							 struct addrinfo **result);
+                             const struct addrinfo *hintsp,
+                             struct addrinfo **result);
 
 
 
@@ -36,21 +36,21 @@ static int	getaddrinfo_unix(const char *path,
  */
 int
 getaddrinfo_all(const char *hostname, const char *servname,
-				   const struct addrinfo *hintp, struct addrinfo **result)
+                const struct addrinfo *hintp, struct addrinfo **result)
 {
-	int			rc;
+    int			rc;
 
-	/* not all versions of getaddrinfo() zero *result on failure */
-	*result = NULL;
+    /* not all versions of getaddrinfo() zero *result on failure */
+    *result = NULL;
 
-	if (hintp->ai_family == AF_UNIX)
-		return getaddrinfo_unix(servname, hintp, result);
+    if (hintp->ai_family == AF_UNIX)
+        return getaddrinfo_unix(servname, hintp, result);
 
-	/* NULL has special meaning to getaddrinfo(). */
-	rc = getaddrinfo((!hostname || hostname[0] == '\0') ? NULL : hostname,
-					 servname, hintp, result);
+    /* NULL has special meaning to getaddrinfo(). */
+    rc = getaddrinfo((!hostname || hostname[0] == '\0') ? NULL : hostname,
+                     servname, hintp, result);
 
-	return rc;
+    return rc;
 }
 
 
@@ -66,24 +66,24 @@ getaddrinfo_all(const char *hostname, const char *servname,
 void
 freeaddrinfo_all(int hint_ai_family, struct addrinfo *ai)
 {
-	if (hint_ai_family == AF_UNIX)
-	{
-		/* struct was built by getaddrinfo_unix (see getaddrinfo_all) */
-		while (ai != NULL)
-		{
-			struct addrinfo *p = ai;
+    if (hint_ai_family == AF_UNIX)
+    {
+        /* struct was built by getaddrinfo_unix (see getaddrinfo_all) */
+        while (ai != NULL)
+        {
+            struct addrinfo *p = ai;
 
-			ai = ai->ai_next;
-			free(p->ai_addr);
-			free(p);
-		}
-	}
-	else
-	{
-		/* struct was built by getaddrinfo() */
-		if (ai != NULL)
-			freeaddrinfo(ai);
-	}
+            ai = ai->ai_next;
+            free(p->ai_addr);
+            free(p);
+        }
+    }
+    else
+    {
+        /* struct was built by getaddrinfo() */
+        if (ai != NULL)
+            freeaddrinfo(ai);
+    }
 }
 
 
@@ -97,26 +97,26 @@ freeaddrinfo_all(int hint_ai_family, struct addrinfo *ai)
  */
 int
 getnameinfo_all(const struct sockaddr_storage *addr, int salen,
-				   char *node, int nodelen,
-				   char *service, int servicelen,
-				   int flags)
+                char *node, int nodelen,
+                char *service, int servicelen,
+                int flags)
 {
-	int			rc;
+    int			rc;
 
-		rc = getnameinfo((const struct sockaddr *) addr, salen,
-						 node, nodelen,
-						 service, servicelen,
-						 flags);
+    rc = getnameinfo((const struct sockaddr *) addr, salen,
+                     node, nodelen,
+                     service, servicelen,
+                     flags);
 
-	if (rc != 0)
-	{
-		if (node)
-			strlcpy(node, "???", nodelen);
-		if (service)
-			strlcpy(service, "???", servicelen);
-	}
+    if (rc != 0)
+    {
+        if (node)
+            strlcpy(node, "???", nodelen);
+        if (service)
+            strlcpy(service, "???", servicelen);
+    }
 
-	return rc;
+    return rc;
 }
 
 
@@ -130,74 +130,74 @@ getnameinfo_all(const struct sockaddr_storage *addr, int salen,
  */
 static int
 getaddrinfo_unix(const char *path, const struct addrinfo *hintsp,
-				 struct addrinfo **result)
+                 struct addrinfo **result)
 {
-	struct addrinfo hints = {0};
-	struct addrinfo *aip;
-	struct sockaddr_un *unp;
+    struct addrinfo hints = {0};
+    struct addrinfo *aip;
+    struct sockaddr_un *unp;
 
-	*result = NULL;
+    *result = NULL;
 
-	if (strlen(path) >= sizeof(unp->sun_path))
-		return EAI_FAIL;
+    if (strlen(path) >= sizeof(unp->sun_path))
+        return EAI_FAIL;
 
-	if (hintsp == NULL)
-	{
-		hints.ai_family = AF_UNIX;
-		hints.ai_socktype = SOCK_STREAM;
-	}
-	else
-		memcpy(&hints, hintsp, sizeof(hints));
+    if (hintsp == NULL)
+    {
+        hints.ai_family = AF_UNIX;
+        hints.ai_socktype = SOCK_STREAM;
+    }
+    else
+        memcpy(&hints, hintsp, sizeof(hints));
 
-	if (hints.ai_socktype == 0)
-		hints.ai_socktype = SOCK_STREAM;
+    if (hints.ai_socktype == 0)
+        hints.ai_socktype = SOCK_STREAM;
 
-	if (hints.ai_family != AF_UNIX)
-	{
-		/* shouldn't have been called */
-		return EAI_FAIL;
-	}
+    if (hints.ai_family != AF_UNIX)
+    {
+        /* shouldn't have been called */
+        return EAI_FAIL;
+    }
 
-	aip = calloc(1, sizeof(struct addrinfo));
-	if (aip == NULL)
-		return EAI_MEMORY;
+    aip = calloc(1, sizeof(struct addrinfo));
+    if (aip == NULL)
+        return EAI_MEMORY;
 
-	unp = calloc(1, sizeof(struct sockaddr_un));
-	if (unp == NULL)
-	{
-		free(aip);
-		return EAI_MEMORY;
-	}
+    unp = calloc(1, sizeof(struct sockaddr_un));
+    if (unp == NULL)
+    {
+        free(aip);
+        return EAI_MEMORY;
+    }
 
-	aip->ai_family = AF_UNIX;
-	aip->ai_socktype = hints.ai_socktype;
-	aip->ai_protocol = hints.ai_protocol;
-	aip->ai_next = NULL;
-	aip->ai_canonname = NULL;
-	*result = aip;
+    aip->ai_family = AF_UNIX;
+    aip->ai_socktype = hints.ai_socktype;
+    aip->ai_protocol = hints.ai_protocol;
+    aip->ai_next = NULL;
+    aip->ai_canonname = NULL;
+    *result = aip;
 
-	unp->sun_family = AF_UNIX;
-	aip->ai_addr = (struct sockaddr *) unp;
-	aip->ai_addrlen = sizeof(struct sockaddr_un);
+    unp->sun_family = AF_UNIX;
+    aip->ai_addr = (struct sockaddr *) unp;
+    aip->ai_addrlen = sizeof(struct sockaddr_un);
 
-	strcpy(unp->sun_path, path);
+    strcpy(unp->sun_path, path);
 
-	/*
-	 * If the supplied path starts with @, replace that with a zero byte for
-	 * the internal representation.  In that mode, the entire sun_path is the
-	 * address, including trailing zero bytes.  But we set the address length
-	 * to only include the length of the original string.  That way the
-	 * trailing zero bytes won't show up in any network or socket lists of the
-	 * operating system.  This is just a convention, also followed by other
-	 * packages.
-	 */
-	if (path[0] == '@')
-	{
-		unp->sun_path[0] = '\0';
-		aip->ai_addrlen = offsetof(struct sockaddr_un, sun_path) + strlen(path);
-	}
+    /*
+     * If the supplied path starts with @, replace that with a zero byte for
+     * the internal representation.  In that mode, the entire sun_path is the
+     * address, including trailing zero bytes.  But we set the address length
+     * to only include the length of the original string.  That way the
+     * trailing zero bytes won't show up in any network or socket lists of the
+     * operating system.  This is just a convention, also followed by other
+     * packages.
+     */
+    if (path[0] == '@')
+    {
+        unp->sun_path[0] = '\0';
+        aip->ai_addrlen = offsetof(struct sockaddr_un, sun_path) + strlen(path);
+    }
 
-	return 0;
+    return 0;
 }
 
 

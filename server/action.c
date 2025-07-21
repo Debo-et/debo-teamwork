@@ -56,77 +56,77 @@ void hadoop_action(Action a) {
     int ret, len;
 
     switch (a) {
-        case START:
-            len = snprintf(cmd, sizeof(cmd), "\"%s/sbin/start-all.sh\" >/dev/null 2>&1", hadoop_home);
-            if (len < 0 || (size_t)len >= sizeof(cmd)) {
-                fprintf(stderr,  "Command buffer overflow detected\n");
-                return;
-            }
-            ret = executeSystemCommand(cmd);
-            if (ret == -1) {
-                fprintf(stderr,  "Start failed (Code: %d). Verify:\n"
-                        "- User permissions\n"
-                        "- Hadoop configuration\n"
-                        "- Cluster status\n", ret);
-            } else {
-                printf( "All Hadoop services started successfully\n");
-            }
-            break;
-
-        case STOP:
-            len = snprintf(cmd, sizeof(cmd), "\"%s/sbin/stop-all.sh\" >/dev/null 2>&1", hadoop_home);
-            if (len < 0 || (size_t)len >= sizeof(cmd)) {
-                fprintf(stderr,  "Command buffer overflow detected\n");
-                return;
-            }
-            ret = executeSystemCommand(cmd);
-            if (ret == -1) {
-                fprintf(stderr,  "Stop failed (Code: %d). Possible causes:\n"
-                        "- Services already stopped\n"
-                        "- Permission issues\n"
-                        "- Node connectivity problems\n", ret);
-            } else {
-                printf( "All Hadoop services stopped successfully\n");
-            }
-            break;
-
-        case RESTART: {
-            // Stop phase
-            len = snprintf(cmd, sizeof(cmd), "\"%s/sbin/stop-all.sh\" >/dev/null 2>&1", hadoop_home);
-            if (len < 0 || (size_t)len >= sizeof(cmd)) {
-                fprintf(stderr,  "Command buffer overflow detected\n");
-                return;
-            }
-            ret = executeSystemCommand(cmd);
-            if (ret == -1) {
-                fprintf(stderr,  "Restart aborted - stop phase failed (Code: %d)\n", ret);
-                return;
-            }
-//            printf( "Services stopped successfully, initiating restart...\n");
-
-            // Add delay for service shutdown (adjust as needed)
-            sleep(5);
-
-            // Start phase
-            len = snprintf(cmd, sizeof(cmd), "\"%s/sbin/start-all.sh\" >/dev/null 2>&1", hadoop_home);
-            if (len < 0 || (size_t)len >= sizeof(cmd)) {
-                fprintf(stderr,  "Command buffer overflow detected\n");
-                return;
-            }
-            ret = executeSystemCommand(cmd);
-            if (ret == -1) {
-                fprintf(stderr,  "Restart incomplete - start phase failed (Code: %d)\n"
-                        "System may be in inconsistent state!\n", ret);
-            } else {
-                printf( "All services restarted successfully\n");
-            }
-            break;
+    case START:
+        len = snprintf(cmd, sizeof(cmd), "\"%s/sbin/start-all.sh\" >/dev/null 2>&1", hadoop_home);
+        if (len < 0 || (size_t)len >= sizeof(cmd)) {
+            fprintf(stderr,  "Command buffer overflow detected\n");
+            return;
         }
+        ret = executeSystemCommand(cmd);
+        if (ret == -1) {
+            fprintf(stderr,  "Start failed (Code: %d). Verify:\n"
+                    "- User permissions\n"
+                    "- Hadoop configuration\n"
+                    "- Cluster status\n", ret);
+        } else {
+            printf( "All Hadoop services started successfully\n");
+        }
+        break;
 
-        default:
-            fprintf(stderr,  "Invalid action. Valid options:\n"
-                    "0 - START\n1 - STOP\n2 - RESTART\n");
-            break;
+    case STOP:
+        len = snprintf(cmd, sizeof(cmd), "\"%s/sbin/stop-all.sh\" >/dev/null 2>&1", hadoop_home);
+        if (len < 0 || (size_t)len >= sizeof(cmd)) {
+            fprintf(stderr,  "Command buffer overflow detected\n");
+            return;
+        }
+        ret = executeSystemCommand(cmd);
+        if (ret == -1) {
+            fprintf(stderr,  "Stop failed (Code: %d). Possible causes:\n"
+                    "- Services already stopped\n"
+                    "- Permission issues\n"
+                    "- Node connectivity problems\n", ret);
+        } else {
+            printf( "All Hadoop services stopped successfully\n");
+        }
+        break;
+
+    case RESTART: {
+        // Stop phase
+        len = snprintf(cmd, sizeof(cmd), "\"%s/sbin/stop-all.sh\" >/dev/null 2>&1", hadoop_home);
+        if (len < 0 || (size_t)len >= sizeof(cmd)) {
+            fprintf(stderr,  "Command buffer overflow detected\n");
+            return;
+        }
+        ret = executeSystemCommand(cmd);
+        if (ret == -1) {
+            fprintf(stderr,  "Restart aborted - stop phase failed (Code: %d)\n", ret);
+            return;
+        }
+        //            printf( "Services stopped successfully, initiating restart...\n");
+
+        // Add delay for service shutdown (adjust as needed)
+        sleep(5);
+
+        // Start phase
+        len = snprintf(cmd, sizeof(cmd), "\"%s/sbin/start-all.sh\" >/dev/null 2>&1", hadoop_home);
+        if (len < 0 || (size_t)len >= sizeof(cmd)) {
+            fprintf(stderr,  "Command buffer overflow detected\n");
+            return;
+        }
+        ret = executeSystemCommand(cmd);
+        if (ret == -1) {
+            fprintf(stderr,  "Restart incomplete - start phase failed (Code: %d)\n"
+                    "System may be in inconsistent state!\n", ret);
+        } else {
+            printf( "All services restarted successfully\n");
+        }
+        break;
+    }
+
+    default:
+        fprintf(stderr,  "Invalid action. Valid options:\n"
+                "0 - START\n1 - STOP\n2 - RESTART\n");
+        break;
     }
 }
 
@@ -135,7 +135,7 @@ static char* find_launcher(const char* base_dir) {
     snprintf(pattern, sizeof(pattern), "%s/presto-server-*/bin/launcher", base_dir);
     glob_t glob_result;
     int glob_ret = glob(pattern, GLOB_ERR, NULL, &glob_result);
-    
+
     if (glob_ret != 0 || glob_result.gl_pathc == 0) {
         globfree(&glob_result);
         return NULL;
@@ -178,33 +178,33 @@ void Presto_action(Action action) {
     }
 
     switch(action) {
-        case START:
-            action_name = "start";
-            snprintf(command, sizeof(command), "sudo %s start >/dev/null 2>&1", launcher_path);
-            break;
+    case START:
+        action_name = "start";
+        snprintf(command, sizeof(command), "sudo %s start >/dev/null 2>&1", launcher_path);
+        break;
 
-        case STOP:
-            action_name = "stop";
-            snprintf(command, sizeof(command), "sudo %s stop >/dev/null 2>&1", launcher_path);
-            break;
+    case STOP:
+        action_name = "stop";
+        snprintf(command, sizeof(command), "sudo %s stop >/dev/null 2>&1", launcher_path);
+        break;
 
-        case RESTART:
-            // Stop phase
-            snprintf(command, sizeof(command), "sudo %s stop >/dev/null 2>&1", launcher_path);
-            if ((ret = executeSystemCommand(command))) {
-                fprintf(stderr,  "Error: Failed to stop Presto (%d)\n", ret);
-                free(launcher_path);
-                exit(EXIT_FAILURE);
-            }
-            // Start phase
-            action_name = "restart";
-            snprintf(command, sizeof(command), "sudo %s start >/dev/null 2>&1", launcher_path);
-            break;
-
-        default:
-            fprintf(stderr,  "Error: Invalid action\n");
+    case RESTART:
+        // Stop phase
+        snprintf(command, sizeof(command), "sudo %s stop >/dev/null 2>&1", launcher_path);
+        if ((ret = executeSystemCommand(command))) {
+            fprintf(stderr,  "Error: Failed to stop Presto (%d)\n", ret);
             free(launcher_path);
             exit(EXIT_FAILURE);
+        }
+        // Start phase
+        action_name = "restart";
+        snprintf(command, sizeof(command), "sudo %s start >/dev/null 2>&1", launcher_path);
+        break;
+
+    default:
+        fprintf(stderr,  "Error: Invalid action\n");
+        free(launcher_path);
+        exit(EXIT_FAILURE);
     }
 
     if ((ret = executeSystemCommand(command))) {
@@ -219,12 +219,12 @@ void Presto_action(Action action) {
 
 void spark_action(Action a) {
     const char* install_path = NULL;
-    
+
     // Detect OS distribution
     if (access("/etc/debian_version", F_OK) == 0) {
         install_path = "/usr/local/spark";
-    } else if (access("/etc/redhat-release", F_OK) == 0 || 
-             access("/etc/system-release", F_OK) == 0) {
+    } else if (access("/etc/redhat-release", F_OK) == 0 ||
+               access("/etc/system-release", F_OK) == 0) {
         install_path = "/opt/spark";
     } else {
         fprintf(stderr,  "Error: Unsupported Linux distribution\n");
@@ -235,18 +235,18 @@ void spark_action(Action a) {
     char start_cmd[512];
     char stop_cmd[512];
     long unsigned int cmd_len;
-    
+
     cmd_len = snprintf(start_cmd, sizeof(start_cmd),
-         "export SPARK_HOME=%s && %s/sbin/start-all.sh" ,
-        install_path, install_path);
+                       "export SPARK_HOME=%s && %s/sbin/start-all.sh" ,
+                       install_path, install_path);
     if (cmd_len >= sizeof(start_cmd)) {
         fprintf(stderr,  "Error: Start command buffer overflow\n");
         return;
     }
 
     cmd_len = snprintf(stop_cmd, sizeof(stop_cmd),
-        "export SPARK_HOME=%s && %s/sbin/stop-all.sh", 
-        install_path, install_path);
+                       "export SPARK_HOME=%s && %s/sbin/stop-all.sh",
+                       install_path, install_path);
     if (cmd_len >= sizeof(stop_cmd)) {
         fprintf(stderr,  "Error: Stop command buffer overflow\n");
         return;
@@ -254,9 +254,9 @@ void spark_action(Action a) {
 
     // Execute command with error handling
     int execute_service_command(const char* command) {
-      //  printf( "Attempting to %s Spark service...\n", action);
+        //  printf( "Attempting to %s Spark service...\n", action);
         int status = executeSystemCommand(command);
-        
+
         if (status == -1) {
             perror( "System command execution failed");
             return -1;
@@ -266,41 +266,41 @@ void spark_action(Action a) {
 
     // Handle different actions
     switch(a) {
-        case START:
-            if (execute_service_command(start_cmd) == -1) {
-                fprintf(stderr,  "Spark service startup aborted\n");
-            }
-            printf( "Spark service Start successfully\n");
-            break;
-            
-        case STOP:
-            if (execute_service_command(stop_cmd) == -1) {
-                fprintf(stderr,  "Spark service shutdown aborted\n");
-            }
-            printf( "Spark service Stop successfully\n");
-            break;
-            
-        case RESTART:
-            // Stop phase
-            if (execute_service_command(stop_cmd) == -1) {
-                fprintf(stderr,  "Restart aborted due to stop failure\n");
-                return;
-            }
-            
-            // Add delay for service shutdown
-          //  printf( "Waiting for services to stop...\n");
-            sleep(3);
-            
-            // Start phase
-            if (execute_service_command(start_cmd) == -1) {
-                fprintf(stderr,  "Spark service restart aborted\n");
-            }
-            printf( "Spark service restart successfully\n");
-            break;
-            
-        default:
-            fprintf(stderr,  "Error: Invalid action specified\n");
-            break;
+    case START:
+        if (execute_service_command(start_cmd) == -1) {
+            fprintf(stderr,  "Spark service startup aborted\n");
+        }
+        printf( "Spark service Start successfully\n");
+        break;
+
+    case STOP:
+        if (execute_service_command(stop_cmd) == -1) {
+            fprintf(stderr,  "Spark service shutdown aborted\n");
+        }
+        printf( "Spark service Stop successfully\n");
+        break;
+
+    case RESTART:
+        // Stop phase
+        if (execute_service_command(stop_cmd) == -1) {
+            fprintf(stderr,  "Restart aborted due to stop failure\n");
+            return;
+        }
+
+        // Add delay for service shutdown
+        //  printf( "Waiting for services to stop...\n");
+        sleep(3);
+
+        // Start phase
+        if (execute_service_command(start_cmd) == -1) {
+            fprintf(stderr,  "Spark service restart aborted\n");
+        }
+        printf( "Spark service restart successfully\n");
+        break;
+
+    default:
+        fprintf(stderr,  "Error: Invalid action specified\n");
+        break;
     }
 }
 
@@ -337,7 +337,7 @@ static bool is_hive_running() {
 static bool check_hive_started() {
     const int max_attempts = 10;
     const int wait_seconds = 2;
-    
+
     for (int i = 0; i < max_attempts; i++) {
         if (is_hive_running()) {
             return true;
@@ -393,68 +393,68 @@ void hive_action(Action a) {
 
     // Construct commands
     snprintf(start_cmd, sizeof(start_cmd),
-        "\"%s/bin/hive\" --service hiveserver2 > /dev/null 2>&1 &", hive_path);
-    
+             "\"%s/bin/hive\" --service hiveserver2 > /dev/null 2>&1 &", hive_path);
+
     snprintf(stop_cmd, sizeof(stop_cmd),
-        "pkill -f '\"%s/bin/hive\" --service hiveserver2' >/dev/null 2>&1", hive_path);
+             "pkill -f '\"%s/bin/hive\" --service hiveserver2' >/dev/null 2>&1", hive_path);
 
     switch (a) {
-        case START: {
-            ret = executeSystemCommand(start_cmd);
-            if (ret == -1) {
-                perror("Failed to execute start command");
-                exit(EXIT_FAILURE);
-            }
-            
-            // Verify service actually started
-            if (check_hive_started()) {
-                printf("Hive service started successfully\n");
-            } else {
-                fprintf(stderr, "Error: Hive service failed to start. Port 10000 not listening after 20 seconds.\n");
-                exit(EXIT_FAILURE);
-            }
-            break;
-        }
-
-        case STOP: {
-            ret = executeSystemCommand(stop_cmd);
-            if (ret == -1) {
-                perror("Failed to execute stop command");
-                exit(EXIT_FAILURE);
-            }
-            
-            printf("Hive service stopped successfully\n");
-            break;
-        }
-
-        case RESTART: {
-            // Stop phase
-            ret = executeSystemCommand(stop_cmd);
-            if (ret == -1) {
-                perror("Failed to stop during restart");
-                exit(EXIT_FAILURE);
-            }
-
-            // Start phase
-            ret = executeSystemCommand(start_cmd);
-            if (ret == -1) {
-                perror("Failed to start during restart");
-                exit(EXIT_FAILURE);
-            }
-            
-            // Verify service restarted
-            if (check_hive_started()) {
-                printf("Hive service restarted successfully\n");
-            } else {
-                fprintf(stderr, "Error: Hive service failed to restart. Port 10000 not listening after 20 seconds.\n");
-                exit(EXIT_FAILURE);
-            }
-            break;
-        }
-
-        default:
-            fprintf(stderr,  "Invalid action specified\n");
+    case START: {
+        ret = executeSystemCommand(start_cmd);
+        if (ret == -1) {
+            perror("Failed to execute start command");
             exit(EXIT_FAILURE);
+        }
+
+        // Verify service actually started
+        if (check_hive_started()) {
+            printf("Hive service started successfully\n");
+        } else {
+            fprintf(stderr, "Error: Hive service failed to start. Port 10000 not listening after 20 seconds.\n");
+            exit(EXIT_FAILURE);
+        }
+        break;
+    }
+
+    case STOP: {
+        ret = executeSystemCommand(stop_cmd);
+        if (ret == -1) {
+            perror("Failed to execute stop command");
+            exit(EXIT_FAILURE);
+        }
+
+        printf("Hive service stopped successfully\n");
+        break;
+    }
+
+    case RESTART: {
+        // Stop phase
+        ret = executeSystemCommand(stop_cmd);
+        if (ret == -1) {
+            perror("Failed to stop during restart");
+            exit(EXIT_FAILURE);
+        }
+
+        // Start phase
+        ret = executeSystemCommand(start_cmd);
+        if (ret == -1) {
+            perror("Failed to start during restart");
+            exit(EXIT_FAILURE);
+        }
+
+        // Verify service restarted
+        if (check_hive_started()) {
+            printf("Hive service restarted successfully\n");
+        } else {
+            fprintf(stderr, "Error: Hive service failed to restart. Port 10000 not listening after 20 seconds.\n");
+            exit(EXIT_FAILURE);
+        }
+        break;
+    }
+
+    default:
+        fprintf(stderr,  "Invalid action specified\n");
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -462,7 +462,7 @@ void Zeppelin_action(Action a) {
     // Determine Zeppelin installation path
     const char *zeppelin_home = getenv("ZEPPELIN_HOME");
     char detected_path[PATH_MAX] = {0};
-    
+
     // Fallback path detection if environment variable not set
     if (!zeppelin_home) {
         // Check Debian-based systems
@@ -470,7 +470,7 @@ void Zeppelin_action(Action a) {
             strncpy(detected_path, "/usr/local/zeppelin", PATH_MAX);
         }
         // Check Red Hat-based systems
-        else if (access("/etc/redhat-release", F_OK) == 0 || 
+        else if (access("/etc/redhat-release", F_OK) == 0 ||
                  access("/etc/system-release", F_OK) == 0) {
             strncpy(detected_path, "/opt/zeppelin", PATH_MAX);
         }
@@ -483,11 +483,11 @@ void Zeppelin_action(Action a) {
 
     // Verify daemon script existence
     char daemon_script[PATH_MAX];
-    snprintf(daemon_script, sizeof(daemon_script), 
+    snprintf(daemon_script, sizeof(daemon_script),
              "%s/bin/zeppelin-daemon.sh", zeppelin_home);
-    
+
     if (access(daemon_script, X_OK) != 0) {
-        fprintf(stderr,  "Zeppelin daemon script not found or not executable at: %s\n", 
+        fprintf(stderr,  "Zeppelin daemon script not found or not executable at: %s\n",
                 daemon_script);
         exit(EXIT_FAILURE);
     }
@@ -495,54 +495,54 @@ void Zeppelin_action(Action a) {
     // Construct base command
     char command[PATH_MAX + 20];
     int ret;
-    
+
     switch(a) {
-        case START:
-            snprintf(command, sizeof(command), "sudo %s start >/dev/null 2>&1", daemon_script);
-          //  printf( "Starting Zeppelin...\n");
-            ret = executeSystemCommand(command);
-            if (WEXITSTATUS(ret) != 0) {
-                fprintf(stderr,  "Start failed with exit code: %d\n", WEXITSTATUS(ret));
-                exit(EXIT_FAILURE);
-            }
-            printf( "Zeppelin Started completed successfully\n");
-            break;
-
-        case STOP:
-            snprintf(command, sizeof(command), "sudo %s stop >/dev/null 2>&1", daemon_script);
-           // printf( "Stopping Zeppelin...\n");
-            ret = executeSystemCommand(command);
-            if (WEXITSTATUS(ret) != 0) {
-                fprintf(stderr,  "Stop failed with exit code: %d\n", WEXITSTATUS(ret));
-                exit(EXIT_FAILURE);
-            }
-            printf( "Zeppelin Stopped completed successfully\n");
-            break;
-
-        case RESTART:
-            // Execute stop followed by start
-            snprintf(command, sizeof(command), "sudo %s stop >/dev/null 2>&1", daemon_script);
-          //  printf( "Initiating restart...\n");
-            ret = executeSystemCommand(command);
-            if (WEXITSTATUS(ret) != 0) {
-                fprintf(stderr,  "Restart aborted - stop phase failed: %d\n", 
-                        WEXITSTATUS(ret));
-                exit(EXIT_FAILURE);
-            }
-            
-            snprintf(command, sizeof(command), "sudo %s start >/dev/null 2>&1", daemon_script);
-            ret = executeSystemCommand(command);
-            if (WEXITSTATUS(ret) != 0) {
-                fprintf(stderr,  "Restart failed - start phase: %d\n", 
-                        WEXITSTATUS(ret));
-                exit(EXIT_FAILURE);
-            }
-            printf( "Zeppelin Restarted successfully\n");
-            break;
-
-        default:
-            fprintf(stderr,  "Invalid action command\n");
+    case START:
+        snprintf(command, sizeof(command), "sudo %s start >/dev/null 2>&1", daemon_script);
+        //  printf( "Starting Zeppelin...\n");
+        ret = executeSystemCommand(command);
+        if (WEXITSTATUS(ret) != 0) {
+            fprintf(stderr,  "Start failed with exit code: %d\n", WEXITSTATUS(ret));
             exit(EXIT_FAILURE);
+        }
+        printf( "Zeppelin Started completed successfully\n");
+        break;
+
+    case STOP:
+        snprintf(command, sizeof(command), "sudo %s stop >/dev/null 2>&1", daemon_script);
+        // printf( "Stopping Zeppelin...\n");
+        ret = executeSystemCommand(command);
+        if (WEXITSTATUS(ret) != 0) {
+            fprintf(stderr,  "Stop failed with exit code: %d\n", WEXITSTATUS(ret));
+            exit(EXIT_FAILURE);
+        }
+        printf( "Zeppelin Stopped completed successfully\n");
+        break;
+
+    case RESTART:
+        // Execute stop followed by start
+        snprintf(command, sizeof(command), "sudo %s stop >/dev/null 2>&1", daemon_script);
+        //  printf( "Initiating restart...\n");
+        ret = executeSystemCommand(command);
+        if (WEXITSTATUS(ret) != 0) {
+            fprintf(stderr,  "Restart aborted - stop phase failed: %d\n",
+                    WEXITSTATUS(ret));
+            exit(EXIT_FAILURE);
+        }
+
+        snprintf(command, sizeof(command), "sudo %s start >/dev/null 2>&1", daemon_script);
+        ret = executeSystemCommand(command);
+        if (WEXITSTATUS(ret) != 0) {
+            fprintf(stderr,  "Restart failed - start phase: %d\n",
+                    WEXITSTATUS(ret));
+            exit(EXIT_FAILURE);
+        }
+        printf( "Zeppelin Restarted successfully\n");
+        break;
+
+    default:
+        fprintf(stderr,  "Invalid action command\n");
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -551,18 +551,18 @@ void Zeppelin_action(Action a) {
 static int execute_command(const char* script_path, const char* arg) {
     char command[PATH_MAX + 128]; // Increased buffer size
     size_t len = snprintf(command, sizeof(command), "sudo %s %s >/dev/null 2>&1", script_path, arg);
-    
+
     if (len >= sizeof(command)) {
         fprintf(stderr,  "Command truncated: 'sudo %s %s'\n", script_path, arg);
         return -1;
     }
-    
+
     int status = executeSystemCommand(command);
     if (status == -1) {
         perror( "system() failed");
         return -1;
     }
-    
+
     if (WIFEXITED(status)) {
         int exit_status = WEXITSTATUS(status);
         if (exit_status != 0) {
@@ -579,8 +579,8 @@ void livy_action(Action a) {
     // Detect OS distribution
     if (access("/etc/debian_version", F_OK) == 0) {
         livy_home = "/usr/local/livy";
-    } else if (access("/etc/redhat-release", F_OK) == 0 || 
-             access("/etc/system-release", F_OK) == 0) {
+    } else if (access("/etc/redhat-release", F_OK) == 0 ||
+               access("/etc/system-release", F_OK) == 0) {
         livy_home = "/opt/livy";
     } else {
         fprintf(stderr,  "Error: Unsupported Linux distribution\n");
@@ -590,7 +590,7 @@ void livy_action(Action a) {
     // Construct and validate server script path
     char script_path[PATH_MAX];
     size_t path_len = snprintf(script_path, sizeof(script_path), "%s/bin/livy-server", livy_home);
-    
+
     if (path_len >= sizeof(script_path)) {
         fprintf(stderr,  "Path construction failed: Maximum length exceeded\n");
         return;
@@ -603,42 +603,42 @@ void livy_action(Action a) {
 
     // Execute the requested action
     switch(a) {
-        case START: {
-            int rc = execute_command(script_path, "start");
-            if (rc == 0) {
-                printf( "Successfully started Livy service\n");
-            } else {
-                fprintf(stderr,  "Start failed with exit code: %d\n", rc);
-            }
-            break;
+    case START: {
+        int rc = execute_command(script_path, "start");
+        if (rc == 0) {
+            printf( "Successfully started Livy service\n");
+        } else {
+            fprintf(stderr,  "Start failed with exit code: %d\n", rc);
         }
-        case STOP: {
-            int rc = execute_command(script_path, "stop");
-            if (rc == 0) {
-                printf( "Successfully stopped Livy service\n");
-            } else {
-                fprintf(stderr,  "Stop failed with exit code: %d\n", rc);
-            }
-            break;
+        break;
+    }
+    case STOP: {
+        int rc = execute_command(script_path, "stop");
+        if (rc == 0) {
+            printf( "Successfully stopped Livy service\n");
+        } else {
+            fprintf(stderr,  "Stop failed with exit code: %d\n", rc);
         }
-        case RESTART: {
-            int stop_rc = execute_command(script_path, "stop");
-            if (stop_rc != 0) {
-                fprintf(stderr,  "Restart aborted - stop failed with code: %d\n", stop_rc);
-                return;
-            }
-         //   printf( "Service stopped. Attempting restart...\n");
-            int start_rc = execute_command(script_path, "start");
-            if (start_rc == 0) {
-                printf( "Successfully restarted Livy service\n");
-            } else {
-                fprintf(stderr,  "Restart failed - start failed with code: %d\n", start_rc);
-            }
-            break;
+        break;
+    }
+    case RESTART: {
+        int stop_rc = execute_command(script_path, "stop");
+        if (stop_rc != 0) {
+            fprintf(stderr,  "Restart aborted - stop failed with code: %d\n", stop_rc);
+            return;
         }
-        default:
-            fprintf(stderr,  "Invalid action requested\n");
-            break;
+        //   printf( "Service stopped. Attempting restart...\n");
+        int start_rc = execute_command(script_path, "start");
+        if (start_rc == 0) {
+            printf( "Successfully restarted Livy service\n");
+        } else {
+            fprintf(stderr,  "Restart failed - start failed with code: %d\n", start_rc);
+        }
+        break;
+    }
+    default:
+        fprintf(stderr,  "Invalid action requested\n");
+        break;
     }
 }
 
@@ -680,55 +680,55 @@ void pig_action(Action a) {
     int ret, len;
 
     switch (a) {
-        case START: {
-            len = snprintf(command, sizeof(command),
-                         "%s/bin/pig -x local > /dev/null 2>&1 &", pig_home);
-            if (len < 0 || len >= (int)sizeof(command)) {
-                fprintf(stderr,  "Command construction error\n");
-                exit(EXIT_FAILURE);
-            }
-
-            ret = executeSystemCommand(command);
-            if (ret == -1) {
-                fprintf(stderr,  "Failed to start Pig. Error: %d\n"
-                        "Verify Pig is installed at: %s\n", ret, pig_home);
-                exit(EXIT_FAILURE);
-            }
-            break;
-        }
-
-        case STOP: {
-            len = snprintf(command, sizeof(command),
-                         "pkill -f '^%s/bin/pig -x local' >/dev/null 2>&1", pig_home);
-            if (len < 0 || len >= (int)sizeof(command)) {
-                fprintf(stderr,  "Command construction error\n");
-                exit(EXIT_FAILURE);
-            }
-
-            ret = executeSystemCommand(command);
-            if (ret == -1) {
-                if (ret == 1) {
-                    printf( "No running Pig processes found\n");
-                } else {
-                    fprintf(stderr,  "Failed to stop Pig. Error: %d\n", ret);
-                    exit(EXIT_FAILURE);
-                }
-            } 
-            break;
-        }
-
-        case RESTART:
-           // printf( "Restarting Pig...\n");
-            pig_action(STOP);
-            sleep(2);  // Allow processes to terminate
-            pig_action(START);
-            break;
-
-        default:
-            fprintf(stderr,  "Invalid action. Use START, STOP, or RESTART\n");
+    case START: {
+        len = snprintf(command, sizeof(command),
+                       "%s/bin/pig -x local > /dev/null 2>&1 &", pig_home);
+        if (len < 0 || len >= (int)sizeof(command)) {
+            fprintf(stderr,  "Command construction error\n");
             exit(EXIT_FAILURE);
-      printf( "Pig Service action performed successfully\n");      
-            
+        }
+
+        ret = executeSystemCommand(command);
+        if (ret == -1) {
+            fprintf(stderr,  "Failed to start Pig. Error: %d\n"
+                    "Verify Pig is installed at: %s\n", ret, pig_home);
+            exit(EXIT_FAILURE);
+        }
+        break;
+    }
+
+    case STOP: {
+        len = snprintf(command, sizeof(command),
+                       "pkill -f '^%s/bin/pig -x local' >/dev/null 2>&1", pig_home);
+        if (len < 0 || len >= (int)sizeof(command)) {
+            fprintf(stderr,  "Command construction error\n");
+            exit(EXIT_FAILURE);
+        }
+
+        ret = executeSystemCommand(command);
+        if (ret == -1) {
+            if (ret == 1) {
+                printf( "No running Pig processes found\n");
+            } else {
+                fprintf(stderr,  "Failed to stop Pig. Error: %d\n", ret);
+                exit(EXIT_FAILURE);
+            }
+        }
+        break;
+    }
+
+    case RESTART:
+        // printf( "Restarting Pig...\n");
+        pig_action(STOP);
+        sleep(2);  // Allow processes to terminate
+        pig_action(START);
+        break;
+
+    default:
+        fprintf(stderr,  "Invalid action. Use START, STOP, or RESTART\n");
+        exit(EXIT_FAILURE);
+        printf( "Pig Service action performed successfully\n");
+
     }
 }
 
@@ -778,41 +778,41 @@ void HBase_action(Action a) {
     snprintf(stop_cmd, sizeof(stop_cmd), "%s/bin/stop-hbase.sh >/dev/null 2>&1", hbase_home);
 
     switch(a) {
-        case START:
-            if (!executeSystemCommand(start_cmd)) {
-                fprintf(stderr,  "Failed to start HBase\n");
-                exit(EXIT_FAILURE);
-            }
-            fprintf(stderr,  "Hbase start successfully \n");
-            break;
-        case STOP:
-            if (!executeSystemCommand(stop_cmd)) {
-                fprintf(stderr,  "Failed to stop HBase\n");
-                exit(EXIT_FAILURE);
-            }
-            fprintf(stderr,  "Hbase stop successfully \n");
-            break;
-        case RESTART:
-            if (!executeSystemCommand(stop_cmd) || !executeSystemCommand(start_cmd)) {
-                fprintf(stderr,  "Restart failed\n");
-                exit(EXIT_FAILURE);
-            }
-            fprintf(stderr,  "Hbase restart successfully \n");
-            break;
-        default:
-            fprintf(stderr,  "Invalid action\n");
+    case START:
+        if (!executeSystemCommand(start_cmd)) {
+            fprintf(stderr,  "Failed to start HBase\n");
             exit(EXIT_FAILURE);
+        }
+        fprintf(stderr,  "Hbase start successfully \n");
+        break;
+    case STOP:
+        if (!executeSystemCommand(stop_cmd)) {
+            fprintf(stderr,  "Failed to stop HBase\n");
+            exit(EXIT_FAILURE);
+        }
+        fprintf(stderr,  "Hbase stop successfully \n");
+        break;
+    case RESTART:
+        if (!executeSystemCommand(stop_cmd) || !executeSystemCommand(start_cmd)) {
+            fprintf(stderr,  "Restart failed\n");
+            exit(EXIT_FAILURE);
+        }
+        fprintf(stderr,  "Hbase restart successfully \n");
+        break;
+    default:
+        fprintf(stderr,  "Invalid action\n");
+        exit(EXIT_FAILURE);
     }
 
     // Verify service state
     char verify_cmd[512];
     snprintf(verify_cmd, sizeof(verify_cmd),
-        "sh -c 'jps | grep HMaster >/dev/null && jps | grep HRegionServer >/dev/null'");
+             "sh -c 'jps | grep HMaster >/dev/null && jps | grep HRegionServer >/dev/null'");
 
     if (a == START || a == RESTART) {
         if (!executeSystemCommand(verify_cmd)) {
             fprintf(stderr,  "Service verification failed after %s\n",
-                   (a == RESTART) ? "restart" : "start");
+                    (a == RESTART) ? "restart" : "start");
             exit(EXIT_FAILURE);
         }
     } else if (a == STOP) {
@@ -831,7 +831,7 @@ const char *get_tez_home() {
     struct stat st;
     const char *tez_home = getenv("TEZ_HOME");
     const char *paths[] = {"/opt/tez", "/usr/local/tez"};
-    
+
     // Check TEZ_HOME first if set
     if (tez_home != NULL) {
         if (stat(tez_home, &st) == 0 && S_ISDIR(st.st_mode)) {
@@ -876,9 +876,9 @@ bool execute_tez_command(const char *operation) {
     const char *tez_home = get_tez_home();
     if (!tez_home) {
         fprintf(stderr,  "Tez installation not found. Checked:\n"
-                        "- TEZ_HOME environment variable\n"
-                        "- /opt/tez (Red Hat)\n"
-                        "- /usr/local/tez (Debian)\n");
+                "- TEZ_HOME environment variable\n"
+                "- /opt/tez (Red Hat)\n"
+                "- /usr/local/tez (Debian)\n");
         return false;
     }
 
@@ -893,13 +893,13 @@ bool execute_tez_command(const char *operation) {
         fprintf(stderr,  "Error formatting command string\n");
         return false;
     }
-    
+
     command = malloc(required_len + 1);
     if (!command) {
         fprintf(stderr,  "Memory allocation failed for command\n");
         return false;
     }
-    
+
     snprintf(command, required_len + 1, "%s/bin/tez-daemon.sh %s historyserver >/dev/null 2>&1", tez_home, operation);
 
     int status = executeSystemCommand(command);
@@ -920,38 +920,38 @@ bool execute_tez_command(const char *operation) {
 
 void tez_action(Action a) {
     bool success = false;
-    
+
     switch(a) {
-        case START: {
-          //  printf( "Initializing Tez service startup...\n");
-            success = execute_tez_command("start");
-            break;
-        }
-        case STOP: {
-            //printf( "Initiating Tez service shutdown...\n");
-            success = execute_tez_command("stop");
-            break;
-        }
-        case RESTART: {
-           // printf( "Beginning Tez service restart...\n");
-            bool stop_success = execute_tez_command("stop");
-            if (!stop_success) {
-                fprintf(stderr,  "Warning: Tez service stop encountered issues\n");
-            }
-            
-            // Add brief delay to allow service shutdown
-            sleep(2);
-            
-            bool start_success = execute_tez_command("start");
-            success = start_success;
-            break;
-        }
-        default: {
-            fprintf(stderr,  "Invalid action requested: %d\n", a);
-            return;
-        }
+    case START: {
+        //  printf( "Initializing Tez service startup...\n");
+        success = execute_tez_command("start");
+        break;
     }
-    
+    case STOP: {
+        //printf( "Initiating Tez service shutdown...\n");
+        success = execute_tez_command("stop");
+        break;
+    }
+    case RESTART: {
+        // printf( "Beginning Tez service restart...\n");
+        bool stop_success = execute_tez_command("stop");
+        if (!stop_success) {
+            fprintf(stderr,  "Warning: Tez service stop encountered issues\n");
+        }
+
+        // Add brief delay to allow service shutdown
+        sleep(2);
+
+        bool start_success = execute_tez_command("start");
+        success = start_success;
+        break;
+    }
+    default: {
+        fprintf(stderr,  "Invalid action requested: %d\n", a);
+        return;
+    }
+    }
+
     if (success) {
         printf( "Operation completed successfully\n");
     } else {
@@ -991,7 +991,7 @@ void kafka_action(Action action) {
     // Construct script paths
     char kafka_start[PATH_MAX], kafka_stop[PATH_MAX], kafka_config[PATH_MAX];
     char zk_start[PATH_MAX], zk_stop[PATH_MAX], zk_config[PATH_MAX];
-    
+
     snprintf(kafka_start, sizeof(kafka_start), "%s/bin/kafka-server-start.sh", kafka_home);
     snprintf(kafka_stop, sizeof(kafka_stop), "%s/bin/kafka-server-stop.sh", kafka_home);
     snprintf(kafka_config, sizeof(kafka_config), "%s/config/server.properties", kafka_home);
@@ -1008,42 +1008,42 @@ void kafka_action(Action action) {
     if (missing) exit(EXIT_FAILURE);
 
     switch(action) {
-        case START: {
-            size_t ret = snprintf(command, sizeof(command),
-                "%s %s >/dev/null 2>&1 & echo $! > %s/zookeeper.pid; "
-                "%s %s >/dev/null 2>&1 & echo $! > %s/kafka.pid",
-                zk_start, zk_config, kafka_home,
-                kafka_start, kafka_config, kafka_home
-            );
-            if (ret >= sizeof(command)) {
-                fprintf(stderr,  "Command buffer overflow\n");
-                exit(EXIT_FAILURE);
-            }
-            break;
-        }
-
-        case STOP: {
-            size_t ret = snprintf(command, sizeof(command),
-                "%s; %s; "
-                "rm -f %s/zookeeper.pid %s/kafka.pid 2>/dev/null",
-                kafka_stop, zk_stop, kafka_home, kafka_home
-            );
-            if (ret >= sizeof(command)) {
-                fprintf(stderr,  "Command buffer overflow\n");
-                exit(EXIT_FAILURE);
-            }
-            break;
-        }
-
-        case RESTART:
-            kafka_action(STOP);
-            sleep(3);
-            kafka_action(START);
-            return;
-
-        default:
-            fprintf(stderr,  "Invalid action\n");
+    case START: {
+        size_t ret = snprintf(command, sizeof(command),
+                              "%s %s >/dev/null 2>&1 & echo $! > %s/zookeeper.pid; "
+                              "%s %s >/dev/null 2>&1 & echo $! > %s/kafka.pid",
+                              zk_start, zk_config, kafka_home,
+                              kafka_start, kafka_config, kafka_home
+                             );
+        if (ret >= sizeof(command)) {
+            fprintf(stderr,  "Command buffer overflow\n");
             exit(EXIT_FAILURE);
+        }
+        break;
+    }
+
+    case STOP: {
+        size_t ret = snprintf(command, sizeof(command),
+                              "%s; %s; "
+                              "rm -f %s/zookeeper.pid %s/kafka.pid 2>/dev/null",
+                              kafka_stop, zk_stop, kafka_home, kafka_home
+                             );
+        if (ret >= sizeof(command)) {
+            fprintf(stderr,  "Command buffer overflow\n");
+            exit(EXIT_FAILURE);
+        }
+        break;
+    }
+
+    case RESTART:
+        kafka_action(STOP);
+        sleep(3);
+        kafka_action(START);
+        return;
+
+    default:
+        fprintf(stderr,  "Invalid action\n");
+        exit(EXIT_FAILURE);
     }
 
     // Execute command
@@ -1054,17 +1054,17 @@ void kafka_action(Action action) {
 
     // Verification command buffers
     char verify_cmd[512];
-    
+
     // Verify execution
     if (action == START) {
         sleep(2);
         // Check Zookeeper
         snprintf(verify_cmd, sizeof(verify_cmd),
-            "pgrep -F '%s/zookeeper.pid' >/dev/null", kafka_home);
+                 "pgrep -F '%s/zookeeper.pid' >/dev/null", kafka_home);
         int zk_up = executeSystemCommand(verify_cmd);
         // Check Kafka
         snprintf(verify_cmd, sizeof(verify_cmd),
-            "pgrep -F '%s/kafka.pid' >/dev/null", kafka_home);
+                 "pgrep -F '%s/kafka.pid' >/dev/null", kafka_home);
         int kafka_up = executeSystemCommand(verify_cmd);
 
         if (zk_up == -1 || kafka_up == -1) {
@@ -1074,11 +1074,11 @@ void kafka_action(Action action) {
     } else if (action == STOP) {
         // Check Zookeeper
         snprintf(verify_cmd, sizeof(verify_cmd),
-            "pgrep -F '%s/zookeeper.pid' >/dev/null", kafka_home);
+                 "pgrep -F '%s/zookeeper.pid' >/dev/null", kafka_home);
         int zk_down = executeSystemCommand(verify_cmd);
         // Check Kafka
         snprintf(verify_cmd, sizeof(verify_cmd),
-            "pgrep -F '%s/kafka.pid' >/dev/null", kafka_home);
+                 "pgrep -F '%s/kafka.pid' >/dev/null", kafka_home);
         int kafka_down = executeSystemCommand(verify_cmd);
 
         if (zk_down == 0 || kafka_down == 0) {
@@ -1113,64 +1113,64 @@ void Solr_action(Action a) {
 
     // Execute requested action
     switch(a) {
-        case START: {
-            //printf( "Starting Solr service...\n");
-            pid_t pid = fork();
-            if (pid == 0) {
-                execl(solr_script, solr_script, "start", (char *)NULL);
-                _exit(EXIT_FAILURE);
-            } else if (pid > 0) {
-                waitpid(pid, &status, 0);
-                if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
-                    printf( "Solr started successfully\n");
-                } else {
-                    fprintf(stderr,  "Failed to start Solr (exit code: %d)\n", WEXITSTATUS(status));
-                }
+    case START: {
+        //printf( "Starting Solr service...\n");
+        pid_t pid = fork();
+        if (pid == 0) {
+            execl(solr_script, solr_script, "start", (char *)NULL);
+            _exit(EXIT_FAILURE);
+        } else if (pid > 0) {
+            waitpid(pid, &status, 0);
+            if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+                printf( "Solr started successfully\n");
+            } else {
+                fprintf(stderr,  "Failed to start Solr (exit code: %d)\n", WEXITSTATUS(status));
             }
-            break;
         }
+        break;
+    }
 
-        case STOP: {
-           // printf( "Stopping Solr service...\n");
-            pid_t pid = fork();
-            if (pid == 0) {
-                execl(solr_script, solr_script, "stop", (char *)NULL);
-                _exit(EXIT_FAILURE);
-            } else if (pid > 0) {
-                waitpid(pid, &status, 0);
-                if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
-                    printf( "Solr stopped successfully\n");
-                } else {
-                    fprintf(stderr,  "Failed to stop Solr (exit code: %d)\n", WEXITSTATUS(status));
-                }
+    case STOP: {
+        // printf( "Stopping Solr service...\n");
+        pid_t pid = fork();
+        if (pid == 0) {
+            execl(solr_script, solr_script, "stop", (char *)NULL);
+            _exit(EXIT_FAILURE);
+        } else if (pid > 0) {
+            waitpid(pid, &status, 0);
+            if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+                printf( "Solr stopped successfully\n");
+            } else {
+                fprintf(stderr,  "Failed to stop Solr (exit code: %d)\n", WEXITSTATUS(status));
             }
-            break;
         }
+        break;
+    }
 
-        case RESTART: {
-         //   printf( "Restarting Solr service...\n");
-            pid_t pid = fork();
-            if (pid == 0) {
-                execl(solr_script, solr_script, "restart", (char *)NULL);
-                _exit(EXIT_FAILURE);
-            } else if (pid > 0) {
-                waitpid(pid, &status, 0);
-                if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
-                    printf( "Solr restarted successfully\n");
-                } else {
-                    fprintf(stderr,  "Failed to restart Solr (exit code: %d)\n", WEXITSTATUS(status));
-                    // Fallback to stop/start sequence
-                    //printf( "Attempting stop/start sequence...\n");
-                    Solr_action(STOP);
-                    Solr_action(START);
-                }
+    case RESTART: {
+        //   printf( "Restarting Solr service...\n");
+        pid_t pid = fork();
+        if (pid == 0) {
+            execl(solr_script, solr_script, "restart", (char *)NULL);
+            _exit(EXIT_FAILURE);
+        } else if (pid > 0) {
+            waitpid(pid, &status, 0);
+            if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+                printf( "Solr restarted successfully\n");
+            } else {
+                fprintf(stderr,  "Failed to restart Solr (exit code: %d)\n", WEXITSTATUS(status));
+                // Fallback to stop/start sequence
+                //printf( "Attempting stop/start sequence...\n");
+                Solr_action(STOP);
+                Solr_action(START);
             }
-            break;
         }
+        break;
+    }
 
-        default:
-            fprintf(stderr,  "Error: Invalid action specified\n");
-            break;
+    default:
+        fprintf(stderr,  "Error: Invalid action specified\n");
+        break;
     }
 }
 #define MAX_CMD_LEN 512
@@ -1178,12 +1178,12 @@ void Solr_action(Action a) {
 static int execute_script_action(const char *script_path, const char *action) {
     char command[MAX_CMD_LEN];
     int ret = snprintf(command, sizeof(command), "%s %s >/dev/null 2>&1", script_path, action);
-    
+
     if (ret < 0 || ret >= (int)sizeof(command)) {
         fprintf(stderr,  "Command buffer overflow for action: %s\n", action);
         return -1;
     }
-    
+
     int exit_code = executeSystemCommand(command);
     if (exit_code != 0) {
         fprintf(stderr,  "Action '%s' failed with exit code: %d\n", action, exit_code);
@@ -1206,9 +1206,9 @@ void phoenix_action(Action a) {
         const char *base_path = search_paths[i];
         if (!base_path) continue;
 
-        int path_len = snprintf(script_path, sizeof(script_path), 
-                              "%s/bin/phoenix-service.sh", base_path);
-        
+        int path_len = snprintf(script_path, sizeof(script_path),
+                                "%s/bin/phoenix-service.sh", base_path);
+
         if (path_len < 0 || path_len >= (int)sizeof(script_path)) {
             continue;  // Invalid path or buffer overflow
         }
@@ -1228,42 +1228,42 @@ void phoenix_action(Action a) {
     }
 
     switch (a) {
-        case START: {
-            if (execute_script_action(script_path, "start") != 0) {
-                exit(EXIT_FAILURE);
-            }
-            printf( "Phoenix service started successfully.\n");
-            break;
-        }
-        
-        case STOP: {
-            if (execute_script_action(script_path, "stop") != 0) {
-                exit(EXIT_FAILURE);
-            }
-            printf( "Phoenix service stopped successfully.\n");
-            break;
-        }
-        
-        case RESTART: {
-            // Try to stop, but continue even if it fails
-            int stop_status = execute_script_action(script_path, "stop");
-            if (stop_status == 0) {
-              //  printf( "Phoenix service stopped successfully.\n");
-            } else {
-               // printf( "Attempting restart despite stop failure (exit code: %d)\n", stop_status);
-            }
-
-            if (execute_script_action(script_path, "start") != 0) {
-                exit(EXIT_FAILURE);
-            }
-            printf( "Phoenix service started successfully.\n");
-            break;
-        }
-        
-        default: {
-            fprintf(stderr,  "Invalid action. Valid options: START, STOP, RESTART\n");
+    case START: {
+        if (execute_script_action(script_path, "start") != 0) {
             exit(EXIT_FAILURE);
         }
+        printf( "Phoenix service started successfully.\n");
+        break;
+    }
+
+    case STOP: {
+        if (execute_script_action(script_path, "stop") != 0) {
+            exit(EXIT_FAILURE);
+        }
+        printf( "Phoenix service stopped successfully.\n");
+        break;
+    }
+
+    case RESTART: {
+        // Try to stop, but continue even if it fails
+        int stop_status = execute_script_action(script_path, "stop");
+        if (stop_status == 0) {
+            //  printf( "Phoenix service stopped successfully.\n");
+        } else {
+            // printf( "Attempting restart despite stop failure (exit code: %d)\n", stop_status);
+        }
+
+        if (execute_script_action(script_path, "start") != 0) {
+            exit(EXIT_FAILURE);
+        }
+        printf( "Phoenix service started successfully.\n");
+        break;
+    }
+
+    default: {
+        fprintf(stderr,  "Invalid action. Valid options: START, STOP, RESTART\n");
+        exit(EXIT_FAILURE);
+    }
     }
 }
 
@@ -1341,27 +1341,27 @@ void ranger_action(Action a) {
     }
 
     switch (a) {
-        case START: {
-            int status = execute_script("ranger-admin-services.sh");
-            handle_command_result(status, "start", "");
-            break;
-        }
-        case STOP: {
-            int status = execute_script("ranger-admin-services.sh");
-            handle_command_result(status, "stop", "");
-            break;
-        }
-        case RESTART: {
-            int stop_status = execute_script("ranger-admin-services.sh");
-            handle_command_result(stop_status, "stop", " during restart");
-            
-            int start_status = execute_script("ranger-admin-services.sh");
-            handle_command_result(start_status, "start", " during restart");
-            break;
-        }
-        default:
-            fprintf(stderr,  "Invalid action specified\n");
-            exit(EXIT_FAILURE);
+    case START: {
+        int status = execute_script("ranger-admin-services.sh");
+        handle_command_result(status, "start", "");
+        break;
+    }
+    case STOP: {
+        int status = execute_script("ranger-admin-services.sh");
+        handle_command_result(status, "stop", "");
+        break;
+    }
+    case RESTART: {
+        int stop_status = execute_script("ranger-admin-services.sh");
+        handle_command_result(stop_status, "stop", " during restart");
+
+        int start_status = execute_script("ranger-admin-services.sh");
+        handle_command_result(start_status, "start", " during restart");
+        break;
+    }
+    default:
+        fprintf(stderr,  "Invalid action specified\n");
+        exit(EXIT_FAILURE);
     }
 
     printf( "Ranger service action completed successfully.\n");
@@ -1439,8 +1439,8 @@ int execute_script(const char *script_path) {
 
 int atlas_action(Action a) {
     //if (geteuid() != 0) {
-      //  fprintf(stderr,  "Error: Requires root privileges. Use sudo.\n");
-        //return -1;
+    //  fprintf(stderr,  "Error: Requires root privileges. Use sudo.\n");
+    //return -1;
     //}
 
     char *atlas_home = get_atlas_home();
@@ -1453,27 +1453,27 @@ int atlas_action(Action a) {
     int result = -1;
 
     switch(a) {
-        case START:
-            snprintf(script_path, sizeof(script_path), "%s/bin/atlas_start.py", atlas_home);
-           // printf( "Starting Apache Atlas...\n");
-            result = execute_script(script_path);
-            break;
+    case START:
+        snprintf(script_path, sizeof(script_path), "%s/bin/atlas_start.py", atlas_home);
+        // printf( "Starting Apache Atlas...\n");
+        result = execute_script(script_path);
+        break;
 
-        case STOP:
-            snprintf(script_path, sizeof(script_path), "%s/bin/atlas_stop.py", atlas_home);
-           // printf( "Stopping Apache Atlas...\n");
-            result = execute_script(script_path);
-            break;
+    case STOP:
+        snprintf(script_path, sizeof(script_path), "%s/bin/atlas_stop.py", atlas_home);
+        // printf( "Stopping Apache Atlas...\n");
+        result = execute_script(script_path);
+        break;
 
-        case RESTART:
-           // printf( "Restarting Apache Atlas...\n");
-            if ((result = atlas_action(STOP)) == 0) {
-                result = atlas_action(START);
-            }
-            break;
+    case RESTART:
+        // printf( "Restarting Apache Atlas...\n");
+        if ((result = atlas_action(STOP)) == 0) {
+            result = atlas_action(START);
+        }
+        break;
 
-        default:
-            fprintf(stderr,  "Error: Invalid action specified.\n");
+    default:
+        fprintf(stderr,  "Error: Invalid action specified.\n");
     }
 
     free(atlas_home);
@@ -1544,7 +1544,7 @@ static int start_services(const char *storm_cmd, const char **services, size_t n
         while (fgets(buffer, sizeof(buffer), fp) != NULL) {
             // Display command output to user
             printf( "%s", buffer);
-            
+
             // Check for Python version requirement message
             if (strstr(buffer, "Need python version > 2.6") != NULL) {
                 found_python_error = 1;
@@ -1624,10 +1624,10 @@ void storm_action(Action a) {
 
     // 3. Final validation
     if (!storm_home) {
-        fprintf(stderr,  
-            "Storm installation not found. Checked:\n"
-            "- STORM_HOME environment variable\n"
-            "- OS-specific default locations\n");
+        fprintf(stderr,
+                "Storm installation not found. Checked:\n"
+                "- STORM_HOME environment variable\n"
+                "- OS-specific default locations\n");
         return;
     }
 
@@ -1640,34 +1640,34 @@ void storm_action(Action a) {
 
     // Rest of the original storm_action implementation remains the same
     switch(a) {
-        case START: {
-            int success = start_services(storm_cmd, services, num_services);
-            printf( success ? "All services started successfully\n"
-                           : "Some services failed to start\n");
-            break;
-        }
+    case START: {
+        int success = start_services(storm_cmd, services, num_services);
+        printf( success ? "All services started successfully\n"
+                : "Some services failed to start\n");
+        break;
+    }
 
-        case STOP: {
-            int success = stop_services(storm_cmd, services, num_services);
-            printf( success ? "All services stopped successfully\n"
-                           : "Some services failed to stop\n");
-            break;
-        }
+    case STOP: {
+        int success = stop_services(storm_cmd, services, num_services);
+        printf( success ? "All services stopped successfully\n"
+                : "Some services failed to stop\n");
+        break;
+    }
 
-        case RESTART: {
-            int stop_success = stop_services(storm_cmd, services, num_services);
-            printf( stop_success ? "All services stopped\n" : "Stop phase completed with errors\n");
-            
-            sleep(2);
-            
-            int start_success = start_services(storm_cmd, services, num_services);
-            printf( start_success ? "All services restarted successfully\n"
-                                  : "Restart completed with errors\n");
-            break;
-        }
+    case RESTART: {
+        int stop_success = stop_services(storm_cmd, services, num_services);
+        printf( stop_success ? "All services stopped\n" : "Stop phase completed with errors\n");
 
-        default:
-            fprintf(stderr,  "Invalid action specified\n");
+        sleep(2);
+
+        int start_success = start_services(storm_cmd, services, num_services);
+        printf( start_success ? "All services restarted successfully\n"
+                : "Restart completed with errors\n");
+        break;
+    }
+
+    default:
+        fprintf(stderr,  "Invalid action specified\n");
     }
 }
 
@@ -1707,45 +1707,45 @@ void flink_action(Action action) {
 
     // Execute requested action
     switch(action) {
-        case START:
-            ret = executeSystemCommand(start_script);
-            if (WEXITSTATUS(ret) == -1) {
-                fprintf(stderr,  "Start failed with exit code %d\n", WEXITSTATUS(ret));
-                exit(EXIT_FAILURE);
-            }
-            break;
-
-        case STOP: {
-            ret = executeSystemCommand(stop_script);
-            if (WEXITSTATUS(ret) == -1) {
-                fprintf(stderr,  "Stop failed with exit code %d\n", WEXITSTATUS(ret));
-                exit(EXIT_FAILURE);
-            }
-            break;
-        }
-
-        case RESTART: {
-            //printf( "Initiating Flink restart...\n");
-            
-            // Stop phase
-            ret = executeSystemCommand(stop_script);
-            if (WEXITSTATUS(ret) == -1) {
-                fprintf(stderr,  "Restart aborted - stop failed with code %d\n", WEXITSTATUS(ret));
-                exit(EXIT_FAILURE);
-            }
-
-            // Start phase
-            ret = executeSystemCommand(start_script);
-            if (WEXITSTATUS(ret) == -1) {
-                fprintf(stderr,  "Restart incomplete - start failed with code %d\n", WEXITSTATUS(ret));
-                exit(EXIT_FAILURE);
-            }
-            break;
-        }
-
-        default:
-            fprintf(stderr,  "Invalid action specified\n");
+    case START:
+        ret = executeSystemCommand(start_script);
+        if (WEXITSTATUS(ret) == -1) {
+            fprintf(stderr,  "Start failed with exit code %d\n", WEXITSTATUS(ret));
             exit(EXIT_FAILURE);
+        }
+        break;
+
+    case STOP: {
+        ret = executeSystemCommand(stop_script);
+        if (WEXITSTATUS(ret) == -1) {
+            fprintf(stderr,  "Stop failed with exit code %d\n", WEXITSTATUS(ret));
+            exit(EXIT_FAILURE);
+        }
+        break;
+    }
+
+    case RESTART: {
+        //printf( "Initiating Flink restart...\n");
+
+        // Stop phase
+        ret = executeSystemCommand(stop_script);
+        if (WEXITSTATUS(ret) == -1) {
+            fprintf(stderr,  "Restart aborted - stop failed with code %d\n", WEXITSTATUS(ret));
+            exit(EXIT_FAILURE);
+        }
+
+        // Start phase
+        ret = executeSystemCommand(start_script);
+        if (WEXITSTATUS(ret) == -1) {
+            fprintf(stderr,  "Restart incomplete - start failed with code %d\n", WEXITSTATUS(ret));
+            exit(EXIT_FAILURE);
+        }
+        break;
+    }
+
+    default:
+        fprintf(stderr,  "Invalid action specified\n");
+        exit(EXIT_FAILURE);
     }
 
     printf( "Operation completed successfully\n");
@@ -1794,55 +1794,55 @@ void zookeeper_action(Action a) {
 
     // Execute the appropriate action
     switch(a) {
-        case START: {
-            long unsigned int ret3 = snprintf(command, sizeof(command), "\"%s\" start >/dev/null 2>&1", zk_script);
-            if (ret3 >= sizeof(command)) {
-                fprintf(stderr,  "Error: command buffer overflow.\n");
-            }
-            ret = executeSystemCommand(command);
-            if (ret == -1) {
-                fprintf(stderr,  "Failed to start Zookeeper. Exit code: %d\n", ret);
-            }
-            printf( "Zookeeper started successfully\n");
-            break;
+    case START: {
+        long unsigned int ret3 = snprintf(command, sizeof(command), "\"%s\" start >/dev/null 2>&1", zk_script);
+        if (ret3 >= sizeof(command)) {
+            fprintf(stderr,  "Error: command buffer overflow.\n");
         }
-        case STOP: {
-            long unsigned int ret4 = snprintf(command, sizeof(command), "\"%s\" stop >/dev/null 2>&1", zk_script);
-            if (ret4 >= sizeof(command)) {
-                fprintf(stderr,  "Error: command buffer overflow.\n");
-            }
-            ret = executeSystemCommand(command);
-            if (ret == -1) {
-                fprintf(stderr,  "Failed to stop Zookeeper. Exit code: %d\n", ret);
-            }
-            printf( "Zookeeper stopped  successfully\n");
-            break;
+        ret = executeSystemCommand(command);
+        if (ret == -1) {
+            fprintf(stderr,  "Failed to start Zookeeper. Exit code: %d\n", ret);
         }
-        case RESTART: {
-            // Stop the service
-            long unsigned int ret5 = snprintf(command, sizeof(command), "\"%s\" stop >/dev/null 2>&1", zk_script);
-            if (ret5 >= sizeof(command)) {
-                fprintf(stderr,  "Error: command buffer overflow.\n");
-            }
-            ret = executeSystemCommand(command);
-            if (ret == -1) {
-                fprintf(stderr,  "Failed to stop Zookeeper during restart. Exit code: %d\n", ret);
-            }
-            // Start the service
-            long unsigned int ret9 = snprintf(command, sizeof(command), "\"%s\" start >/dev/null 2>&1", zk_script);
-            if (ret9 >= sizeof(command)) {
-                fprintf(stderr,  "Error: command buffer overflow.\n");
-            }
-            ret = executeSystemCommand(command);
-            if (ret == -1) {
-                fprintf(stderr,  "Failed to start Zookeeper during restart. Exit code: %d\n", ret);
-            }
-            printf( "Zookeeper restarted successfully\n");
-            break;
+        printf( "Zookeeper started successfully\n");
+        break;
+    }
+    case STOP: {
+        long unsigned int ret4 = snprintf(command, sizeof(command), "\"%s\" stop >/dev/null 2>&1", zk_script);
+        if (ret4 >= sizeof(command)) {
+            fprintf(stderr,  "Error: command buffer overflow.\n");
         }
-        default:
-            fprintf(stderr,  "Error: Invalid action specified.\n");
-            break;
+        ret = executeSystemCommand(command);
+        if (ret == -1) {
+            fprintf(stderr,  "Failed to stop Zookeeper. Exit code: %d\n", ret);
+        }
+        printf( "Zookeeper stopped  successfully\n");
+        break;
+    }
+    case RESTART: {
+        // Stop the service
+        long unsigned int ret5 = snprintf(command, sizeof(command), "\"%s\" stop >/dev/null 2>&1", zk_script);
+        if (ret5 >= sizeof(command)) {
+            fprintf(stderr,  "Error: command buffer overflow.\n");
+        }
+        ret = executeSystemCommand(command);
+        if (ret == -1) {
+            fprintf(stderr,  "Failed to stop Zookeeper during restart. Exit code: %d\n", ret);
+        }
+        // Start the service
+        long unsigned int ret9 = snprintf(command, sizeof(command), "\"%s\" start >/dev/null 2>&1", zk_script);
+        if (ret9 >= sizeof(command)) {
+            fprintf(stderr,  "Error: command buffer overflow.\n");
+        }
+        ret = executeSystemCommand(command);
+        if (ret == -1) {
+            fprintf(stderr,  "Failed to start Zookeeper during restart. Exit code: %d\n", ret);
+        }
+        printf( "Zookeeper restarted successfully\n");
+        break;
+    }
+    default:
+        fprintf(stderr,  "Error: Invalid action specified.\n");
+        break;
     }
 }
 

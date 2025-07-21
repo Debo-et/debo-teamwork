@@ -10,81 +10,81 @@ static const ConfigParam predefined_entries[] = {
     { "^ranger[._-]+admin[._-]+(https?|server)([._-]port)?$", "ranger.admin.${1}.port", "ranger-admin-site.xml" },
     { "^ranger[._-]+policy[._-]+rest[._-]+url$", "ranger.policy.rest.url", "ranger-admin-site.xml" },
     { "^ranger[._-]+service[._-]+(https_|)storepass$", "ranger.service.${1}storepass", "ranger-admin-site.xml" },
-    
+
     // Database Configuration
     { "^ranger[._-]+db[._-](host|port|name|user|password)$", "ranger.db.${1}", "ranger-admin-site.xml" },
     { "^ranger[._-]+jpa[._-]+(jdbc|audit\\.jdbc)\\.(url|driver|user|password)$", "ranger.jpa.${1}.${2}", "ranger-admin-site.xml" },
-    
+
     // Security & Authentication
     { "^ranger[._-]+(kerberos|spnego)\\.(keytab|principal)$", "ranger.${1}.${2}", "ranger-admin-site.xml"},
     { "^ranger[._-]+ldap[._-]+(base\\.dn|bind\\.dn|bind\\.password|url|referral)$", "ranger.ldap.${1}", "ranger-admin-site.xml"},
     { "^ranger[._-]+sso[._-]+(provider|enabled|cookie\\.name|public\\.key)$", "ranger.sso.${1}", "ranger-admin-site.xml"},
-    
+
     // Plugin Framework
-    { "^ranger[._-]+plugin[._-]+(hdfs|hive|hbase|kafka|yarn|storm|atlas|sqoop)\\.([\\w\\.]+)$", 
-      "ranger.${1}.${2}", "ranger-${1}-security.xml"},
-    { "^ranger[._-]+plugin[._-]+(enable|policy\\.pollIntervalMs|cache\\.dir|audit\\.enabled)$", 
-      "ranger.plugin.${1}", "ranger-plugins-common.xml"},
-    
+    { "^ranger[._-]+plugin[._-]+(hdfs|hive|hbase|kafka|yarn|storm|atlas|sqoop)\\.([\\w\\.]+)$",
+        "ranger.${1}.${2}", "ranger-${1}-security.xml"},
+    { "^ranger[._-]+plugin[._-]+(enable|policy\\.pollIntervalMs|cache\\.dir|audit\\.enabled)$",
+        "ranger.plugin.${1}", "ranger-plugins-common.xml"},
+
     // Service-Specific Configurations
-    { "^ranger[._-]+(hive|hdfs|hbase|kafka)[._-]+(service|repository)[._-]+name$", 
-      "ranger.${1}.service.name", "ranger-${1}-security.xml"},
-    { "^ranger[._-]+(s3|atlas)[._-]+audit[._-]+(path|enable)$", 
-      "ranger.${1}.audit.${2}", "ranger-${1}-security.xml"},
-    
+    { "^ranger[._-]+(hive|hdfs|hbase|kafka)[._-]+(service|repository)[._-]+name$",
+        "ranger.${1}.service.name", "ranger-${1}-security.xml"},
+    { "^ranger[._-]+(s3|atlas)[._-]+audit[._-]+(path|enable)$",
+        "ranger.${1}.audit.${2}", "ranger-${1}-security.xml"},
+
     // Tag-Based Authorization
-    { "^ranger[._-]+tag[._-]+(service|store|download\\.interval\\.ms|policy\\.evaluator\\.class)$", 
-      "ranger.tag.${1}", "ranger-tagsync-site.xml"},
-    { "^ranger[._-]+tagsync[._-]+(source|atlas\\.endpoints|retry\\.interval)$", 
-      "ranger.tagsync.${1}", "ranger-tagsync-site.xml"},
-    
+    { "^ranger[._-]+tag[._-]+(service|store|download\\.interval\\.ms|policy\\.evaluator\\.class)$",
+        "ranger.tag.${1}", "ranger-tagsync-site.xml"},
+    { "^ranger[._-]+tagsync[._-]+(source|atlas\\.endpoints|retry\\.interval)$",
+        "ranger.tagsync.${1}", "ranger-tagsync-site.xml"},
+
     // User/Group Synchronization
-    { "^ranger[._-]+usersync[._-]+(source|ldap|interval|retry|batch\\.size)$", 
-      "ranger.usersync.${1}", "ranger-ugsync-site.xml"},
-    { "^ranger[._-]+unix[._-]+(user|group)[._-]+(name|mapping)$", 
-      "ranger.unix.${1}.${2}", "ranger-ugsync-site.xml"},
-    
+    { "^ranger[._-]+usersync[._-]+(source|ldap|interval|retry|batch\\.size)$",
+        "ranger.usersync.${1}", "ranger-ugsync-site.xml"},
+    { "^ranger[._-]+unix[._-]+(user|group)[._-]+(name|mapping)$",
+        "ranger.unix.${1}.${2}", "ranger-ugsync-site.xml"},
+
     // Advanced Authorization Features
-    { "^ranger[._-]+(abac|attribute)[._-]+(enable|evaluator|context\\.enricher)$", 
-      "ranger.abac.${2}", "ranger-policymgr.xml"},
-    { "^ranger[._-]+policy[._-]+(condition|resource\\.matcher)\\.class\\.([\\w]+)$", 
-      "ranger.policy.${1}.${2}", "ranger-policymgr.xml"},
-    
+    { "^ranger[._-]+(abac|attribute)[._-]+(enable|evaluator|context\\.enricher)$",
+        "ranger.abac.${2}", "ranger-policymgr.xml"},
+    { "^ranger[._-]+policy[._-]+(condition|resource\\.matcher)\\.class\\.([\\w]+)$",
+        "ranger.policy.${1}.${2}", "ranger-policymgr.xml"},
+
     // Audit Configuration
-    { "^ranger[._-]+audit[._-]+(solr|hdfs|db|cloud)\\.([\\w\\.]+)$", 
-      "ranger.audit.${1}.${2}", "ranger-admin-site.xml"},
-    { "^ranger[._-]+audit[._-]+(encrypt|filter|queue|buffer|ssl)\\.([\\w]+)$", 
-      "ranger.audit.${1}.${2}", "ranger-admin-site.xml"},
-    
+    { "^ranger[._-]+audit[._-]+(solr|hdfs|db|cloud)\\.([\\w\\.]+)$",
+        "ranger.audit.${1}.${2}", "ranger-admin-site.xml"},
+    { "^ranger[._-]+audit[._-]+(encrypt|filter|queue|buffer|ssl)\\.([\\w]+)$",
+        "ranger.audit.${1}.${2}", "ranger-admin-site.xml"},
+
     // SSL/TLS Configuration
-    { "^ranger[._-]+ssl[._-]+(keystore|truststore)\\.(file|password|type)$", 
-      "ranger.ssl.${1}.${2}", "ranger-security.xml"},
-    { "^ranger[._-]+ssl[._-]+(enabledProtocols|cipherSuites|requireClientAuth)$", 
-      "ranger.ssl.${1}", "ranger-security.xml"},
-    
+    { "^ranger[._-]+ssl[._-]+(keystore|truststore)\\.(file|password|type)$",
+        "ranger.ssl.${1}.${2}", "ranger-security.xml"},
+    { "^ranger[._-]+ssl[._-]+(enabledProtocols|cipherSuites|requireClientAuth)$",
+        "ranger.ssl.${1}", "ranger-security.xml"},
+
     // Policy Management
-    { "^ranger[._-]+policy[._-]+(engine|update|cache)\\.([\\w]+)$", 
-      "ranger.policy.${1}.${2}", "ranger-policymgr.xml"},
-    { "^ranger[._-]+rest[._-]+(api|client)\\.([\\w]+)$", 
-      "ranger.rest.${1}.${2}", "ranger-admin-site.xml"},
-    
+    { "^ranger[._-]+policy[._-]+(engine|update|cache)\\.([\\w]+)$",
+        "ranger.policy.${1}.${2}", "ranger-policymgr.xml"},
+    { "^ranger[._-]+rest[._-]+(api|client)\\.([\\w]+)$",
+        "ranger.rest.${1}.${2}", "ranger-admin-site.xml"},
+
     // Advanced Features
-    { "^ranger[._-]+(zone|resource)\\.([\\w]+)\\.([\\w]+)$", 
-      "ranger.${1}.${2}.${3}", "ranger-admin-site.xml"},
-    { "^ranger[._-]+(admin|user)\\.([\\w]+)\\.([\\w]+)$", 
-      "ranger.${1}.${2}.${3}", "ranger-admin-site.xml"},
-    
+    { "^ranger[._-]+(zone|resource)\\.([\\w]+)\\.([\\w]+)$",
+        "ranger.${1}.${2}.${3}", "ranger-admin-site.xml"},
+    { "^ranger[._-]+(admin|user)\\.([\\w]+)\\.([\\w]+)$",
+        "ranger.${1}.${2}.${3}", "ranger-admin-site.xml"},
+
     // Plugin Lifecycle Management
-    { "^ranger[._-]+plugin[._-]+(init|shutdown)[._-]+(timeout|retry)$", 
-      "ranger.plugin.${1}.${2}", "ranger-plugins-common.xml"},
-    { "^ranger[._-]+service[._-]+(register|refresh)[._-]+interval$", 
-      "ranger.service.${1}.interval", "ranger-admin-site.xml"},
-    
+    { "^ranger[._-]+plugin[._-]+(init|shutdown)[._-]+(timeout|retry)$",
+        "ranger.plugin.${1}.${2}", "ranger-plugins-common.xml"},
+    { "^ranger[._-]+service[._-]+(register|refresh)[._-]+interval$",
+        "ranger.service.${1}.interval", "ranger-admin-site.xml"},
+
     // External Integration
-    { "^ranger[._-]+(keycloak|okta|azuread)\\.([\\w]+)\\.([\\w]+)$", 
-      "ranger.${1}.${2}.${3}", "ranger-admin-site.xml"},
-    { "^ranger[._-]+(saml|oauth2)\\.([\\w]+)\\.([\\w]+)$", 
-      "ranger.${1}.${2}.${3}", "ranger-admin-site.xml"}
+    { "^ranger[._-]+(keycloak|okta|azuread)\\.([\\w]+)\\.([\\w]+)$",
+        "ranger.${1}.${2}.${3}", "ranger-admin-site.xml"},
+    { "^ranger[._-]+(saml|oauth2)\\.([\\w]+)\\.([\\w]+)$",
+        "ranger.${1}.${2}.${3}", "ranger-admin-site.xml"}
 };
 
 ValidationResult validateRangerConfigParam(const char *param_name, const char *value) {
@@ -93,7 +93,7 @@ ValidationResult validateRangerConfigParam(const char *param_name, const char *v
     regex_t regex;
     regmatch_t matches[4];
     char pattern[512];
-    
+
     for (size_t i = 0; i < sizeof(predefined_entries)/sizeof(predefined_entries[0]); i++) {
         // Convert pattern to valid regex
         snprintf(pattern, sizeof(pattern), "%s", predefined_entries[i].canonicalName);
@@ -104,7 +104,7 @@ ValidationResult validateRangerConfigParam(const char *param_name, const char *v
             ptr = strchr(ptr, '}');
             if (ptr) *ptr = ')';
         }
-        
+
         if (regcomp(&regex, pattern, REG_EXTENDED) != 0) continue;
         if (regexec(&regex, param_name, 4, matches, 0) == 0) {
             param_exists = true;
@@ -113,7 +113,7 @@ ValidationResult validateRangerConfigParam(const char *param_name, const char *v
         }
         regfree(&regex);
     }
-    
+
     if (!param_exists) return ERROR_PARAM_NOT_FOUND;
 
     // Check value presence
@@ -159,8 +159,8 @@ ValidationResult validateRangerConfigParam(const char *param_name, const char *v
 }
 
 ConfigResult* get_ranger_config(const char *param_name, const char *param_value) {
-               ConfigResult *result = malloc(sizeof(ConfigResult));
-            if (!result) return NULL;
+    ConfigResult *result = malloc(sizeof(ConfigResult));
+    if (!result) return NULL;
 
     for (size_t i = 0; i < sizeof(predefined_entries)/sizeof(predefined_entries[0]); ++i) {
         const ConfigParam *entry = &predefined_entries[i];
@@ -172,10 +172,10 @@ ConfigResult* get_ranger_config(const char *param_name, const char *param_value)
         regfree(&regex);
 
         if (reti == 0) {
-           result->canonical_name = strdup(entry->normalizedName);
+            result->canonical_name = strdup(entry->normalizedName);
             result->value = strdup(param_value);
             result->config_file = strdup(entry->configFile);
-            
+
             // Properly null-terminate
             break;
         }
@@ -206,7 +206,7 @@ static char *determine_config_path(const char *config_file) {
     // Check standard Red Hat and Debian base directories
     const char *standard_bases[] = {"/opt/ranger", "/usr/local/ranger", NULL};
     const char *subdirs[] = {"conf", "etc", NULL};
-    
+
     for (int j = 0; standard_bases[j] != NULL; j++) {
         for (int i = 0; subdirs[i] != NULL; i++) {
             len = snprintf(path, sizeof(path), "%s/%s/%s", standard_bases[j], subdirs[i], config_file);

@@ -17,13 +17,13 @@
 
 
 extern int	getaddrinfo_all(const char *hostname, const char *servname,
-							   const struct addrinfo *hintp,
-							   struct addrinfo **result);
+                            const struct addrinfo *hintp,
+                            struct addrinfo **result);
 extern void freeaddrinfo_all(int hint_ai_family, struct addrinfo *ai);
 
 extern int	getnameinfo_all(const struct sockaddr_storage *addr, int salen,
-							   char *node, int nodelen,
-							   char *service, int servicelen,
-							   int flags);
+                            char *node, int nodelen,
+                            char *service, int servicelen,
+                            int flags);
 
 #endif							/* IP_H */

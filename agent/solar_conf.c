@@ -29,7 +29,7 @@ static const ConfigParam solr_param_configs[] = {
 
     // Legacy Parameters (solr.xml only)
     {.canonicalName = "^transientCacheSize$", .normalizedName  =  "transientCacheSize", .configFile  = "solr.xml"},
-        // solr-log4j.properties parameters
+    // solr-log4j.properties parameters
     {.canonicalName = "^solr\\.log$", .normalizedName  =  "solr.log", .configFile  = "solr-log4j.properties"},
     {.canonicalName = "^log4j\\.rootLogger$", .normalizedName  =  "log4j.rootLogger", .configFile  = "solr-log4j.properties"},
     {.canonicalName = "^log4j\\.appender\\.CONSOLE$", .normalizedName  =  "log4j.appender.CONSOLE", .configFile  = "solr-log4j.properties"},
@@ -165,16 +165,16 @@ update_solr_config(const char *param_name, const char *param_value, const char *
     /* Validate config_file parameter */
     if (config_file == NULL ||
         (strcmp(config_file, "solrconfig.xml") != 0 &&
-        strcmp(config_file, "solr.xml") != 0 &&
-        strcmp(config_file, "solr-log4j.properties") != 0 &&
-        strcmp(config_file, "core.properties") != 0)) {
+         strcmp(config_file, "solr.xml") != 0 &&
+         strcmp(config_file, "solr-log4j.properties") != 0 &&
+         strcmp(config_file, "core.properties") != 0)) {
         return INVALID_CONFIG_FILE;
     }
 
     /* Search for existing configuration file in SOLR_HOME/server/solr */
     for (int i = 0; search_paths[i]; i++) {
         if (!search_paths[i]) continue;
-        
+
         char path[PATH_MAX];
         snprintf(path, sizeof(path), "%s/server/solr/%s", search_paths[i], config_file);
         if (access(path, F_OK) == 0) {
@@ -232,7 +232,7 @@ update_solr_config(const char *param_name, const char *param_value, const char *
     /* Find existing parameter node */
     xmlNodePtr param_node = NULL;
     for (xmlNodePtr cur = root->children; cur; cur = cur->next) {
-        if (cur->type == XML_ELEMENT_NODE && 
+        if (cur->type == XML_ELEMENT_NODE &&
             xmlStrcmp(cur->name, BAD_CAST param_name) == 0) {
             param_node = cur;
             break;

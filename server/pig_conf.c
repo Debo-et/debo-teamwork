@@ -62,11 +62,11 @@ static const struct {
 ValidationResult validatePigConfigParam(const char *param_name, const char *value) {
     // Check if parameter exists
     bool param_exists = true;
- //   for (size_t i = 0; i < sizeof(predefined_parameters)/sizeof(predefined_parameters[0]); i++) {
-   //     if (strcmp(param_name, predefined_parameters[i].canonical) == 0) {
-     //       param_exists = true;
-       //     break;
-        //}
+    //   for (size_t i = 0; i < sizeof(predefined_parameters)/sizeof(predefined_parameters[0]); i++) {
+    //     if (strcmp(param_name, predefined_parameters[i].canonical) == 0) {
+    //       param_exists = true;
+    //     break;
+    //}
     //}
     if (!param_exists) return ERROR_PARAM_NOT_FOUND;
 

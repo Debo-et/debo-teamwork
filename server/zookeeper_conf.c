@@ -2,107 +2,107 @@
 
 ConfigResult *parse_zookeeper_param(const char *param_name, const char *param_value) {
     // Predefined list of ZooKeeper parameters with canonical names and their normalized forms
-ConfigParam param_map[] = {
-    // Original Parameters (Retained)
-    { "clientPort", "clientport", "zoo.cfg" },
-    { "dataDir", "datadir", "zoo.cfg" },
-    { "tickTime", "ticktime", "zoo.cfg" },
-    { "initLimit", "initlimit", "zoo.cfg" },
-    { "syncLimit", "synclimit", "zoo.cfg" },
-    { "maxClientCnxns", "maxclientcnxns", "zoo.cfg" },
-    { "autopurge.snapRetainCount", "autopurgesnapretaincount", "zoo.cfg" },
-    { "autopurge.purgeInterval", "autopurgepurgeinterval", "zoo.cfg" },
-    { "minSessionTimeout", "minsessiontimeout", "zoo.cfg" },
-    { "maxSessionTimeout", "maxsessiontimeout", "zoo.cfg" },
-    { "electionPort", "electionport", "zoo.cfg" },
-    { "leaderServes", "leaderserves", "zoo.cfg" },
-    { "server.id", "serverid", "zoo.cfg" },  // Dynamic server entries
-    { "cnxTimeout", "cnxtimeout", "zoo.cfg" },
-    { "standaloneEnabled", "standaloneenabled", "zoo.cfg" },
-    { "reconfigEnabled", "reconfigenabled", "zoo.cfg" },
-    { "4lw.commands.whitelist", "4lwcommandswhitelist", "zoo.cfg" },
-    { "globalOutstandingLimit", "globaloutstandinglimit", "zoo.cfg" },
-    { "preAllocSize", "preallocsize", "zoo.cfg" },
-    { "snapCount", "snapcount", "zoo.cfg" },
+    ConfigParam param_map[] = {
+        // Original Parameters (Retained)
+        { "clientPort", "clientport", "zoo.cfg" },
+        { "dataDir", "datadir", "zoo.cfg" },
+        { "tickTime", "ticktime", "zoo.cfg" },
+        { "initLimit", "initlimit", "zoo.cfg" },
+        { "syncLimit", "synclimit", "zoo.cfg" },
+        { "maxClientCnxns", "maxclientcnxns", "zoo.cfg" },
+        { "autopurge.snapRetainCount", "autopurgesnapretaincount", "zoo.cfg" },
+        { "autopurge.purgeInterval", "autopurgepurgeinterval", "zoo.cfg" },
+        { "minSessionTimeout", "minsessiontimeout", "zoo.cfg" },
+        { "maxSessionTimeout", "maxsessiontimeout", "zoo.cfg" },
+        { "electionPort", "electionport", "zoo.cfg" },
+        { "leaderServes", "leaderserves", "zoo.cfg" },
+        { "server.id", "serverid", "zoo.cfg" },  // Dynamic server entries
+        { "cnxTimeout", "cnxtimeout", "zoo.cfg" },
+        { "standaloneEnabled", "standaloneenabled", "zoo.cfg" },
+        { "reconfigEnabled", "reconfigenabled", "zoo.cfg" },
+        { "4lw.commands.whitelist", "4lwcommandswhitelist", "zoo.cfg" },
+        { "globalOutstandingLimit", "globaloutstandinglimit", "zoo.cfg" },
+        { "preAllocSize", "preallocsize", "zoo.cfg" },
+        { "snapCount", "snapcount", "zoo.cfg" },
 
-    // Security & Authentication
-    { "clientPortAddress", "clientportaddress", "zoo.cfg" },
-    { "secureClientPort", "secureclientport", "zoo.cfg" },
-    { "ssl.keyStore.location", "sslkeystorelocation", "zoo.cfg" },
-    { "ssl.keyStore.password", "sslkeystorepassword", "zoo.cfg" },
-    { "ssl.trustStore.location", "ssltruststorelocation", "zoo.cfg" },
-    { "ssl.trustStore.password", "ssltruststorepassword", "zoo.cfg" },
-    { "ssl.hostnameVerification", "sslhostnameverification", "zoo.cfg" },
-    { "authProvider.sasl", "authprovidersasl", "zoo.cfg" },
-    { "jaasLoginRenew", "jaasloginrenew", "zoo.cfg" },
-    { "sasl.client.id", "saslclientid", "zoo.cfg" },
-    { "kerberos.removeHostFromPrincipal", "kerberosremovehostfromprincipal", "zoo.cfg" },
-    { "kerberos.removeRealmFromPrincipal", "kerberosremoverealmfromprincipal", "zoo.cfg" },
-    { "ssl.clientAuth", "sslclientauth", "zoo.cfg" },
-    { "zookeeper.superUser", "zookeepersuperuser", "zoo.cfg" },
+        // Security & Authentication
+        { "clientPortAddress", "clientportaddress", "zoo.cfg" },
+        { "secureClientPort", "secureclientport", "zoo.cfg" },
+        { "ssl.keyStore.location", "sslkeystorelocation", "zoo.cfg" },
+        { "ssl.keyStore.password", "sslkeystorepassword", "zoo.cfg" },
+        { "ssl.trustStore.location", "ssltruststorelocation", "zoo.cfg" },
+        { "ssl.trustStore.password", "ssltruststorepassword", "zoo.cfg" },
+        { "ssl.hostnameVerification", "sslhostnameverification", "zoo.cfg" },
+        { "authProvider.sasl", "authprovidersasl", "zoo.cfg" },
+        { "jaasLoginRenew", "jaasloginrenew", "zoo.cfg" },
+        { "sasl.client.id", "saslclientid", "zoo.cfg" },
+        { "kerberos.removeHostFromPrincipal", "kerberosremovehostfromprincipal", "zoo.cfg" },
+        { "kerberos.removeRealmFromPrincipal", "kerberosremoverealmfromprincipal", "zoo.cfg" },
+        { "ssl.clientAuth", "sslclientauth", "zoo.cfg" },
+        { "zookeeper.superUser", "zookeepersuperuser", "zoo.cfg" },
 
-    // Quorum & Ensemble Management
-    { "quorum.enableSasl", "quorumenablesasl", "zoo.cfg" },
-    { "quorum.auth.learnerRequireSasl", "quorumauthlearnerrequiresasl", "zoo.cfg" },
-    { "quorum.auth.serverRequireSasl", "quorumauthserverrequiresasl", "zoo.cfg" },
-    { "quorum.cnxTimeout", "quorumcnxtimeout", "zoo.cfg" },
-    { "quorum.electionAlg", "quorumelectionalg", "zoo.cfg" },
-    { "quorum.portUnification", "quorumportunification", "zoo.cfg" },
+        // Quorum & Ensemble Management
+        { "quorum.enableSasl", "quorumenablesasl", "zoo.cfg" },
+        { "quorum.auth.learnerRequireSasl", "quorumauthlearnerrequiresasl", "zoo.cfg" },
+        { "quorum.auth.serverRequireSasl", "quorumauthserverrequiresasl", "zoo.cfg" },
+        { "quorum.cnxTimeout", "quorumcnxtimeout", "zoo.cfg" },
+        { "quorum.electionAlg", "quorumelectionalg", "zoo.cfg" },
+        { "quorum.portUnification", "quorumportunification", "zoo.cfg" },
 
-    // ACLs & Data Security
-    { "skipACL", "skipacl", "zoo.cfg" },
-    { "aclProvider", "aclprovider", "zoo.cfg" },
+        // ACLs & Data Security
+        { "skipACL", "skipacl", "zoo.cfg" },
+        { "aclProvider", "aclprovider", "zoo.cfg" },
 
-    // Performance & Advanced Tuning
-    { "jute.maxbuffer", "jutemaxbuffer", "zoo.cfg" },
-    { "commitProcessor.numWorkerThreads", "commitprocessornumworkerthreads", "zoo.cfg" },
-    { "fsync.warningthresholdms", "fsyncwarningthresholdms", "zoo.cfg" },
-    { "forceSync", "forcesync", "zoo.cfg" },
-    { "syncEnabled", "syncenabled", "zoo.cfg" },
-    { "connectTimeout", "connecttimeout", "zoo.cfg" },
-    { "readTimeout", "readtimeout", "zoo.cfg" },
+        // Performance & Advanced Tuning
+        { "jute.maxbuffer", "jutemaxbuffer", "zoo.cfg" },
+        { "commitProcessor.numWorkerThreads", "commitprocessornumworkerthreads", "zoo.cfg" },
+        { "fsync.warningthresholdms", "fsyncwarningthresholdms", "zoo.cfg" },
+        { "forceSync", "forcesync", "zoo.cfg" },
+        { "syncEnabled", "syncenabled", "zoo.cfg" },
+        { "connectTimeout", "connecttimeout", "zoo.cfg" },
+        { "readTimeout", "readtimeout", "zoo.cfg" },
 
-    // Dynamic Configuration & Admin
-    { "dynamicConfigFile", "dynamicconfigfile", "zoo.cfg" },
-    { "admin.enableServer", "adminenableserver", "zoo.cfg" },
-    { "admin.serverPort", "adminserverport", "zoo.cfg" },
-    { "admin.serverAddress", "adminserveraddress", "zoo.cfg" },
+        // Dynamic Configuration & Admin
+        { "dynamicConfigFile", "dynamicconfigfile", "zoo.cfg" },
+        { "admin.enableServer", "adminenableserver", "zoo.cfg" },
+        { "admin.serverPort", "adminserverport", "zoo.cfg" },
+        { "admin.serverAddress", "adminserveraddress", "zoo.cfg" },
 
-    // Metrics & Monitoring
-    { "metricsProvider.className", "metricsproviderclassname", "zoo.cfg" },
+        // Metrics & Monitoring
+        { "metricsProvider.className", "metricsproviderclassname", "zoo.cfg" },
 
-    // Network & Client Settings
-    { "clientCnxnSocket", "clientcnxnsocket", "zoo.cfg" },
-    { "client.secure", "clientsecure", "zoo.cfg" },
+        // Network & Client Settings
+        { "clientCnxnSocket", "clientcnxnsocket", "zoo.cfg" },
+        { "client.secure", "clientsecure", "zoo.cfg" },
 
-    // Additional 4LW Controls
-    { "4lw.commands.enabled", "4lwcommandsenabled", "zoo.cfg" },
+        // Additional 4LW Controls
+        { "4lw.commands.enabled", "4lwcommandsenabled", "zoo.cfg" },
 
-    // Advanced Throttling and NIO
-    { "zookeeper.request_throttler.shutdownTimeout", "zookeeperrequestthrottlershutdowntimeout", "zoo.cfg" },
-    { "zookeeper.nio.numSelectorThreads", "zookeepernionumselectorthreads", "zoo.cfg" },
-    { "zookeeper.nio.numWorkerThreads", "zookeepernionumworkerthreads", "zoo.cfg" },
-    { "zookeeper.nio.directBufferBytes", "zookeeperniodirectbufferbytes", "zoo.cfg" },
+        // Advanced Throttling and NIO
+        { "zookeeper.request_throttler.shutdownTimeout", "zookeeperrequestthrottlershutdowntimeout", "zoo.cfg" },
+        { "zookeeper.nio.numSelectorThreads", "zookeepernionumselectorthreads", "zoo.cfg" },
+        { "zookeeper.nio.numWorkerThreads", "zookeepernionumworkerthreads", "zoo.cfg" },
+        { "zookeeper.nio.directBufferBytes", "zookeeperniodirectbufferbytes", "zoo.cfg" },
         // New Parameters from log4j.properties
-    { "log4j.rootLogger", "log4jrootlogger", "log4j.properties" },
-    { "log4j.appender.CONSOLE", "log4jappenderconsole", "log4j.properties" },
-    { "log4j.appender.CONSOLE.Threshold", "log4jappenderconsolethreshold", "log4j.properties" },
-    { "log4j.appender.CONSOLE.layout", "log4jappenderconsolelayout", "log4j.properties" },
-    { "log4j.appender.CONSOLE.layout.ConversionPattern", "log4jappenderconsolelayoutconversionpattern", "log4j.properties" },
-    { "log4j.appender.ROLLINGFILE", "log4jappenderrollingfile", "log4j.properties" },
-    { "log4j.appender.ROLLINGFILE.Threshold", "log4jappenderrollingfilethreshold", "log4j.properties" },
-    { "log4j.appender.ROLLINGFILE.File", "log4jappenderrollingfilefile", "log4j.properties" },
-    { "log4j.appender.ROLLINGFILE.MaxFileSize", "log4jappenderrollingfilemaxfilesize", "log4j.properties" },
-    { "log4j.appender.ROLLINGFILE.layout", "log4jappenderrollingfilelayout", "log4j.properties" },
-    { "log4j.appender.ROLLINGFILE.layout.ConversionPattern", "log4jappenderrollingfilelayoutconversionpattern", "log4j.properties" },
-    { "log4j.appender.TRACEFILE", "log4jappendertracefile", "log4j.properties" },
-    { "log4j.appender.TRACEFILE.Threshold", "log4jappendertracefilethreshold", "log4j.properties" },
-    { "log4j.appender.TRACEFILE.File", "log4jappendertracefilefile", "log4j.properties" },
-    { "log4j.appender.TRACEFILE.layout", "log4jappendertracefilelayout", "log4j.properties" },
-    { "log4j.appender.TRACEFILE.layout.ConversionPattern", "log4jappendertracefilelayoutconversionpattern", "log4j.properties" },
-};
+        { "log4j.rootLogger", "log4jrootlogger", "log4j.properties" },
+        { "log4j.appender.CONSOLE", "log4jappenderconsole", "log4j.properties" },
+        { "log4j.appender.CONSOLE.Threshold", "log4jappenderconsolethreshold", "log4j.properties" },
+        { "log4j.appender.CONSOLE.layout", "log4jappenderconsolelayout", "log4j.properties" },
+        { "log4j.appender.CONSOLE.layout.ConversionPattern", "log4jappenderconsolelayoutconversionpattern", "log4j.properties" },
+        { "log4j.appender.ROLLINGFILE", "log4jappenderrollingfile", "log4j.properties" },
+        { "log4j.appender.ROLLINGFILE.Threshold", "log4jappenderrollingfilethreshold", "log4j.properties" },
+        { "log4j.appender.ROLLINGFILE.File", "log4jappenderrollingfilefile", "log4j.properties" },
+        { "log4j.appender.ROLLINGFILE.MaxFileSize", "log4jappenderrollingfilemaxfilesize", "log4j.properties" },
+        { "log4j.appender.ROLLINGFILE.layout", "log4jappenderrollingfilelayout", "log4j.properties" },
+        { "log4j.appender.ROLLINGFILE.layout.ConversionPattern", "log4jappenderrollingfilelayoutconversionpattern", "log4j.properties" },
+        { "log4j.appender.TRACEFILE", "log4jappendertracefile", "log4j.properties" },
+        { "log4j.appender.TRACEFILE.Threshold", "log4jappendertracefilethreshold", "log4j.properties" },
+        { "log4j.appender.TRACEFILE.File", "log4jappendertracefilefile", "log4j.properties" },
+        { "log4j.appender.TRACEFILE.layout", "log4jappendertracefilelayout", "log4j.properties" },
+        { "log4j.appender.TRACEFILE.layout.ConversionPattern", "log4jappendertracefilelayoutconversionpattern", "log4j.properties" },
+    };
 
-const size_t num_params = sizeof(param_map) / sizeof(param_map[0]);
+    const size_t num_params = sizeof(param_map) / sizeof(param_map[0]);
 
     // Normalize the input parameter name
     char normalized[256] = {0};
@@ -191,9 +191,9 @@ ValidationResult validateZooKeeperConfigParam(const char *param_name, const char
         return isSizeWithUnit(value) ? VALIDATION_OK : ERROR_INVALID_FORMAT;
     }
     else if (strcmp(param_name, "4lw.commands.whitelist") == 0) {
-        const char *allowed[] = {"conf", "cons", "crst", "dump", "envi", 
-                                "ruok", "srst", "srvr", "stat", "wchc", 
-                                "wchp", "wchs", "mntr", NULL};
+        const char *allowed[] = {"conf", "cons", "crst", "dump", "envi",
+            "ruok", "srst", "srvr", "stat", "wchc",
+            "wchp", "wchs", "mntr", NULL};
         char *copy = strdup(value);
         char *token = strtok(copy, ",");
         while (token) {
@@ -250,7 +250,7 @@ ConfigStatus modify_zookeeper_config(const char* config_param, const char* value
         const char *default_dirs[] = {
             "/usr/local/zookeeper/conf",          // Debian
             "/opt/zookeeper/conf",     // Red Hat
-            // Add other possible paths if needed
+                                       // Add other possible paths if needed
         };
         size_t num_dirs = sizeof(default_dirs) / sizeof(default_dirs[0]);
         for (size_t i = 0; i < num_dirs; i++) {
@@ -265,7 +265,7 @@ ConfigStatus modify_zookeeper_config(const char* config_param, const char* value
             return FILE_NOT_FOUND;
         }
     }
-    
+
     if (strcmp(filename, "log4j.properties") == 0 ) {
         configure_hadoop_property(file_path, config_param, value);
         return SUCCESS;

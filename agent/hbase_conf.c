@@ -27,13 +27,13 @@ ConfigResult* process_hbase_config(const char *param_name, const char *param_val
         {"hbase.superuser", "^(hbase[._-])?superuser$", "hbase-policy.xml"},
         {"hbase.coprocessor.region.classes", "^(hbase[._-])?coprocessor[._-]?region[._-]?classes$", "hbase-site.xml"},
         {"hbase.rest.port", "^(hbase[._-])?rest[._-]?port$", "hbase-site.xml"},
-            // HBase policy parameters (from hbase-policy.xml)
+        // HBase policy parameters (from hbase-policy.xml)
         {"security.client.protocol.acl", "^security\\.client\\.protocol\\.acl$", "hbase-policy.xml"},
         {"security.admin.protocol.acl", "^security\\.admin\\.protocol\\.acl$", "hbase-policy.xml"},
         {"security.master.protocol.acl", "^security\\.master\\.protocol\\.acl$", "hbase-policy.xml"},
         {"security.regionserver.protocol.acl", "^security\\.regionserver\\.protocol\\.acl$", "hbase-policy.xml"},
-        
-    // New core-site.xml parameters (extended list)
+
+        // New core-site.xml parameters (extended list)
         {"io.native.lib.available", "^io\\.native\\.lib\\.available$", "core-site.xml"},
         {"hadoop.http.filter.initializers", "^hadoop\\.http\\.filter\\.initializers$", "core-site.xml"},
         {"hadoop.security.authorization", "^hadoop\\.security\\.authorization$", "core-site.xml"},
@@ -48,13 +48,13 @@ ConfigResult* process_hbase_config(const char *param_name, const char *param_val
         {"hadoop.proxyuser.knox.groups", "^hadoop\\.proxyuser\\.knox\\.groups$", "core-site.xml"},
         {"hadoop.proxyuser.knox.hosts", "^hadoop\\.proxyuser\\.knox\\.hosts$", "core-site.xml"},
         {"fs.oci.client.hostname", "^fs\\.oci\\.client\\.hostname$", "core-site.xml"},
-         {"fs.oci.client.custom.authenticator", "^fs\\.oci\\.client\\.custom\\.authenticator$", "core-site.xml"},
+        {"fs.oci.client.custom.authenticator", "^fs\\.oci\\.client\\.custom\\.authenticator$", "core-site.xml"},
         {"fs.viprfs.impl", "^fs\\.viprfs\\.impl$", "core-site.xml"},
         {"fs.AbstractFileSystem.viprfs.impl", "^fs\\.AbstractFileSystem\\.viprfs\\.impl$", "core-site.xml"},
         {"hadoop.security.dns.interface", "^hadoop\\.security\\.dns\\.interface$", "core-site.xml"},
         {"hadoop.security.groups.cache.secs", "^hadoop\\.security\\.groups\\.cache\\.secs$", "core-site.xml"},
         {"viprfs.security.principal", "^viprfs\\.security\\.principal$", "core-site.xml"},
-           // Core Audit Destinations
+        // Core Audit Destinations
         // Connection/Timeout/Retry
         {"hbase.client.operation.timeout", "^(hbase[._-])?client[._-]?operation[._-]?timeout$", "hbase-site.xml"},
         {"hbase.client.scanner.timeout.period", "^(hbase[._-])?client[._-]?scanner[._-]?timeout[._-]?period$", "hbase-site.xml"},
@@ -100,7 +100,7 @@ ConfigResult* process_hbase_config(const char *param_name, const char *param_val
         {"hbase.client.primaryCallTimeout.multiget", "^(hbase[._-])?client[._-]?primary[._-]?call[._-]?timeout[._-]?multiget$", "hbase-site.xml"},
         {"hbase.client.hedged.read.timeout", "^(hbase[._-])?client[._-]?hedged[._-]?read[._-]?timeout$", "hbase-site.xml"},
         {"hbase.client.hedged.read.threadpool.size", "^(hbase[._-])?client[._-]?hedged[._-]?read[._-]?threadpool[._-]?size$", "hbase-site.xml"},
-                {"xasecure.audit.is.enabled", "^xasecure\\.audit\\.is\\.enabled$", "ranger-hbase-audit.xml"},
+        {"xasecure.audit.is.enabled", "^xasecure\\.audit\\.is\\.enabled$", "ranger-hbase-audit.xml"},
         {"xasecure.audit.hdfs.is.enabled", "^xasecure\\.audit\\.hdfs\\.is\\.enabled$", "ranger-hbase-audit.xml"},
         {"xasecure.audit.hdfs.is.async", "^xasecure\\.audit\\.hdfs\\.is\\.async$", "ranger-hbase-audit.xml"},
         {"xasecure.audit.hdfs.async.max.queue.size", "^xasecure\\.audit\\.hdfs\\.async\\.max\\.queue\\.size$", "ranger-hbase-audit.xml"},
@@ -132,7 +132,7 @@ ConfigResult* process_hbase_config(const char *param_name, const char *param_val
         {"xasecure.audit.solr.async.max.queue.size", "^xasecure\\.audit\\.solr\\.async\\.max\\.queue\\.size$", "ranger-hbase-audit.xml"},
         {"xasecure.audit.solr.async.max.flush.interval.ms", "^xasecure\\.audit\\.solr\\.async\\.max\\.flush\\.interval\\.ms$", "ranger-hbase-audit.xml"},
         {"xasecure.audit.solr.solr_url", "^xasecure\\.audit\\.solr\\.solr_url$", "ranger-hbase-audit.xml"},
-                // Ranger HBase SSL policy manager parameters (from ranger-hbase-policymgr-ssl.xml)
+        // Ranger HBase SSL policy manager parameters (from ranger-hbase-policymgr-ssl.xml)
         {"xasecure.policymgr.clientssl.keystore", "^xasecure\\.policymgr\\.clientssl\\.keystore$", "ranger-hbase-policymgr-ssl.xml"},
         {"xasecure.policymgr.clientssl.truststore", "^xasecure\\.policymgr\\.clientssl\\.truststore$", "ranger-hbase-policymgr-ssl.xml"},
         {"xasecure.policymgr.clientssl.keystore.credential.file", "^xasecure\\.policymgr\\.clientssl\\.keystore\\.credential\\.file$", "ranger-hbase-policymgr-ssl.xml"},
@@ -146,7 +146,7 @@ ConfigResult* process_hbase_config(const char *param_name, const char *param_val
         {"xasecure.hbase.update.xapolicies.on.grant.revoke", "^xasecure\\.hbase\\.update\\.xapolicies\\.on\\.grant\\.revoke$", "ranger-hbase-security.xml"},
         {"ranger.plugin.hbase.policy.rest.client.connection.timeoutMs", "^ranger\\.plugin\\.hbase\\.policy\\.rest\\.client\\.connection\\.timeoutMs$", "ranger-hbase-security.xml"},
         {"ranger.plugin.hbase.policy.rest.client.read.timeoutMs", "^ranger\\.plugin\\.hbase\\.policy\\.rest\\.client\\.read\\.timeoutMs$", "ranger-hbase-security.xml"},
-                {"log4j.rootlogger", "^log4j[._-]rootlogger$", "hbase-log4j.properties"},
+        {"log4j.rootlogger", "^log4j[._-]rootlogger$", "hbase-log4j.properties"},
         {"log4j.threshold", "^log4j[._-]threshold$", "hbase-log4j.properties"},
         {"log4j.appender.stdout", "^log4j[._-]appender[._-]stdout$", "hbase-log4j.properties"},
         {"log4j.appender.stdout.layout", "^log4j[._-]appender[._-]stdout[._-]layout$", "hbase-log4j.properties"},
@@ -164,18 +164,18 @@ ConfigResult* process_hbase_config(const char *param_name, const char *param_val
         {"log4j.rootLogger", "^log4j[._-]rootLogger$", "hbase-log4j.properties"},
         {"log4j.threshold", "^log4j[._-]threshold$", "hbase-log4j.properties"},
         {"log4j.appender.DRFA", "^log4j[._-]appender[._-]DRFA$", "hbase-log4j.properties"},
-    // ... (all other log4j properties from calls) ...
-    
-    // HBase Site Parameters
+        // ... (all other log4j properties from calls) ...
+
+        // HBase Site Parameters
         {"hbase_log_maxfilesize", "^hbase[._-]log[._-]maxfilesize$", "hbase-site.xml"},
         {"hbase_log_maxbackupindex", "^hbase[._-]log[._-]maxbackupindex$", "hbase-site.xml"},
         {"hbase_security_log_maxfilesize", "^hbase[._-]security[._-]log[._-]maxfilesize$", "hbase-site.xml"},
         {"hbase_security_log_maxbackupindex", "^hbase[._-]security[._-]log[._-]maxbackupindex$", "hbase-site.xml"},
         {"hbase.master.port", "^hbase[._-]master[._-]port$", "hbase-site.xml"},
         {"phoenix.rpc.index.handler.count", "^phoenix[._-]rpc[._-]index[._-]handler[._-]count$", "hbase-site.xml"},
-    // ... (all other missing hbase-site params) ...
-    
-    // Ranger Plugin Properties
+        // ... (all other missing hbase-site params) ...
+
+        // Ranger Plugin Properties
         {"common.name.for.certificate", "^common[._-]name[._-]for[._-]certificate$", "ranger-hbase-plugin.properties"},
         {"policy_user", "^policy[._-]user$", "ranger-hbase-plugin.properties"},
         {"ranger-hbase-plugin-enabled", "^ranger[._-]hbase[._-]plugin[._-]enabled$", "ranger-hbase-plugin.properties"},
@@ -192,7 +192,7 @@ ConfigResult* process_hbase_config(const char *param_name, const char *param_val
         if (reti) {
             char error_msg[1024];
             regerror(reti, &regex, error_msg, sizeof(error_msg));
-            FPRINTF(global_client_socket, "Regex compilation error for %s: %s\n", 
+            FPRINTF(global_client_socket, "Regex compilation error for %s: %s\n",
                     hbase_predefined_params[i].canonicalName, error_msg);
             continue;
         }
@@ -224,7 +224,7 @@ ConfigResult* process_hbase_config(const char *param_name, const char *param_val
         } else if (reti != REG_NOMATCH) {
             char error_msg[1024];
             regerror(reti, &regex, error_msg, sizeof(error_msg));
-            FPRINTF(global_client_socket, "Regex execution error for %s: %s\n", 
+            FPRINTF(global_client_socket, "Regex execution error for %s: %s\n",
                     hbase_predefined_params[i].canonicalName, error_msg);
         }
     }
@@ -280,7 +280,7 @@ ValidationResult validateHBaseConfigParam(const char *param_name, const char *va
             ? VALIDATION_OK : ERROR_CONSTRAINT_VIOLATED;
     }
     else if (strcmp(param_name, "hbase.rpc.protection") == 0) {
-        return (strcmp(value, "authentication") == 0 || 
+        return (strcmp(value, "authentication") == 0 ||
                 strcmp(value, "integrity") == 0 ||
                 strcmp(value, "privacy") == 0)
             ? VALIDATION_OK : ERROR_CONSTRAINT_VIOLATED;
@@ -308,8 +308,8 @@ ValidationResult validateHBaseConfigParam(const char *param_name, const char *va
              strcmp(param_name, "hbase.ssl.truststore.store") == 0) {
         return (strlen(value) > 0) ? VALIDATION_OK : ERROR_VALUE_EMPTY;
     }
-    
-   else if (strcmp(param_name, "io.native.lib.available") == 0) {
+
+    else if (strcmp(param_name, "io.native.lib.available") == 0) {
         return isValidBoolean(value) ? VALIDATION_OK : ERROR_CONSTRAINT_VIOLATED;
     }
     else if (strcmp(param_name, "hadoop.http.filter.initializers") == 0) {
@@ -412,31 +412,31 @@ ValidationResult validateHBaseConfigParam(const char *param_name, const char *va
         while (*start) {
             const char *comma = strchr(start, ',');
             size_t len = comma ? (size_t)(comma - start) : strlen(start);
-            
+
             // Check for empty token
             if (len == 0) return ERROR_INVALID_FORMAT;
-            
+
             // Check token length
             if (len >= sizeof(token)) return ERROR_INVALID_FORMAT;
-            
+
             // Copy token to buffer
             strncpy(token, start, len);
             token[len] = '\0';
-            
+
             if (!isValidHostPort(token)) {
                 return ERROR_INVALID_FORMAT;
             }
-            
+
             token_count++;
             start = comma ? comma + 1 : start + len;
         }
-        
+
         // Ensure at least one valid token
         return (token_count > 0) ? VALIDATION_OK : ERROR_INVALID_FORMAT;
     }
-       else if (strstr(param_name, "xasecure.audit") != NULL) {
+    else if (strstr(param_name, "xasecure.audit") != NULL) {
         // Boolean flags
-        if (strstr(param_name, ".is.enabled") != NULL || 
+        if (strstr(param_name, ".is.enabled") != NULL ||
             strstr(param_name, ".is.async") != NULL) {
             return isValidBoolean(value) ? VALIDATION_OK : ERROR_CONSTRAINT_VIOLATED;
         }
@@ -458,39 +458,39 @@ ValidationResult validateHBaseConfigParam(const char *param_name, const char *va
         // Encoding/format parameters
         else if (strcmp(param_name, "xasecure.audit.hdfs.config.encoding") == 0) {
             // Allow empty value or valid encoding names
-            return (value[0] == '\0' || isValidEncoding(value)) ? 
-                   VALIDATION_OK : ERROR_INVALID_FORMAT;
+            return (value[0] == '\0' || isValidEncoding(value)) ?
+                VALIDATION_OK : ERROR_INVALID_FORMAT;
         }
     }
-    
+
     // Ranger SSL parameter validation
     else if (strstr(param_name, "xasecure.policymgr.clientssl") != NULL) {
         // Credential file paths
         if (strstr(param_name, "credential.file") != NULL) {
-            return (strncmp(value, "jceks://", 8) == 0) ? 
-                   VALIDATION_OK : ERROR_INVALID_FORMAT;
+            return (strncmp(value, "jceks://", 8) == 0) ?
+                VALIDATION_OK : ERROR_INVALID_FORMAT;
         }
         // Keystore/truststore paths
-        else if (strstr(param_name, "keystore") != NULL || 
+        else if (strstr(param_name, "keystore") != NULL ||
                  strstr(param_name, "truststore") != NULL) {
-            return (strstr(value, ".jks") != NULL || 
-                    strstr(value, ".p12") != NULL) ? 
-                   VALIDATION_OK : ERROR_INVALID_FORMAT;
+            return (strstr(value, ".jks") != NULL ||
+                    strstr(value, ".p12") != NULL) ?
+                VALIDATION_OK : ERROR_INVALID_FORMAT;
         }
     }
-    
+
     // Ranger security policy parameter validation
     else if (strstr(param_name, "ranger.plugin.hbase") != NULL) {
         // Service name validation
         if (strcmp(param_name, "ranger.plugin.hbase.service.name") == 0) {
-            return (value[0] != '\0' && !strchr(value, ' ') && 
+            return (value[0] != '\0' && !strchr(value, ' ') &&
                     !strchr(value, '/')) ? VALIDATION_OK : ERROR_INVALID_FORMAT;
         }
         // URL validation
         else if (strcmp(param_name, "ranger.plugin.hbase.policy.rest.url") == 0) {
-            return (strstr(value, "http://") != NULL || 
-                    strstr(value, "https://") != NULL) ? 
-                   VALIDATION_OK : ERROR_INVALID_FORMAT;
+            return (strstr(value, "http://") != NULL ||
+                    strstr(value, "https://") != NULL) ?
+                VALIDATION_OK : ERROR_INVALID_FORMAT;
         }
         // Path validation
         else if (strcmp(param_name, "ranger.plugin.hbase.policy.rest.ssl.config.file") == 0 ||
@@ -509,8 +509,8 @@ ValidationResult validateHBaseConfigParam(const char *param_name, const char *va
         }
         // Class name validation
         else if (strcmp(param_name, "ranger.plugin.hbase.policy.source.impl") == 0) {
-            return (strstr(value, "RangerAdmin") != NULL) ? 
-                   VALIDATION_OK : ERROR_INVALID_FORMAT;
+            return (strstr(value, "RangerAdmin") != NULL) ?
+                VALIDATION_OK : ERROR_INVALID_FORMAT;
         }
     }
 
@@ -524,7 +524,7 @@ ValidationResult validateHBaseConfigParam(const char *param_name, const char *va
 
  * Update HBase configuration parameter in XML configuration file
 
- * 
+ *
 
  * Searches for configuration file in HBASE_HOME/conf, OS-specific default installation directories,
 
@@ -599,7 +599,7 @@ ConfigStatus update_hbase_config(const char* param, const char* value , const ch
         }
     }
 
-    if (strcmp(filename, "log4j2.properties") == 0) 
+    if (strcmp(filename, "log4j2.properties") == 0)
     {
         configure_hadoop_property(file_path, param, value);
         return SUCCESS;
@@ -635,7 +635,7 @@ ConfigStatus update_hbase_config(const char* param, const char* value , const ch
     xmlNodePtr prop = NULL;
     bool param_found = false;
     for (prop = root->children; prop != NULL; prop = prop->next) {
-        if (prop->type != XML_ELEMENT_NODE || 
+        if (prop->type != XML_ELEMENT_NODE ||
             xmlStrcmp(prop->name, BAD_CAST "property") != 0) {
             continue;
         }

@@ -115,8 +115,8 @@ typedef enum {
 typedef enum {
     CORE_SITE,
     HDFS_SITE,
-	YARN_SITE
-    // Extend with other file types as necessary
+    YARN_SITE
+        // Extend with other file types as necessary
 } ConfigFileType;
 
 typedef struct {
@@ -126,14 +126,14 @@ typedef struct {
 } ConfigParam;
 
 typedef enum {NO_ACTION, START, STOP, RESTART, INSTALL, VERSION_SWITCH,
-UNINSTALL, REPORT ,CONFIGURE} Action;
+    UNINSTALL, REPORT ,CONFIGURE} Action;
 
 typedef struct PromptInterruptContext
 {
-        /* To avoid including <setjmp.h> here, jmpbuf is declared "void *" */
-        void       *jmpbuf;                     /* existing longjmp buffer */
-        volatile sig_atomic_t *enabled; /* flag that enables longjmp-on-interrupt */
-        bool            canceled;               /* indicates whether cancellation occurred */
+    /* To avoid including <setjmp.h> here, jmpbuf is declared "void *" */
+    void       *jmpbuf;                     /* existing longjmp buffer */
+    volatile sig_atomic_t *enabled; /* flag that enables longjmp-on-interrupt */
+    bool            canceled;               /* indicates whether cancellation occurred */
 } PromptInterruptContext;
 
 
@@ -185,14 +185,14 @@ char *simple_prompt(const char *prompt, bool echo);
 void execute_and_print(const char *command);
 char * apache_strdup(const char *in);
 bool is_version_format(const char *version);
-void printBorder(const char *start, const char *end, const char *color); 
+void printBorder(const char *start, const char *end, const char *color);
 void printTextBlock(const char *text, const char *textColor, const char *borderColor);
 const char * component_to_string(Component comp);
 const char * action_to_string(Action action);
 char* execute_remote_script(const char* script, const char* username, const char* host, const char* password);
-int execute_remote_command(const char* host, 
-                   const char* username, const char* password,
-                   const char* cmd);
+int execute_remote_command(const char* host,
+                           const char* username, const char* password,
+                           const char* cmd);
 //Component* get_dependencies(Component comp);
 Component string_to_component(const char* name);
 unsigned char get_protocol_code(Component comp, Action action, const char* version);
@@ -265,9 +265,9 @@ char* generate_regex_pattern(const char* canonical_name);
 int configure_hadoop_property(const char *file_path, const char *key, const char *value);
 int updateHadoopConfigXML(const char *filePath, const char *parameterName, const char *parameterValue);
 void SendComponentActionCommand(Component component, Action action,
-                              const char* version,
-                              const char* param_name, const char* param_value,
-                              Conn* conn);
+                                const char* version,
+                                const char* param_name, const char* param_value,
+                                Conn* conn);
 Component* get_dependencies(Component comp, int *count);
 int update_config(const char *param, const char *value, const char *file_path);
 int create_xml_file(const char *directory_path, const char *xml_file_name);
@@ -276,4 +276,6 @@ int create_conf_file(const char *directory_path, const char *conf_file_name);
 int start_stdout_capture(void);
 int stop_stdout_capture(void);
 char* get_component_config_path(Component comp, const char* config_filename);
+bool isComponentInstalled(Component comp);
+bool check_installed_message(const char* str);
 #endif

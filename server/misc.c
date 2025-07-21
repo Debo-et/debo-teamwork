@@ -26,74 +26,74 @@
 static int	PutMsgBytes(const void *buf, size_t len, Conn *conn);
 static int	SendSome(Conn *conn, int len);
 static int	SocketCheck(Conn *conn, int forRead, int forWrite,
-						  pg_usec_time_t end_time);
+                        pg_usec_time_t end_time);
 #define DBINVALID_SOCKET (-1)
 #define ALL_CONNECTION_FAILURE_ERRNOS \
-        EPIPE: \
-        case ECONNRESET: \
-        case ECONNABORTED: \
-        case EHOSTDOWN: \
-        case EHOSTUNREACH: \
-        case ENETDOWN: \
-        case ENETRESET: \
-        case ENETUNREACH: \
-        case ETIMEDOUT
-        
-#define DB_STRERROR_R_BUFLEN 256 
+EPIPE: \
+case ECONNRESET: \
+case ECONNABORTED: \
+case EHOSTDOWN: \
+case EHOSTUNREACH: \
+case ENETDOWN: \
+case ENETRESET: \
+case ENETUNREACH: \
+case ETIMEDOUT
+
+#define DB_STRERROR_R_BUFLEN 256
 
 
 ssize_t
 secure_raw_read(Conn *conn, void *ptr, size_t len)
 {
-	ssize_t		n;
-	int			result_errno = 0;
-	char		sebuf[DB_STRERROR_R_BUFLEN];
+    ssize_t		n;
+    int			result_errno = 0;
+    char		sebuf[DB_STRERROR_R_BUFLEN];
 
-	SOCK_ERRNO_SET(0);
+    SOCK_ERRNO_SET(0);
 
-	n = recv(conn->sock, ptr, len, 0);
+    n = recv(conn->sock, ptr, len, 0);
 
-	if (n < 0)
-	{
-		result_errno = SOCK_ERRNO;
+    if (n < 0)
+    {
+        result_errno = SOCK_ERRNO;
 
-		/* Set error message if appropriate */
-		switch (result_errno)
-		{
+        /* Set error message if appropriate */
+        switch (result_errno)
+        {
 #ifdef EAGAIN
-			case EAGAIN:
+        case EAGAIN:
 #endif
 #if defined(EWOULDBLOCK) && (!defined(EAGAIN) || (EWOULDBLOCK != EAGAIN))
-			case EWOULDBLOCK:
+        case EWOULDBLOCK:
 #endif
-			case EINTR:
-				/* no error message, caller is expected to retry */
-				break;
+        case EINTR:
+            /* no error message, caller is expected to retry */
+            break;
 
-			case EPIPE:
-			case ECONNRESET:
-				db_append_conn_error(conn, "server closed the connection unexpectedly\n"
-										"\tThis probably means the server terminated abnormally\n"
-										"\tbefore or while processing the request.");
-				break;
+        case EPIPE:
+        case ECONNRESET:
+            db_append_conn_error(conn, "server closed the connection unexpectedly\n"
+                                 "\tThis probably means the server terminated abnormally\n"
+                                 "\tbefore or while processing the request.");
+            break;
 
-			case 0:
-				/* If errno didn't get set, treat it as regular EOF */
-				n = 0;
-				break;
+        case 0:
+            /* If errno didn't get set, treat it as regular EOF */
+            n = 0;
+            break;
 
-			default:
-				db_append_conn_error(conn, "could not receive data from server: %d",
-										SOCK_STRERROR(result_errno,
-													  sebuf, sizeof(sebuf)));
-				break;
-		}
-	}
+        default:
+            db_append_conn_error(conn, "could not receive data from server: %d",
+                                 SOCK_STRERROR(result_errno,
+                                               sebuf, sizeof(sebuf)));
+            break;
+        }
+    }
 
-	/* ensure we return the intended errno to caller */
-	SOCK_ERRNO_SET(result_errno);
+    /* ensure we return the intended errno to caller */
+    SOCK_ERRNO_SET(result_errno);
 
-	return n;
+    return n;
 }
 
 /*
@@ -113,107 +113,107 @@ secure_raw_read(Conn *conn, void *ptr, size_t len)
 ssize_t
 secure_raw_write(Conn *conn, const void *ptr, size_t len)
 {
-	ssize_t		n;
-	int			flags = 0;
-	int			result_errno = 0;
-	char		msgbuf[1024];
+    ssize_t		n;
+    int			flags = 0;
+    int			result_errno = 0;
+    char		msgbuf[1024];
 
-	//DECLARE_SIGPIPE_INFO(spinfo);
+    //DECLARE_SIGPIPE_INFO(spinfo);
 
-	/*
-	 * If we already had a write failure, we will never again try to send data
-	 * on that connection.  Even if the kernel would let us, we've probably
-	 * lost message boundary sync with the server.  conn->write_failed
-	 * therefore persists until the connection is reset, and we just discard
-	 * all data presented to be written.
-	 */
-	if (conn->write_failed)
-		return len;
+    /*
+     * If we already had a write failure, we will never again try to send data
+     * on that connection.  Even if the kernel would let us, we've probably
+     * lost message boundary sync with the server.  conn->write_failed
+     * therefore persists until the connection is reset, and we just discard
+     * all data presented to be written.
+     */
+    if (conn->write_failed)
+        return len;
 
 #ifdef MSG_NOSIGNAL
-	if (conn->sigpipe_flag)
-		flags |= MSG_NOSIGNAL;
+    if (conn->sigpipe_flag)
+        flags |= MSG_NOSIGNAL;
 
 retry_masked:
 #endif							/* MSG_NOSIGNAL */
 
-	//DISABLE_SIGPIPE(conn, spinfo, return -1);
+    //DISABLE_SIGPIPE(conn, spinfo, return -1);
 
-	n = send(conn->sock, ptr, len, flags);
+    n = send(conn->sock, ptr, len, flags);
 
-	if (n < 0)
-	{
-		result_errno = SOCK_ERRNO;
+    if (n < 0)
+    {
+        result_errno = SOCK_ERRNO;
 
-		/*
-		 * If we see an EINVAL, it may be because MSG_NOSIGNAL isn't available
-		 * on this machine.  So, clear sigpipe_flag so we don't try the flag
-		 * again, and retry the send().
-		 */
+        /*
+         * If we see an EINVAL, it may be because MSG_NOSIGNAL isn't available
+         * on this machine.  So, clear sigpipe_flag so we don't try the flag
+         * again, and retry the send().
+         */
 #ifdef MSG_NOSIGNAL
-		if (flags != 0 && result_errno == EINVAL)
-		{
-			conn->sigpipe_flag = false;
-			flags = 0;
-			goto retry_masked;
-		}
+        if (flags != 0 && result_errno == EINVAL)
+        {
+            conn->sigpipe_flag = false;
+            flags = 0;
+            goto retry_masked;
+        }
 #endif							/* MSG_NOSIGNAL */
 
-		/* Set error message if appropriate */
-		switch (result_errno)
-		{
+        /* Set error message if appropriate */
+        switch (result_errno)
+        {
 #ifdef EAGAIN
-			case EAGAIN:
+        case EAGAIN:
 #endif
 #if defined(EWOULDBLOCK) && (!defined(EAGAIN) || (EWOULDBLOCK != EAGAIN))
-			case EWOULDBLOCK:
+        case EWOULDBLOCK:
 #endif
-			case EINTR:
-				/* no error message, caller is expected to retry */
-				break;
+        case EINTR:
+            /* no error message, caller is expected to retry */
+            break;
 
-			case EPIPE:
-				/* Set flag for EPIPE */
-				//REMEMBER_EPIPE(spinfo, true);
+        case EPIPE:
+            /* Set flag for EPIPE */
+            //REMEMBER_EPIPE(spinfo, true);
 
-				/* FALL THRU */
+            /* FALL THRU */
 
-			case ECONNRESET:
-				conn->write_failed = true;
-				/* Store error message in conn->write_err_msg, if possible */
-				/* (strdup failure is OK, we'll cope later) */
-				snprintf(msgbuf, sizeof(msgbuf),
-						 libpq_gettext("server closed the connection unexpectedly\n"
-									   "\tThis probably means the server terminated abnormally\n"
-									   "\tbefore or while processing the request."));
-				/* keep newline out of translated string */
-				strlcat(msgbuf, "\n", sizeof(msgbuf));
-				conn->write_err_msg = strdup(msgbuf);
-				/* Now claim the write succeeded */
-				n = len;
-				break;
+        case ECONNRESET:
+            conn->write_failed = true;
+            /* Store error message in conn->write_err_msg, if possible */
+            /* (strdup failure is OK, we'll cope later) */
+            snprintf(msgbuf, sizeof(msgbuf),
+                     libpq_gettext("server closed the connection unexpectedly\n"
+                                   "\tThis probably means the server terminated abnormally\n"
+                                   "\tbefore or while processing the request."));
+            /* keep newline out of translated string */
+            strlcat(msgbuf, "\n", sizeof(msgbuf));
+            conn->write_err_msg = strdup(msgbuf);
+            /* Now claim the write succeeded */
+            n = len;
+            break;
 
-			default:
-				conn->write_failed = true;
-				/* Store error message in conn->write_err_msg, if possible */
-				/* (strdup failure is OK, we'll cope later) */
-				snprintf(msgbuf, sizeof(msgbuf),
-						 "could not send data to server:");
-				/* keep newline out of translated string */
-				strlcat(msgbuf, "\n", sizeof(msgbuf));
-				conn->write_err_msg = strdup(msgbuf);
-				/* Now claim the write succeeded */
-				n = len;
-				break;
-		}
-	}
+        default:
+            conn->write_failed = true;
+            /* Store error message in conn->write_err_msg, if possible */
+            /* (strdup failure is OK, we'll cope later) */
+            snprintf(msgbuf, sizeof(msgbuf),
+                     "could not send data to server:");
+            /* keep newline out of translated string */
+            strlcat(msgbuf, "\n", sizeof(msgbuf));
+            conn->write_err_msg = strdup(msgbuf);
+            /* Now claim the write succeeded */
+            n = len;
+            break;
+        }
+    }
 
-	//RESTORE_SIGPIPE(conn, spinfo);
+    //RESTORE_SIGPIPE(conn, spinfo);
 
-	/* ensure we return the intended errno to caller */
-	SOCK_ERRNO_SET(result_errno);
+    /* ensure we return the intended errno to caller */
+    SOCK_ERRNO_SET(result_errno);
 
-	return n;
+    return n;
 }
 
 
@@ -228,12 +228,12 @@ retry_masked:
 int
 Getc(char *result, Conn *conn)
 {
-	if (conn->inCursor >= conn->inEnd)
-		return EOF;
+    if (conn->inCursor >= conn->inEnd)
+        return EOF;
 
-	*result = conn->inBuffer[conn->inCursor++];
+    *result = conn->inBuffer[conn->inCursor++];
 
-	return 0;
+    return 0;
 }
 
 
@@ -243,10 +243,10 @@ Getc(char *result, Conn *conn)
 int
 Putc(char c, Conn *conn)
 {
-	if (PutMsgBytes(&c, 1, conn))
-		return EOF;
+    if (PutMsgBytes(&c, 1, conn))
+        return EOF;
 
-	return 0;
+    return 0;
 }
 
 
@@ -260,40 +260,40 @@ Putc(char c, Conn *conn)
 static int
 Gets_internal(ExpBuffer buf, Conn *conn, bool resetbuffer)
 {
-	/* Copy conn data to locals for faster search loop */
-	char	   *inBuffer = conn->inBuffer;
-	int			inCursor = conn->inCursor;
-	int			inEnd = conn->inEnd;
-	int			slen;
+    /* Copy conn data to locals for faster search loop */
+    char	   *inBuffer = conn->inBuffer;
+    int			inCursor = conn->inCursor;
+    int			inEnd = conn->inEnd;
+    int			slen;
 
-	while (inCursor < inEnd && inBuffer[inCursor])
-		inCursor++;
+    while (inCursor < inEnd && inBuffer[inCursor])
+        inCursor++;
 
-	if (inCursor >= inEnd)
-		return EOF;
+    if (inCursor >= inEnd)
+        return EOF;
 
-	slen = inCursor - conn->inCursor;
+    slen = inCursor - conn->inCursor;
 
-	if (resetbuffer)
-		resetExpBuffer(buf);
+    if (resetbuffer)
+        resetExpBuffer(buf);
 
-	appendBinaryExpBuffer(buf, inBuffer + conn->inCursor, slen);
+    appendBinaryExpBuffer(buf, inBuffer + conn->inCursor, slen);
 
-	conn->inCursor = ++inCursor;
+    conn->inCursor = ++inCursor;
 
-	return 0;
+    return 0;
 }
 
 int
 Gets(ExpBuffer buf, Conn *conn)
 {
-	return Gets_internal(buf, conn, true);
+    return Gets_internal(buf, conn, true);
 }
 
 int
 Gets_append(ExpBuffer buf, Conn *conn)
 {
-	return Gets_internal(buf, conn, false);
+    return Gets_internal(buf, conn, false);
 }
 
 
@@ -303,10 +303,10 @@ Gets_append(ExpBuffer buf, Conn *conn)
 int
 Puts(const char *s, Conn *conn)
 {
-	if (PutMsgBytes(s, strlen(s) + 1, conn))
-		return EOF;
+    if (PutMsgBytes(s, strlen(s) + 1, conn))
+        return EOF;
 
-	return 0;
+    return 0;
 }
 
 /*
@@ -316,15 +316,15 @@ Puts(const char *s, Conn *conn)
 int
 Getnchar(char *s, size_t len, Conn *conn)
 {
-	if (len > (size_t) (conn->inEnd - conn->inCursor))
-		return EOF;
+    if (len > (size_t) (conn->inEnd - conn->inCursor))
+        return EOF;
 
-	memcpy(s, conn->inBuffer + conn->inCursor, len);
-	/* no terminating null */
+    memcpy(s, conn->inBuffer + conn->inCursor, len);
+    /* no terminating null */
 
-	conn->inCursor += len;
+    conn->inCursor += len;
 
-	return 0;
+    return 0;
 }
 
 /*
@@ -338,12 +338,12 @@ Getnchar(char *s, size_t len, Conn *conn)
 int
 Skipnchar(size_t len, Conn *conn)
 {
-	if (len > (size_t) (conn->inEnd - conn->inCursor))
-		return EOF;
+    if (len > (size_t) (conn->inEnd - conn->inCursor))
+        return EOF;
 
-	conn->inCursor += len;
+    conn->inCursor += len;
 
-	return 0;
+    return 0;
 }
 
 /*
@@ -353,10 +353,10 @@ Skipnchar(size_t len, Conn *conn)
 int
 Putnchar(const char *s, size_t len, Conn *conn)
 {
-	if (PutMsgBytes(s, len, conn))
-		return EOF;
+    if (PutMsgBytes(s, len, conn))
+        return EOF;
 
-	return 0;
+    return 0;
 }
 
 /*
@@ -367,31 +367,31 @@ Putnchar(const char *s, size_t len, Conn *conn)
 int
 GetInt(int *result, size_t bytes, Conn *conn)
 {
-	uint16		tmp2;
-	uint32		tmp4;
+    uint16		tmp2;
+    uint32		tmp4;
 
-	switch (bytes)
-	{
-		case 2:
-			if (conn->inCursor + 2 > conn->inEnd)
-				return EOF;
-			memcpy(&tmp2, conn->inBuffer + conn->inCursor, 2);
-			conn->inCursor += 2;
-			*result = (int) db_ntoh16(tmp2);
-			break;
-		case 4:
-			if (conn->inCursor + 4 > conn->inEnd)
-				return EOF;
-			memcpy(&tmp4, conn->inBuffer + conn->inCursor, 4);
-			conn->inCursor += 4;
-			*result = (int) db_ntoh32(tmp4);
-			break;
-		default:
-			printf("integer of size not supported by GetInt");
-			return EOF;
-	}
+    switch (bytes)
+    {
+    case 2:
+        if (conn->inCursor + 2 > conn->inEnd)
+            return EOF;
+        memcpy(&tmp2, conn->inBuffer + conn->inCursor, 2);
+        conn->inCursor += 2;
+        *result = (int) db_ntoh16(tmp2);
+        break;
+    case 4:
+        if (conn->inCursor + 4 > conn->inEnd)
+            return EOF;
+        memcpy(&tmp4, conn->inBuffer + conn->inCursor, 4);
+        conn->inCursor += 4;
+        *result = (int) db_ntoh32(tmp4);
+        break;
+    default:
+        printf("integer of size not supported by GetInt");
+        return EOF;
+    }
 
-	return 0;
+    return 0;
 }
 
 /*
@@ -402,27 +402,27 @@ GetInt(int *result, size_t bytes, Conn *conn)
 int
 PutInt(int value, size_t bytes, Conn *conn)
 {
-	uint16		tmp2;
-	uint32		tmp4;
+    uint16		tmp2;
+    uint32		tmp4;
 
-	switch (bytes)
-	{
-		case 2:
-			tmp2 = db_hton16((uint16) value);
-			if (PutMsgBytes((const char *) &tmp2, 2, conn))
-				return EOF;
-			break;
-		case 4:
-			tmp4 = db_hton32((uint32) value);
-			if (PutMsgBytes((const char *) &tmp4, 4, conn))
-				return EOF;
-			break;
-		default:
-			printf("integer of size not supported by PutInt");
-			return EOF;
-	}
+    switch (bytes)
+    {
+    case 2:
+        tmp2 = db_hton16((uint16) value);
+        if (PutMsgBytes((const char *) &tmp2, 2, conn))
+            return EOF;
+        break;
+    case 4:
+        tmp4 = db_hton32((uint32) value);
+        if (PutMsgBytes((const char *) &tmp4, 4, conn))
+            return EOF;
+        break;
+    default:
+        printf("integer of size not supported by PutInt");
+        return EOF;
+    }
 
-	return 0;
+    return 0;
 }
 
 /*
@@ -434,59 +434,59 @@ PutInt(int value, size_t bytes, Conn *conn)
 int
 CheckOutBufferSpace(size_t bytes_needed, Conn *conn)
 {
-	int			newsize = conn->outBufSize;
-	char	   *newbuf;
+    int			newsize = conn->outBufSize;
+    char	   *newbuf;
 
-	/* Quick exit if we have enough space */
-	if (bytes_needed <= (size_t) newsize)
-		return 0;
+    /* Quick exit if we have enough space */
+    if (bytes_needed <= (size_t) newsize)
+        return 0;
 
-	/*
-	 * If we need to enlarge the buffer, we first try to double it in size; if
-	 * that doesn't work, enlarge in multiples of 8K.  This avoids thrashing
-	 * the malloc pool by repeated small enlargements.
-	 *
-	 * Note: tests for newsize > 0 are to catch integer overflow.
-	 */
-	do
-	{
-		newsize *= 2;
-	} while (newsize > 0 && bytes_needed > (size_t) newsize);
+    /*
+     * If we need to enlarge the buffer, we first try to double it in size; if
+     * that doesn't work, enlarge in multiples of 8K.  This avoids thrashing
+     * the malloc pool by repeated small enlargements.
+     *
+     * Note: tests for newsize > 0 are to catch integer overflow.
+     */
+    do
+    {
+        newsize *= 2;
+    } while (newsize > 0 && bytes_needed > (size_t) newsize);
 
-	if (newsize > 0 && bytes_needed <= (size_t) newsize)
-	{
-		newbuf = realloc(conn->outBuffer, newsize);
-		if (newbuf)
-		{
-			/* realloc succeeded */
-			conn->outBuffer = newbuf;
-			conn->outBufSize = newsize;
-			return 0;
-		}
-	}
+    if (newsize > 0 && bytes_needed <= (size_t) newsize)
+    {
+        newbuf = realloc(conn->outBuffer, newsize);
+        if (newbuf)
+        {
+            /* realloc succeeded */
+            conn->outBuffer = newbuf;
+            conn->outBufSize = newsize;
+            return 0;
+        }
+    }
 
-	newsize = conn->outBufSize;
-	do
-	{
-		newsize += 8192;
-	} while (newsize > 0 && bytes_needed > (size_t) newsize);
+    newsize = conn->outBufSize;
+    do
+    {
+        newsize += 8192;
+    } while (newsize > 0 && bytes_needed > (size_t) newsize);
 
-	if (newsize > 0 && bytes_needed <= (size_t) newsize)
-	{
-		newbuf = realloc(conn->outBuffer, newsize);
-		if (newbuf)
-		{
-			/* realloc succeeded */
-			conn->outBuffer = newbuf;
-			conn->outBufSize = newsize;
-			return 0;
-		}
-	}
+    if (newsize > 0 && bytes_needed <= (size_t) newsize)
+    {
+        newbuf = realloc(conn->outBuffer, newsize);
+        if (newbuf)
+        {
+            /* realloc succeeded */
+            conn->outBuffer = newbuf;
+            conn->outBufSize = newsize;
+            return 0;
+        }
+    }
 
-	/* realloc failed. Probably out of memory */
-	appendExpBufferStr(&conn->errorMessage,
-						 "cannot allocate memory for output buffer\n");
-	return EOF;
+    /* realloc failed. Probably out of memory */
+    appendExpBufferStr(&conn->errorMessage,
+                       "cannot allocate memory for output buffer\n");
+    return EOF;
 }
 
 /*
@@ -498,89 +498,89 @@ CheckOutBufferSpace(size_t bytes_needed, Conn *conn)
 int
 CheckInBufferSpace(size_t bytes_needed, Conn *conn)
 {
-	int			newsize = conn->inBufSize;
-	char	   *newbuf;
+    int			newsize = conn->inBufSize;
+    char	   *newbuf;
 
-	/* Quick exit if we have enough space */
-	if (bytes_needed <= (size_t) newsize)
-		return 0;
+    /* Quick exit if we have enough space */
+    if (bytes_needed <= (size_t) newsize)
+        return 0;
 
-	/*
-	 * Before concluding that we need to enlarge the buffer, left-justify
-	 * whatever is in it and recheck.  The caller's value of bytes_needed
-	 * includes any data to the left of inStart, but we can delete that in
-	 * preference to enlarging the buffer.  It's slightly ugly to have this
-	 * function do this, but it's better than making callers worry about it.
-	 */
-	bytes_needed -= conn->inStart;
+    /*
+     * Before concluding that we need to enlarge the buffer, left-justify
+     * whatever is in it and recheck.  The caller's value of bytes_needed
+     * includes any data to the left of inStart, but we can delete that in
+     * preference to enlarging the buffer.  It's slightly ugly to have this
+     * function do this, but it's better than making callers worry about it.
+     */
+    bytes_needed -= conn->inStart;
 
-	if (conn->inStart < conn->inEnd)
-	{
-		if (conn->inStart > 0)
-		{
-			memmove(conn->inBuffer, conn->inBuffer + conn->inStart,
-					conn->inEnd - conn->inStart);
-			conn->inEnd -= conn->inStart;
-			conn->inCursor -= conn->inStart;
-			conn->inStart = 0;
-		}
-	}
-	else
-	{
-		/* buffer is logically empty, reset it */
-		conn->inStart = conn->inCursor = conn->inEnd = 0;
-	}
+    if (conn->inStart < conn->inEnd)
+    {
+        if (conn->inStart > 0)
+        {
+            memmove(conn->inBuffer, conn->inBuffer + conn->inStart,
+                    conn->inEnd - conn->inStart);
+            conn->inEnd -= conn->inStart;
+            conn->inCursor -= conn->inStart;
+            conn->inStart = 0;
+        }
+    }
+    else
+    {
+        /* buffer is logically empty, reset it */
+        conn->inStart = conn->inCursor = conn->inEnd = 0;
+    }
 
-	/* Recheck whether we have enough space */
-	if (bytes_needed <= (size_t) newsize)
-		return 0;
+    /* Recheck whether we have enough space */
+    if (bytes_needed <= (size_t) newsize)
+        return 0;
 
-	/*
-	 * If we need to enlarge the buffer, we first try to double it in size; if
-	 * that doesn't work, enlarge in multiples of 8K.  This avoids thrashing
-	 * the malloc pool by repeated small enlargements.
-	 *
-	 * Note: tests for newsize > 0 are to catch integer overflow.
-	 */
-	do
-	{
-		newsize *= 2;
-	} while (newsize > 0 && bytes_needed > (size_t) newsize);
+    /*
+     * If we need to enlarge the buffer, we first try to double it in size; if
+     * that doesn't work, enlarge in multiples of 8K.  This avoids thrashing
+     * the malloc pool by repeated small enlargements.
+     *
+     * Note: tests for newsize > 0 are to catch integer overflow.
+     */
+    do
+    {
+        newsize *= 2;
+    } while (newsize > 0 && bytes_needed > (size_t) newsize);
 
-	if (newsize > 0 && bytes_needed <= (size_t) newsize)
-	{
-		newbuf = realloc(conn->inBuffer, newsize);
-		if (newbuf)
-		{
-			/* realloc succeeded */
-			conn->inBuffer = newbuf;
-			conn->inBufSize = newsize;
-			return 0;
-		}
-	}
+    if (newsize > 0 && bytes_needed <= (size_t) newsize)
+    {
+        newbuf = realloc(conn->inBuffer, newsize);
+        if (newbuf)
+        {
+            /* realloc succeeded */
+            conn->inBuffer = newbuf;
+            conn->inBufSize = newsize;
+            return 0;
+        }
+    }
 
-	newsize = conn->inBufSize;
-	do
-	{
-		newsize += 8192;
-	} while (newsize > 0 && bytes_needed > (size_t) newsize);
+    newsize = conn->inBufSize;
+    do
+    {
+        newsize += 8192;
+    } while (newsize > 0 && bytes_needed > (size_t) newsize);
 
-	if (newsize > 0 && bytes_needed <= (size_t) newsize)
-	{
-		newbuf = realloc(conn->inBuffer, newsize);
-		if (newbuf)
-		{
-			/* realloc succeeded */
-			conn->inBuffer = newbuf;
-			conn->inBufSize = newsize;
-			return 0;
-		}
-	}
+    if (newsize > 0 && bytes_needed <= (size_t) newsize)
+    {
+        newbuf = realloc(conn->inBuffer, newsize);
+        if (newbuf)
+        {
+            /* realloc succeeded */
+            conn->inBuffer = newbuf;
+            conn->inBufSize = newsize;
+            return 0;
+        }
+    }
 
-	/* realloc failed. Probably out of memory */
-	appendExpBufferStr(&conn->errorMessage,
-						 "cannot allocate memory for input buffer\n");
-	return EOF;
+    /* realloc failed. Probably out of memory */
+    appendExpBufferStr(&conn->errorMessage,
+                       "cannot allocate memory for input buffer\n");
+    return EOF;
 }
 
 /*
@@ -590,12 +590,12 @@ CheckInBufferSpace(size_t bytes_needed, Conn *conn)
 void
 ParseDone(Conn *conn, int newInStart)
 {
-	/* trace server-to-client message */
-	//if (conn->Pfdebug)
-	//	TraceOutputMessage(conn, conn->inBuffer + conn->inStart, false);
+    /* trace server-to-client message */
+    //if (conn->Pfdebug)
+    //	TraceOutputMessage(conn, conn->inBuffer + conn->inStart, false);
 
-	/* Mark message as done */
-	conn->inStart = newInStart;
+    /* Mark message as done */
+    conn->inStart = newInStart;
 }
 
 /*
@@ -620,32 +620,32 @@ ParseDone(Conn *conn, int newInStart)
 int
 PutMsgStart(char msg_type, Conn *conn)
 {
-	int			lenPos;
-	int			endPos;
+    int			lenPos;
+    int			endPos;
 
-	/* allow room for message type byte */
-	if (msg_type)
-		endPos = conn->outCount + 1;
-	else
-		endPos = conn->outCount;
+    /* allow room for message type byte */
+    if (msg_type)
+        endPos = conn->outCount + 1;
+    else
+        endPos = conn->outCount;
 
-	/* do we want a length word? */
-	lenPos = endPos;
-	/* allow room for message length */
-	endPos += 4;
+    /* do we want a length word? */
+    lenPos = endPos;
+    /* allow room for message length */
+    endPos += 4;
 
-	/* make sure there is room for message header */
-	if (CheckOutBufferSpace(endPos, conn))
-		return EOF;
-	/* okay, save the message type byte if any */
-	if (msg_type)
-		conn->outBuffer[conn->outCount] = msg_type;
-	/* set up the message pointers */
-	conn->outMsgStart = lenPos;
-	conn->outMsgEnd = endPos;
-	/* length word, if needed, will be filled in by PutMsgEnd */
+    /* make sure there is room for message header */
+    if (CheckOutBufferSpace(endPos, conn))
+        return EOF;
+    /* okay, save the message type byte if any */
+    if (msg_type)
+        conn->outBuffer[conn->outCount] = msg_type;
+    /* set up the message pointers */
+    conn->outMsgStart = lenPos;
+    conn->outMsgEnd = endPos;
+    /* length word, if needed, will be filled in by PutMsgEnd */
 
-	return 0;
+    return 0;
 }
 
 /*
@@ -656,14 +656,14 @@ PutMsgStart(char msg_type, Conn *conn)
 static int
 PutMsgBytes(const void *buf, size_t len, Conn *conn)
 {
-	/* make sure there is room for it */
-	if (CheckOutBufferSpace(conn->outMsgEnd + len, conn))
-		return EOF;
-	/* okay, save the data */
-	memcpy(conn->outBuffer + conn->outMsgEnd, buf, len);
-	conn->outMsgEnd += len;
-	/* no Pfdebug call here, caller should do it */
-	return 0;
+    /* make sure there is room for it */
+    if (CheckOutBufferSpace(conn->outMsgEnd + len, conn))
+        return EOF;
+    /* okay, save the data */
+    memcpy(conn->outBuffer + conn->outMsgEnd, buf, len);
+    conn->outMsgEnd += len;
+    /* no Pfdebug call here, caller should do it */
+    return 0;
 }
 
 /*
@@ -679,38 +679,38 @@ PutMsgBytes(const void *buf, size_t len, Conn *conn)
 int
 PutMsgEnd(Conn *conn)
 {
-	/* Fill in length word if needed */
-	if (conn->outMsgStart >= 0)
-	{
-		uint32		msgLen = conn->outMsgEnd - conn->outMsgStart;
+    /* Fill in length word if needed */
+    if (conn->outMsgStart >= 0)
+    {
+        uint32		msgLen = conn->outMsgEnd - conn->outMsgStart;
 
-		msgLen = db_hton32(msgLen);
-		memcpy(conn->outBuffer + conn->outMsgStart, &msgLen, 4);
-	}
+        msgLen = db_hton32(msgLen);
+        memcpy(conn->outBuffer + conn->outMsgStart, &msgLen, 4);
+    }
 
-	/* trace client-to-server message */
-	//if (conn->Pfdebug)
-	//{
-	//	if (conn->outCount < conn->outMsgStart)
-	//		TraceOutputMessage(conn, conn->outBuffer + conn->outCount, true);
-	//	else
-	//		TraceOutputNoTypeByteMessage(conn,
-	//									   conn->outBuffer + conn->outMsgStart);
-	//}
+    /* trace client-to-server message */
+    //if (conn->Pfdebug)
+    //{
+    //	if (conn->outCount < conn->outMsgStart)
+    //		TraceOutputMessage(conn, conn->outBuffer + conn->outCount, true);
+    //	else
+    //		TraceOutputNoTypeByteMessage(conn,
+    //									   conn->outBuffer + conn->outMsgStart);
+    //}
 
-	/* Make message eligible to send */
-	conn->outCount = conn->outMsgEnd;
+    /* Make message eligible to send */
+    conn->outCount = conn->outMsgEnd;
 
-	if (conn->outCount >= 8192)
-	{
-		int			toSend = conn->outCount - (conn->outCount % 8192);
+    if (conn->outCount >= 8192)
+    {
+        int			toSend = conn->outCount - (conn->outCount % 8192);
 
-		if (SendSome(conn, toSend) < 0)
-			return EOF;
-		/* in nonblock mode, don't complain if unable to send it all */
-	}
+        if (SendSome(conn, toSend) < 0)
+            return EOF;
+        /* in nonblock mode, don't complain if unable to send it all */
+    }
 
-	return 0;
+    return 0;
 }
 
 /* ----------
@@ -727,177 +727,177 @@ PutMsgEnd(Conn *conn)
 int
 ReadData(Conn *conn)
 {
-	int			someread = 0;
-	int			nread;
+    int			someread = 0;
+    int			nread;
 
-	if (conn->sock == DBINVALID_SOCKET)
-	{
-		db_append_conn_error(conn, "connection not open");
-		return -1;
-	}
+    if (conn->sock == DBINVALID_SOCKET)
+    {
+        db_append_conn_error(conn, "connection not open");
+        return -1;
+    }
 
-	/* Left-justify any data in the buffer to make room */
-	if (conn->inStart < conn->inEnd)
-	{
-		if (conn->inStart > 0)
-		{
-			memmove(conn->inBuffer, conn->inBuffer + conn->inStart,
-					conn->inEnd - conn->inStart);
-			conn->inEnd -= conn->inStart;
-			conn->inCursor -= conn->inStart;
-			conn->inStart = 0;
-		}
-	}
-	else
-	{
-		/* buffer is logically empty, reset it */
-		conn->inStart = conn->inCursor = conn->inEnd = 0;
-	}
+    /* Left-justify any data in the buffer to make room */
+    if (conn->inStart < conn->inEnd)
+    {
+        if (conn->inStart > 0)
+        {
+            memmove(conn->inBuffer, conn->inBuffer + conn->inStart,
+                    conn->inEnd - conn->inStart);
+            conn->inEnd -= conn->inStart;
+            conn->inCursor -= conn->inStart;
+            conn->inStart = 0;
+        }
+    }
+    else
+    {
+        /* buffer is logically empty, reset it */
+        conn->inStart = conn->inCursor = conn->inEnd = 0;
+    }
 
-	/*
-	 * If the buffer is fairly full, enlarge it. We need to be able to enlarge
-	 * the buffer in case a single message exceeds the initial buffer size. We
-	 * enlarge before filling the buffer entirely so as to avoid asking the
-	 * kernel for a partial packet. The magic constant here should be large
-	 * enough for a TCP packet or Unix pipe bufferload.  8K is the usual pipe
-	 * buffer size, so...
-	 */
-	if (conn->inBufSize - conn->inEnd < 8192)
-	{
-		if (CheckInBufferSpace(conn->inEnd + (size_t) 8192, conn))
-		{
-			/*
-			 * We don't insist that the enlarge worked, but we need some room
-			 */
-			if (conn->inBufSize - conn->inEnd < 100)
-				return -1;		/* errorMessage already set */
-		}
-	}
+    /*
+     * If the buffer is fairly full, enlarge it. We need to be able to enlarge
+     * the buffer in case a single message exceeds the initial buffer size. We
+     * enlarge before filling the buffer entirely so as to avoid asking the
+     * kernel for a partial packet. The magic constant here should be large
+     * enough for a TCP packet or Unix pipe bufferload.  8K is the usual pipe
+     * buffer size, so...
+     */
+    if (conn->inBufSize - conn->inEnd < 8192)
+    {
+        if (CheckInBufferSpace(conn->inEnd + (size_t) 8192, conn))
+        {
+            /*
+             * We don't insist that the enlarge worked, but we need some room
+             */
+            if (conn->inBufSize - conn->inEnd < 100)
+                return -1;		/* errorMessage already set */
+        }
+    }
 
-	/* OK, try to read some data */
+    /* OK, try to read some data */
 retry3:
-	nread = pg_GSS_read(conn, conn->inBuffer + conn->inEnd,
-						  conn->inBufSize - conn->inEnd);
-	if (nread < 0)
-	{
-		switch (SOCK_ERRNO)
-		{
-			case EINTR:
-				goto retry3;
+    nread = pg_GSS_read(conn, conn->inBuffer + conn->inEnd,
+                        conn->inBufSize - conn->inEnd);
+    if (nread < 0)
+    {
+        switch (SOCK_ERRNO)
+        {
+        case EINTR:
+            goto retry3;
 
-				/* Some systems return EAGAIN/EWOULDBLOCK for no data */
+            /* Some systems return EAGAIN/EWOULDBLOCK for no data */
 #ifdef EAGAIN
-			case EAGAIN:
-				return someread;
+        case EAGAIN:
+            return someread;
 #endif
 #if defined(EWOULDBLOCK) && (!defined(EAGAIN) || (EWOULDBLOCK != EAGAIN))
-			case EWOULDBLOCK:
-				return someread;
+        case EWOULDBLOCK:
+            return someread;
 #endif
 
-				/* We might get ECONNRESET etc here if connection failed */
-			case ALL_CONNECTION_FAILURE_ERRNOS:
-				goto definitelyFailed;
+            /* We might get ECONNRESET etc here if connection failed */
+        case ALL_CONNECTION_FAILURE_ERRNOS:
+            goto definitelyFailed;
 
-			default:
-				/* secure_read set the error message for us */
-				return -1;
-		}
-	}
-	if (nread > 0)
-	{
-		conn->inEnd += nread;
+        default:
+            /* secure_read set the error message for us */
+            return -1;
+        }
+    }
+    if (nread > 0)
+    {
+        conn->inEnd += nread;
 
-		/*
-		 * Hack to deal with the fact that some kernels will only give us back
-		 * 1 packet per recv() call, even if we asked for more and there is
-		 * more available.  If it looks like we are reading a long message,
-		 * loop back to recv() again immediately, until we run out of data or
-		 * buffer space.  Without this, the block-and-restart behavior of
-		 * libpq's higher levels leads to O(N^2) performance on long messages.
-		 *
-		 * Since we left-justified the data above, conn->inEnd gives the
-		 * amount of data already read in the current message.  We consider
-		 * the message "long" once we have acquired 32k ...
-		 */
-		if (conn->inEnd > 32768 &&
-			(conn->inBufSize - conn->inEnd) >= 8192)
-		{
-			someread = 1;
-			goto retry3;
-		}
-		return 1;
-	}
+        /*
+         * Hack to deal with the fact that some kernels will only give us back
+         * 1 packet per recv() call, even if we asked for more and there is
+         * more available.  If it looks like we are reading a long message,
+         * loop back to recv() again immediately, until we run out of data or
+         * buffer space.  Without this, the block-and-restart behavior of
+         * libpq's higher levels leads to O(N^2) performance on long messages.
+         *
+         * Since we left-justified the data above, conn->inEnd gives the
+         * amount of data already read in the current message.  We consider
+         * the message "long" once we have acquired 32k ...
+         */
+        if (conn->inEnd > 32768 &&
+            (conn->inBufSize - conn->inEnd) >= 8192)
+        {
+            someread = 1;
+            goto retry3;
+        }
+        return 1;
+    }
 
-	if (someread)
-		return 1;				/* got a zero read after successful tries */
+    if (someread)
+        return 1;				/* got a zero read after successful tries */
 
 
-	switch (ReadReady(conn))
-	{
-		case 0:
-			/* definitely no data available */
-			return 0;
-		case 1:
-			/* ready for read */
-			break;
-		default:
-			/* we override ReadReady's message with something more useful */
-			goto definitelyEOF;
-	}
+    switch (ReadReady(conn))
+    {
+    case 0:
+        /* definitely no data available */
+        return 0;
+    case 1:
+        /* ready for read */
+        break;
+    default:
+        /* we override ReadReady's message with something more useful */
+        goto definitelyEOF;
+    }
 
-	/*
-	 * Still not sure that it's EOF, because some data could have just
-	 * arrived.
-	 */
+    /*
+     * Still not sure that it's EOF, because some data could have just
+     * arrived.
+     */
 retry4:
-	nread = pg_GSS_read(conn, conn->inBuffer + conn->inEnd,
-						  conn->inBufSize - conn->inEnd);
-	if (nread < 0)
-	{
-		switch (SOCK_ERRNO)
-		{
-			case EINTR:
-				goto retry4;
+    nread = pg_GSS_read(conn, conn->inBuffer + conn->inEnd,
+                        conn->inBufSize - conn->inEnd);
+    if (nread < 0)
+    {
+        switch (SOCK_ERRNO)
+        {
+        case EINTR:
+            goto retry4;
 
-				/* Some systems return EAGAIN/EWOULDBLOCK for no data */
+            /* Some systems return EAGAIN/EWOULDBLOCK for no data */
 #ifdef EAGAIN
-			case EAGAIN:
-				return 0;
+        case EAGAIN:
+            return 0;
 #endif
 #if defined(EWOULDBLOCK) && (!defined(EAGAIN) || (EWOULDBLOCK != EAGAIN))
-			case EWOULDBLOCK:
-				return 0;
+        case EWOULDBLOCK:
+            return 0;
 #endif
 
-				/* We might get ECONNRESET etc here if connection failed */
-			case ALL_CONNECTION_FAILURE_ERRNOS:
-				goto definitelyFailed;
+            /* We might get ECONNRESET etc here if connection failed */
+        case ALL_CONNECTION_FAILURE_ERRNOS:
+            goto definitelyFailed;
 
-			default:
-				/* secure_read set the error message for us */
-				return -1;
-		}
-	}
-	if (nread > 0)
-	{
-		conn->inEnd += nread;
-		return 1;
-	}
+        default:
+            /* secure_read set the error message for us */
+            return -1;
+        }
+    }
+    if (nread > 0)
+    {
+        conn->inEnd += nread;
+        return 1;
+    }
 
-	/*
-	 * OK, we are getting a zero read even though select() says ready. This
-	 * means the connection has been closed.  Cope.
-	 */
+    /*
+     * OK, we are getting a zero read even though select() says ready. This
+     * means the connection has been closed.  Cope.
+     */
 definitelyEOF:
-	db_append_conn_error(conn, "server closed the connection unexpectedly\n"
-							"\tThis probably means the server terminated abnormally\n"
-							"\tbefore or while processing the request.");
+    db_append_conn_error(conn, "server closed the connection unexpectedly\n"
+                         "\tThis probably means the server terminated abnormally\n"
+                         "\tbefore or while processing the request.");
 
-	/* Come here if lower-level code already set a suitable errorMessage */
+    /* Come here if lower-level code already set a suitable errorMessage */
 definitelyFailed:
-	conn->status = CONNECTION_BAD;	/* No more connection to backend */
-	return -1;
+    conn->status = CONNECTION_BAD;	/* No more connection to backend */
+    return -1;
 }
 
 /*
@@ -924,162 +924,162 @@ definitelyFailed:
 static int
 SendSome(Conn *conn, int len)
 {
-	char	   *ptr = conn->outBuffer;
-	int			remaining = conn->outCount;
-	int			result = 0;
+    char	   *ptr = conn->outBuffer;
+    int			remaining = conn->outCount;
+    int			result = 0;
 
-	/*
-	 * If we already had a write failure, we will never again try to send data
-	 * on that connection.  Even if the kernel would let us, we've probably
-	 * lost message boundary sync with the server.  conn->write_failed
-	 * therefore persists until the connection is reset, and we just discard
-	 * all data presented to be written.  However, as long as we still have a
-	 * valid socket, we should continue to absorb data from the backend, so
-	 * that we can collect any final error messages.
-	 */
-	if (conn->write_failed)
-	{
-		/* conn->write_err_msg should be set up already */
-		conn->outCount = 0;
-		/* Absorb input data if any, and detect socket closure */
-		if (conn->sock != DBINVALID_SOCKET)
-		{
-			if (ReadData(conn) < 0)
-				return -1;
-		}
-		return 0;
-	}
+    /*
+     * If we already had a write failure, we will never again try to send data
+     * on that connection.  Even if the kernel would let us, we've probably
+     * lost message boundary sync with the server.  conn->write_failed
+     * therefore persists until the connection is reset, and we just discard
+     * all data presented to be written.  However, as long as we still have a
+     * valid socket, we should continue to absorb data from the backend, so
+     * that we can collect any final error messages.
+     */
+    if (conn->write_failed)
+    {
+        /* conn->write_err_msg should be set up already */
+        conn->outCount = 0;
+        /* Absorb input data if any, and detect socket closure */
+        if (conn->sock != DBINVALID_SOCKET)
+        {
+            if (ReadData(conn) < 0)
+                return -1;
+        }
+        return 0;
+    }
 
-	if (conn->sock == DBINVALID_SOCKET)
-	{
-		conn->write_failed = true;
-		/* Store error message in conn->write_err_msg, if possible */
-		/* (strdup failure is OK, we'll cope later) */
-		conn->write_err_msg = strdup(libpq_gettext("connection not open\n"));
-		/* Discard queued data; no chance it'll ever be sent */
-		conn->outCount = 0;
-		return 0;
-	}
+    if (conn->sock == DBINVALID_SOCKET)
+    {
+        conn->write_failed = true;
+        /* Store error message in conn->write_err_msg, if possible */
+        /* (strdup failure is OK, we'll cope later) */
+        conn->write_err_msg = strdup(libpq_gettext("connection not open\n"));
+        /* Discard queued data; no chance it'll ever be sent */
+        conn->outCount = 0;
+        return 0;
+    }
 
-	/* while there's still data to send */
-	while (len > 0)
-	{
-		int			sent;
+    /* while there's still data to send */
+    while (len > 0)
+    {
+        int			sent;
 
 #ifndef WIN32
-		sent = pg_GSS_write(conn, ptr, len);
+        sent = pg_GSS_write(conn, ptr, len);
 #else
 
-		/*
-		 * Windows can fail on large sends, per KB article Q201213. The
-		 * failure-point appears to be different in different versions of
-		 * Windows, but 64k should always be safe.
-		 */
-		sent = pg_GSS_write(conn, ptr, Min(len, 65536));
+        /*
+         * Windows can fail on large sends, per KB article Q201213. The
+         * failure-point appears to be different in different versions of
+         * Windows, but 64k should always be safe.
+         */
+        sent = pg_GSS_write(conn, ptr, Min(len, 65536));
 #endif
 
-		if (sent < 0)
-		{
-			/* Anything except EAGAIN/EWOULDBLOCK/EINTR is trouble */
-			switch (SOCK_ERRNO)
-			{
+        if (sent < 0)
+        {
+            /* Anything except EAGAIN/EWOULDBLOCK/EINTR is trouble */
+            switch (SOCK_ERRNO)
+            {
 #ifdef EAGAIN
-				case EAGAIN:
-					break;
+            case EAGAIN:
+                break;
 #endif
 #if defined(EWOULDBLOCK) && (!defined(EAGAIN) || (EWOULDBLOCK != EAGAIN))
-				case EWOULDBLOCK:
-					break;
+            case EWOULDBLOCK:
+                break;
 #endif
-				case EINTR:
-					continue;
+            case EINTR:
+                continue;
 
-				default:
-					/* Discard queued data; no chance it'll ever be sent */
-					conn->outCount = 0;
+            default:
+                /* Discard queued data; no chance it'll ever be sent */
+                conn->outCount = 0;
 
-					/* Absorb input data if any, and detect socket closure */
-					if (conn->sock != DBINVALID_SOCKET)
-					{
-						if (ReadData(conn) < 0)
-							return -1;
-					}
+                /* Absorb input data if any, and detect socket closure */
+                if (conn->sock != DBINVALID_SOCKET)
+                {
+                    if (ReadData(conn) < 0)
+                        return -1;
+                }
 
-					/*
-					 * Lower-level code should already have filled
-					 * conn->write_err_msg (and set conn->write_failed) or
-					 * conn->errorMessage.  In the former case, we pretend
-					 * there's no problem; the write_failed condition will be
-					 * dealt with later.  Otherwise, report the error now.
-					 */
-					if (conn->write_failed)
-						return 0;
-					else
-						return -1;
-			}
-		}
-		else
-		{
-			ptr += sent;
-			len -= sent;
-			remaining -= sent;
-		}
+                /*
+                 * Lower-level code should already have filled
+                 * conn->write_err_msg (and set conn->write_failed) or
+                 * conn->errorMessage.  In the former case, we pretend
+                 * there's no problem; the write_failed condition will be
+                 * dealt with later.  Otherwise, report the error now.
+                 */
+                if (conn->write_failed)
+                    return 0;
+                else
+                    return -1;
+            }
+        }
+        else
+        {
+            ptr += sent;
+            len -= sent;
+            remaining -= sent;
+        }
 
-		if (len > 0)
-		{
-			/*
-			 * We didn't send it all, wait till we can send more.
-			 *
-			 * There are scenarios in which we can't send data because the
-			 * communications channel is full, but we cannot expect the server
-			 * to clear the channel eventually because it's blocked trying to
-			 * send data to us.  (This can happen when we are sending a large
-			 * amount of COPY data, and the server has generated lots of
-			 * NOTICE responses.)  To avoid a deadlock situation, we must be
-			 * prepared to accept and buffer incoming data before we try
-			 * again.  Furthermore, it is possible that such incoming data
-			 * might not arrive until after we've gone to sleep.  Therefore,
-			 * we wait for either read ready or write ready.
-			 *
-			 * In non-blocking mode, we don't wait here directly, but return 1
-			 * to indicate that data is still pending.  The caller should wait
-			 * for both read and write ready conditions, and call
-			 * consumeInput() on read ready, but just in case it doesn't, we
-			 * call ReadData() ourselves before returning.  That's not
-			 * enough if the data has not arrived yet, but it's the best we
-			 * can do, and works pretty well in practice.  (The documentation
-			 * used to say that you only need to wait for write-ready, so
-			 * there are still plenty of applications like that out there.)
-			 *
-			 * Note that errors here don't result in write_failed becoming
-			 * set.
-			 */
-			if (ReadData(conn) < 0)
-			{
-				result = -1;	/* error message already set up */
-				break;
-			}
+        if (len > 0)
+        {
+            /*
+             * We didn't send it all, wait till we can send more.
+             *
+             * There are scenarios in which we can't send data because the
+             * communications channel is full, but we cannot expect the server
+             * to clear the channel eventually because it's blocked trying to
+             * send data to us.  (This can happen when we are sending a large
+             * amount of COPY data, and the server has generated lots of
+             * NOTICE responses.)  To avoid a deadlock situation, we must be
+             * prepared to accept and buffer incoming data before we try
+             * again.  Furthermore, it is possible that such incoming data
+             * might not arrive until after we've gone to sleep.  Therefore,
+             * we wait for either read ready or write ready.
+             *
+             * In non-blocking mode, we don't wait here directly, but return 1
+             * to indicate that data is still pending.  The caller should wait
+             * for both read and write ready conditions, and call
+             * consumeInput() on read ready, but just in case it doesn't, we
+             * call ReadData() ourselves before returning.  That's not
+             * enough if the data has not arrived yet, but it's the best we
+             * can do, and works pretty well in practice.  (The documentation
+             * used to say that you only need to wait for write-ready, so
+             * there are still plenty of applications like that out there.)
+             *
+             * Note that errors here don't result in write_failed becoming
+             * set.
+             */
+            if (ReadData(conn) < 0)
+            {
+                result = -1;	/* error message already set up */
+                break;
+            }
 
-			if (Isnonblocking(conn))
-			{
-				result = 1;
-				break;
-			}
+            if (Isnonblocking(conn))
+            {
+                result = 1;
+                break;
+            }
 
-			if (Wait(true, true, conn))
-			{
-				result = -1;
-				break;
-			}
-		}
-	}
+            if (Wait(true, true, conn))
+            {
+                result = -1;
+                break;
+            }
+        }
+    }
 
-	/* shift the remaining contents of the buffer */
-	if (remaining > 0)
-		memmove(conn->outBuffer, ptr, remaining);
-	conn->outCount = remaining;
+    /* shift the remaining contents of the buffer */
+    if (remaining > 0)
+        memmove(conn->outBuffer, ptr, remaining);
+    conn->outCount = remaining;
 
-	return result;
+    return result;
 }
 
 
@@ -1093,15 +1093,15 @@ SendSome(Conn *conn, int len)
 int
 Flush(Conn *conn)
 {
-	if (conn->outCount > 0)
-	{
-		if (conn->Pfdebug)
-			fflush(conn->Pfdebug);
+    if (conn->outCount > 0)
+    {
+        if (conn->Pfdebug)
+            fflush(conn->Pfdebug);
 
-		return SendSome(conn, conn->outCount);
-	}
+        return SendSome(conn, conn->outCount);
+    }
 
-	return 0;
+    return 0;
 }
 
 
@@ -1118,7 +1118,7 @@ Flush(Conn *conn)
 int
 Wait(int forRead, int forWrite, Conn *conn)
 {
-	return WaitTimed(forRead, forWrite, conn, -1);
+    return WaitTimed(forRead, forWrite, conn, -1);
 }
 
 /*
@@ -1134,20 +1134,20 @@ Wait(int forRead, int forWrite, Conn *conn)
 int
 WaitTimed(int forRead, int forWrite, Conn *conn, pg_usec_time_t end_time)
 {
-	int			result;
+    int			result;
 
-	result = SocketCheck(conn, forRead, forWrite, end_time);
+    result = SocketCheck(conn, forRead, forWrite, end_time);
 
-	if (result < 0)
-		return -1;				/* errorMessage is already set */
+    if (result < 0)
+        return -1;				/* errorMessage is already set */
 
-	if (result == 0)
-	{
-		db_append_conn_error(conn, "timeout expired");
-		return 1;
-	}
+    if (result == 0)
+    {
+        db_append_conn_error(conn, "timeout expired");
+        return 1;
+    }
 
-	return 0;
+    return 0;
 }
 
 /*
@@ -1157,7 +1157,7 @@ WaitTimed(int forRead, int forWrite, Conn *conn, pg_usec_time_t end_time)
 int
 ReadReady(Conn *conn)
 {
-	return SocketCheck(conn, 1, 0, 0);
+    return SocketCheck(conn, 1, 0, 0);
 }
 
 /*
@@ -1167,7 +1167,7 @@ ReadReady(Conn *conn)
 int
 WriteReady(Conn *conn)
 {
-	return SocketCheck(conn, 0, 1, 0);
+    return SocketCheck(conn, 0, 1, 0);
 }
 
 /*
@@ -1178,31 +1178,31 @@ WriteReady(Conn *conn)
 static int
 SocketCheck(Conn *conn, int forRead, int forWrite, pg_usec_time_t end_time)
 {
-	int			result;
+    int			result;
 
-	if (!conn)
-		return -1;
-	if (conn->sock == DBINVALID_SOCKET)
-	{
-		db_append_conn_error(conn, "invalid socket");
-		return -1;
-	}
+    if (!conn)
+        return -1;
+    if (conn->sock == DBINVALID_SOCKET)
+    {
+        db_append_conn_error(conn, "invalid socket");
+        return -1;
+    }
 
 
-	/* We will retry as long as we get EINTR */
-	do
-		result = socketPoll(conn->sock, forRead, forWrite, end_time);
-	while (result < 0 && SOCK_ERRNO == EINTR);
+    /* We will retry as long as we get EINTR */
+    do
+        result = socketPoll(conn->sock, forRead, forWrite, end_time);
+    while (result < 0 && SOCK_ERRNO == EINTR);
 
-	if (result < 0)
-	{
-		char		sebuf[DB_STRERROR_R_BUFLEN];
+    if (result < 0)
+    {
+        char		sebuf[DB_STRERROR_R_BUFLEN];
 
-		db_append_conn_error(conn, "%s() failed: %d", "select",
-								SOCK_STRERROR(SOCK_ERRNO, sebuf, sizeof(sebuf)));
-	}
+        db_append_conn_error(conn, "%s() failed: %d", "select",
+                             SOCK_STRERROR(SOCK_ERRNO, sebuf, sizeof(sebuf)));
+    }
 
-	return result;
+    return result;
 }
 
 /*
@@ -1214,10 +1214,10 @@ SocketCheck(Conn *conn, int forRead, int forWrite, pg_usec_time_t end_time)
 pg_usec_time_t
 getCurrentTimeUSec(void)
 {
-	struct timeval tval;
+    struct timeval tval;
 
-	gettimeofday(&tval, NULL);
-	return (pg_usec_time_t) tval.tv_sec * 1000000 + tval.tv_usec;
+    gettimeofday(&tval, NULL);
+    return (pg_usec_time_t) tval.tv_sec * 1000000 + tval.tv_usec;
 }
 
 
@@ -1238,88 +1238,88 @@ getCurrentTimeUSec(void)
 int
 socketPoll(int sock, int forRead, int forWrite, pg_usec_time_t end_time)
 {
-	/* We use poll(2) if available, otherwise select(2) */
+    /* We use poll(2) if available, otherwise select(2) */
 #ifdef HAVE_POLL
-	struct pollfd input_fd;
-	int			timeout_ms;
+    struct pollfd input_fd;
+    int			timeout_ms;
 
-	if (!forRead && !forWrite)
-		return 0;
+    if (!forRead && !forWrite)
+        return 0;
 
-	input_fd.fd = sock;
-	input_fd.events = POLLERR;
-	input_fd.revents = 0;
+    input_fd.fd = sock;
+    input_fd.events = POLLERR;
+    input_fd.revents = 0;
 
-	if (forRead)
-		input_fd.events |= POLLIN;
-	if (forWrite)
-		input_fd.events |= POLLOUT;
+    if (forRead)
+        input_fd.events |= POLLIN;
+    if (forWrite)
+        input_fd.events |= POLLOUT;
 
-	/* Compute appropriate timeout interval */
-	if (end_time == -1)
-		timeout_ms = -1;
-	else if (end_time == 0)
-		timeout_ms = 0;
-	else
-	{
-		pg_usec_time_t now = getCurrentTimeUSec();
+    /* Compute appropriate timeout interval */
+    if (end_time == -1)
+        timeout_ms = -1;
+    else if (end_time == 0)
+        timeout_ms = 0;
+    else
+    {
+        pg_usec_time_t now = getCurrentTimeUSec();
 
-		if (end_time > now)
-			timeout_ms = (end_time - now) / 1000;
-		else
-			timeout_ms = 0;
-	}
+        if (end_time > now)
+            timeout_ms = (end_time - now) / 1000;
+        else
+            timeout_ms = 0;
+    }
 
-	return poll(&input_fd, 1, timeout_ms);
+    return poll(&input_fd, 1, timeout_ms);
 #else							/* !HAVE_POLL */
 
-	fd_set		input_mask;
-	fd_set		output_mask;
-	fd_set		except_mask;
-	struct timeval timeout;
-	struct timeval *ptr_timeout;
+    fd_set		input_mask;
+    fd_set		output_mask;
+    fd_set		except_mask;
+    struct timeval timeout;
+    struct timeval *ptr_timeout;
 
-	if (!forRead && !forWrite)
-		return 0;
+    if (!forRead && !forWrite)
+        return 0;
 
-	FD_ZERO(&input_mask);
-	FD_ZERO(&output_mask);
-	FD_ZERO(&except_mask);
-	if (forRead)
-		FD_SET(sock, &input_mask);
+    FD_ZERO(&input_mask);
+    FD_ZERO(&output_mask);
+    FD_ZERO(&except_mask);
+    if (forRead)
+        FD_SET(sock, &input_mask);
 
-	if (forWrite)
-		FD_SET(sock, &output_mask);
-	FD_SET(sock, &except_mask);
+    if (forWrite)
+        FD_SET(sock, &output_mask);
+    FD_SET(sock, &except_mask);
 
-	/* Compute appropriate timeout interval */
-	if (end_time == -1)
-		ptr_timeout = NULL;
-	else if (end_time == 0)
-	{
-		timeout.tv_sec = 0;
-		timeout.tv_usec = 0;
-		ptr_timeout = &timeout;
-	}
-	else
-	{
-		pg_usec_time_t now = getCurrentTimeUSec();
+    /* Compute appropriate timeout interval */
+    if (end_time == -1)
+        ptr_timeout = NULL;
+    else if (end_time == 0)
+    {
+        timeout.tv_sec = 0;
+        timeout.tv_usec = 0;
+        ptr_timeout = &timeout;
+    }
+    else
+    {
+        pg_usec_time_t now = getCurrentTimeUSec();
 
-		if (end_time > now)
-		{
-			timeout.tv_sec = (end_time - now) / 1000000;
-			timeout.tv_usec = (end_time - now) % 1000000;
-		}
-		else
-		{
-			timeout.tv_sec = 0;
-			timeout.tv_usec = 0;
-		}
-		ptr_timeout = &timeout;
-	}
+        if (end_time > now)
+        {
+            timeout.tv_sec = (end_time - now) / 1000000;
+            timeout.tv_usec = (end_time - now) % 1000000;
+        }
+        else
+        {
+            timeout.tv_sec = 0;
+            timeout.tv_usec = 0;
+        }
+        ptr_timeout = &timeout;
+    }
 
-	return select(sock + 1, &input_mask, &output_mask,
-				  &except_mask, ptr_timeout);
+    return select(sock + 1, &input_mask, &output_mask,
+                  &except_mask, ptr_timeout);
 #endif							/* HAVE_POLL */
 }
 
@@ -1330,64 +1330,64 @@ socketPoll(int sock, int forRead, int forWrite, pg_usec_time_t end_time)
 static void
 libpq_binddomain(void)
 {
-	/*
-	 * At least on Windows, there are gettext implementations that fail if
-	 * multiple threads call bindtextdomain() concurrently.  Use a mutex and
-	 * flag variable to ensure that we call it just once per process.  It is
-	 * not known that similar bugs exist on non-Windows platforms, but we
-	 * might as well do it the same way everywhere.
-	 */
-	static volatile bool already_bound = false;
-	static pthread_mutex_t binddomain_mutex = PTHREAD_MUTEX_INITIALIZER;
+    /*
+     * At least on Windows, there are gettext implementations that fail if
+     * multiple threads call bindtextdomain() concurrently.  Use a mutex and
+     * flag variable to ensure that we call it just once per process.  It is
+     * not known that similar bugs exist on non-Windows platforms, but we
+     * might as well do it the same way everywhere.
+     */
+    static volatile bool already_bound = false;
+    static pthread_mutex_t binddomain_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-	if (!already_bound)
-	{
-		/* bindtextdomain() does not preserve errno */
+    if (!already_bound)
+    {
+        /* bindtextdomain() does not preserve errno */
 #ifdef WIN32
-		int			save_errno = GetLastError();
+        int			save_errno = GetLastError();
 #else
-		int			save_errno = errno;
+        int			save_errno = errno;
 #endif
 
-		(void) pthread_mutex_lock(&binddomain_mutex);
+        (void) pthread_mutex_lock(&binddomain_mutex);
 
-		if (!already_bound)
-		{
-			const char *ldir;
+        if (!already_bound)
+        {
+            const char *ldir;
 
-			/*
-			 * No relocatable lookup here because the calling executable could
-			 * be anywhere
-			 */
-			ldir = getenv("PGLOCALEDIR");
-			if (!ldir)
-				ldir = LOCALEDIR;
-			bindtextdomain(PG_TEXTDOMAIN("libpq"), ldir);
-			already_bound = true;
-		}
+            /*
+             * No relocatable lookup here because the calling executable could
+             * be anywhere
+             */
+            ldir = getenv("PGLOCALEDIR");
+            if (!ldir)
+                ldir = LOCALEDIR;
+            bindtextdomain(PG_TEXTDOMAIN("libpq"), ldir);
+            already_bound = true;
+        }
 
-		(void) pthread_mutex_unlock(&binddomain_mutex);
+        (void) pthread_mutex_unlock(&binddomain_mutex);
 
 #ifdef WIN32
-		SetLastError(save_errno);
+        SetLastError(save_errno);
 #else
-		errno = save_errno;
+        errno = save_errno;
 #endif
-	}
+    }
 }
 
 char *
 libpq_gettext(const char *msgid)
 {
-	libpq_binddomain();
-	return dgettext(PG_TEXTDOMAIN("libpq"), msgid);
+    libpq_binddomain();
+    return dgettext(PG_TEXTDOMAIN("libpq"), msgid);
 }
 
 char *
 libpq_ngettext(const char *msgid, const char *msgid_plural, unsigned long n)
 {
-	libpq_binddomain();
-	return dngettext(PG_TEXTDOMAIN("libpq"), msgid, msgid_plural, n);
+    libpq_binddomain();
+    return dngettext(PG_TEXTDOMAIN("libpq"), msgid, msgid_plural, n);
 }
 
 #endif							/* ENABLE_NLS */
@@ -1401,25 +1401,25 @@ libpq_ngettext(const char *msgid, const char *msgid_plural, unsigned long n)
 void
 db_append_error(ExpBuffer errorMessage, const char *fmt,...)
 {
-	int			save_errno = errno;
-	bool		done;
-	va_list		args;
+    int			save_errno = errno;
+    bool		done;
+    va_list		args;
 
-	Assert(fmt[strlen(fmt) - 1] != '\n');
+    Assert(fmt[strlen(fmt) - 1] != '\n');
 
-	if (ExpBufferBroken(errorMessage))
-		return;					/* already failed */
+    if (ExpBufferBroken(errorMessage))
+        return;					/* already failed */
 
-	/* Loop in case we have to retry after enlarging the buffer. */
-	do
-	{
-		errno = save_errno;
-		va_start(args, fmt);
-		done = appendExpBufferVA(errorMessage, libpq_gettext(fmt), args);
-		va_end(args);
-	} while (!done);
+    /* Loop in case we have to retry after enlarging the buffer. */
+    do
+    {
+        errno = save_errno;
+        va_start(args, fmt);
+        done = appendExpBufferVA(errorMessage, libpq_gettext(fmt), args);
+        va_end(args);
+    } while (!done);
 
-	appendExpBufferChar(errorMessage, '\n');
+    appendExpBufferChar(errorMessage, '\n');
 }
 
 /*
@@ -1430,23 +1430,23 @@ db_append_error(ExpBuffer errorMessage, const char *fmt,...)
 void
 db_append_conn_error(Conn *conn, const char *fmt,...)
 {
-	int			save_errno = errno;
-	bool		done;
-	va_list		args;
+    int			save_errno = errno;
+    bool		done;
+    va_list		args;
 
-	Assert(fmt[strlen(fmt) - 1] != '\n');
+    Assert(fmt[strlen(fmt) - 1] != '\n');
 
-	if (ExpBufferBroken(&conn->errorMessage))
-		return;					/* already failed */
+    if (ExpBufferBroken(&conn->errorMessage))
+        return;					/* already failed */
 
-	/* Loop in case we have to retry after enlarging the buffer. */
-	do
-	{
-		errno = save_errno;
-		va_start(args, fmt);
-		done = appendExpBufferVA(&conn->errorMessage, libpq_gettext(fmt), args);
-		va_end(args);
-	} while (!done);
+    /* Loop in case we have to retry after enlarging the buffer. */
+    do
+    {
+        errno = save_errno;
+        va_start(args, fmt);
+        done = appendExpBufferVA(&conn->errorMessage, libpq_gettext(fmt), args);
+        va_end(args);
+    } while (!done);
 
-	appendExpBufferChar(&conn->errorMessage, '\n');
+    appendExpBufferChar(&conn->errorMessage, '\n');
 }

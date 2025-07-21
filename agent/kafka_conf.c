@@ -95,7 +95,7 @@ ConfigParam kafka_param_configs[] = {
     { "num.network.threads", "^(kafka[._-])?num[._-]network[._-]threads$", "server.properties" },
     { "log.retention.ms", "^(kafka[._-])?log[._-]retention[._-]ms$", "server.properties" },
     { "log.segment.bytes", "^(kafka[._-])?log[._-]segment[._-]bytes$", "server.properties" },
-        { "xasecure.audit.is.enabled", "^(kafka[._-])?xasecure[._-]audit[._-]is[._-]enabled$", "ranger-kafka-audit.xml" },
+    { "xasecure.audit.is.enabled", "^(kafka[._-])?xasecure[._-]audit[._-]is[._-]enabled$", "ranger-kafka-audit.xml" },
     { "xasecure.audit.hdfs.is.enabled", "^(kafka[._-])?xasecure[._-]audit[._-]hdfs[._-]is[._-]enabled$", "ranger-kafka-audit.xml" },
     { "xasecure.audit.hdfs.is.async", "^(kafka[._-])?xasecure[._-]audit[._-]hdfs[._-]is[._-]async$", "ranger-kafka-audit.xml" },
     { "xasecure.audit.hdfs.async.max.queue.size", "^(kafka[._-])?xasecure[._-]audit[._-]hdfs[._-]async[._-]max[._-]queue[._-]size$", "ranger-kafka-audit.xml" },
@@ -126,7 +126,7 @@ ConfigParam kafka_param_configs[] = {
     { "xasecure.audit.solr.async.max.queue.size", "^(kafka[._-])?xasecure[._-]audit[._-]solr[._-]async[._-]max[._-]queue[._-]size$", "ranger-kafka-audit.xml" },
     { "xasecure.audit.solr.async.max.flush.interval.ms", "^(kafka[._-])?xasecure[._-]audit[._-]solr[._-]async[._-]max[._-]flush[._-]interval[._-]ms$", "ranger-kafka-audit.xml" },
     { "xasecure.audit.solr.solr_url", "^(kafka[._-])?xasecure[._-]audit[._-]solr[._-]solr[._-]url$", "ranger-kafka-audit.xml" },
-        // New parameters from ranger-kafka-security.xml
+    // New parameters from ranger-kafka-security.xml
     { "ranger.plugin.kafka.service.name", "^(kafka[._-])?ranger[._-]plugin[._-]kafka[._-]service[._-]name$", "ranger-kafka-security.xml" },
     { "ranger.plugin.kafka.policy.source.impl", "^(kafka[._-])?ranger[._-]plugin[._-]kafka[._-]policy[._-]source[._-]impl$", "ranger-kafka-security.xml" },
     { "ranger.plugin.kafka.policy.rest.url", "^(kafka[._-])?ranger[._-]plugin[._-]kafka[._-]policy[._-]rest[._-]url$", "ranger-kafka-security.xml" },
@@ -135,14 +135,14 @@ ConfigParam kafka_param_configs[] = {
     { "ranger.plugin.kafka.policy.cache.dir", "^(kafka[._-])?ranger[._-]plugin[._-]kafka[._-]policy[._-]cache[._-]dir$", "ranger-kafka-security.xml" },
     { "ranger.plugin.kafka.policy.rest.client.connection.timeoutMs", "^(kafka[._-])?ranger[._-]plugin[._-]kafka[._-]policy[._-]rest[._-]client[._-]connection[._-]timeoutMs$", "ranger-kafka-security.xml" },
     { "ranger.plugin.kafka.policy.rest.client.read.timeoutMs", "^(kafka[._-])?ranger[._-]plugin[._-]kafka[._-]policy[._-]rest[._-]client[._-]read[._-]timeoutMs$", "ranger-kafka-security.xml" },
-        // New parameters from ranger-kafka-policymgr-ssl.xml
+    // New parameters from ranger-kafka-policymgr-ssl.xml
     { "xasecure.policymgr.clientssl.keystore", "^(kafka[._-])?xasecure[._-]policymgr[._-]clientssl[._-]keystore$", "ranger-kafka-policymgr-ssl.xml" },
     { "xasecure.policymgr.clientssl.keystore.password", "^(kafka[._-])?xasecure[._-]policymgr[._-]clientssl[._-]keystore[._-]password$", "ranger-kafka-policymgr-ssl.xml" },
     { "xasecure.policymgr.clientssl.truststore", "^(kafka[._-])?xasecure[._-]policymgr[._-]clientssl[._-]truststore$", "ranger-kafka-policymgr-ssl.xml" },
     { "xasecure.policymgr.clientssl.truststore.password", "^(kafka[._-])?xasecure[._-]policymgr[._-]clientssl[._-]truststore[._-]password$", "ranger-kafka-policymgr-ssl.xml" },
     { "xasecure.policymgr.clientssl.keystore.credential.file", "^(kafka[._-])?xasecure[._-]policymgr[._-]clientssl[._-]keystore[._-]credential[._-]file$", "ranger-kafka-policymgr-ssl.xml" },
     { "xasecure.policymgr.clientssl.truststore.credential.file", "^(kafka[._-])?xasecure[._-]policymgr[._-]clientssl[._-]truststore[._-]credential[._-]file$", "ranger-kafka-policymgr-ssl.xml" },
-        
+
     // New Settings from log4j.properties
     { "log4j.rootLogger", "^log4j[._-]rootLogger$", "log4j.properties" },
     { "log4j.appender.stdout", "^log4j[._-]appender[._-]stdout$", "log4j.properties" },
@@ -201,11 +201,11 @@ ConfigParam kafka_param_configs[] = {
 ValidationResult validateKafkaConfigParam(const char *param_name, const char *value) {
     // Check if parameter exists
     bool param_exists = true;
- //   for (size_t i = 0; i < sizeof(kafka_param_configs)/sizeof(kafka_param_configs[0]); i++) {
-   //     if (strcmp(param_name, kafka_param_configs[i].normalized_name) == 0) {
-     //       param_exists = true;
-       //     break;
-       // }
+    //   for (size_t i = 0; i < sizeof(kafka_param_configs)/sizeof(kafka_param_configs[0]); i++) {
+    //     if (strcmp(param_name, kafka_param_configs[i].normalized_name) == 0) {
+    //       param_exists = true;
+    //     break;
+    // }
     //}
     if (!param_exists) return ERROR_PARAM_NOT_FOUND;
 
@@ -226,8 +226,8 @@ ValidationResult validateKafkaConfigParam(const char *param_name, const char *va
         free(copy);
     }
     else if (strcmp(param_name, "acks") == 0) {
-        if (strcmp(value, "all") != 0 && 
-            strcmp(value, "0") != 0 && 
+        if (strcmp(value, "all") != 0 &&
+            strcmp(value, "0") != 0 &&
             strcmp(value, "1") != 0)
             return ERROR_CONSTRAINT_VIOLATED;
     }
@@ -269,8 +269,8 @@ ValidationResult validateKafkaConfigParam(const char *param_name, const char *va
              strcmp(param_name, "message.max.bytes") == 0) {
         char *end;
         strtoll(value, &end, 10);
-        if (*end != '\0' && !(end[0] == 'k' || end[0] == 'K' || 
-                              end[0] == 'm' || end[0] == 'M' || 
+        if (*end != '\0' && !(end[0] == 'k' || end[0] == 'K' ||
+                              end[0] == 'm' || end[0] == 'M' ||
                               end[0] == 'g' || end[0] == 'G'))
             return ERROR_INVALID_FORMAT;
     }
@@ -463,20 +463,20 @@ ConfigStatus modify_kafka_config(const char *param, const char *value, const cha
     if (!found) {
         return FILE_NOT_FOUND;
     }
-    
+
     if (strcmp(config_file, "ranger-kafka-audit.xml") == 0 ||
         strcmp(config_file, "ranger-kafka-security.xml") == 0 ||
         strcmp(config_file, "ranger-kafka-policymgr-ssl.xml") == 0) {
         updateHadoopConfigXML(filepath, param, value);
         return SUCCESS;
     }
-    
+
     if (strcmp(config_file, "log4j.properties") ==0 ||
-    strcmp(config_file, "ranger-kafka-plugin.properties") ==0) {
+        strcmp(config_file, "ranger-kafka-plugin.properties") ==0) {
         configure_hadoop_property(filepath, param, value);
         return SUCCESS;
     }
-    
+
     // Read the entire file into memory
     FILE *file = fopen(filepath, "r");
     if (!file) {

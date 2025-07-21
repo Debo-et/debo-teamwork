@@ -24,7 +24,7 @@ ConfigParam spark_param_configs[] = {
     { "spark.sql.autoBroadcastJoinThreshold", "^(spark[._-])?sql[._-]autoBroadcastJoinThreshold$", "spark-defaults.conf" },
     { "spark.memory.fraction", "^(spark[._-])?memory[._-]fraction$", "spark-defaults.conf" },
     { "spark.locality.wait", "^(spark[._-])?locality[._-]wait$", "spark-defaults.conf" },
-    
+
     // Additional comprehensive configurations
     { "spark.driver.cores", "^(spark[._-])?driver[._-]cores$", "spark-defaults.conf" },
     { "spark.memory.offHeap.enabled", "^(spark[._-])?memory[._-]offHeap[._-]enabled$", "spark-defaults.conf" },
@@ -87,7 +87,7 @@ ConfigParam spark_param_configs[] = {
     { "logger.RetryingHMSHandler.level", "^logger[._-]RetryingHMSHandler[._-]level$", "spark-log4j.properties" },
     { "logger.FunctionRegistry.name", "^logger[._-]FunctionRegistry[._-]name$", "spark-log4j.properties" },
     { "logger.FunctionRegistry.level", "^logger[._-]FunctionRegistry[._-]level$", "spark-log4j.properties" },
-    
+
     // Metrics.properties configurations (144 new entries)
     // Class properties for sinks
     { "*.sink.console.class", "^\\*[._-]sink[._-]console[._-]class$", "metrics.properties" },
@@ -120,7 +120,7 @@ ConfigParam spark_param_configs[] = {
     { "executor.sink.graphite.class", "^executor[._-]sink[._-]graphite[._-]class$", "metrics.properties" },
     { "driver.sink.graphite.class", "^driver[._-]sink[._-]graphite[._-]class$", "metrics.properties" },
     { "applications.sink.graphite.class", "^applications[._-]sink[._-]graphite[._-]class$", "metrics.properties" },
-    
+
     // Console sink options
     { "*.sink.console.period", "^\\*[._-]sink[._-]console[._-]period$", "metrics.properties" },
     { "master.sink.console.period", "^master[._-]sink[._-]console[._-]period$", "metrics.properties" },
@@ -134,7 +134,7 @@ ConfigParam spark_param_configs[] = {
     { "executor.sink.console.unit", "^executor[._-]sink[._-]console[._-]unit$", "metrics.properties" },
     { "driver.sink.console.unit", "^driver[._-]sink[._-]console[._-]unit$", "metrics.properties" },
     { "applications.sink.console.unit", "^applications[._-]sink[._-]console[._-]unit$", "metrics.properties" },
-    
+
     // CSV sink options
     { "*.sink.csv.period", "^\\*[._-]sink[._-]csv[._-]period$", "metrics.properties" },
     { "master.sink.csv.period", "^master[._-]sink[._-]csv[._-]period$", "metrics.properties" },
@@ -154,7 +154,7 @@ ConfigParam spark_param_configs[] = {
     { "executor.sink.csv.directory", "^executor[._-]sink[._-]csv[._-]directory$", "metrics.properties" },
     { "driver.sink.csv.directory", "^driver[._-]sink[._-]csv[._-]directory$", "metrics.properties" },
     { "applications.sink.csv.directory", "^applications[._-]sink[._-]csv[._-]directory$", "metrics.properties" },
-    
+
     // Ganglia sink options
     { "*.sink.ganglia.host", "^\\*[._-]sink[._-]ganglia[._-]host$", "metrics.properties" },
     { "master.sink.ganglia.host", "^master[._-]sink[._-]ganglia[._-]host$", "metrics.properties" },
@@ -192,7 +192,7 @@ ConfigParam spark_param_configs[] = {
     { "executor.sink.ganglia.mode", "^executor[._-]sink[._-]ganglia[._-]mode$", "metrics.properties" },
     { "driver.sink.ganglia.mode", "^driver[._-]sink[._-]ganglia[._-]mode$", "metrics.properties" },
     { "applications.sink.ganglia.mode", "^applications[._-]sink[._-]ganglia[._-]mode$", "metrics.properties" },
-    
+
     // Graphite sink options
     { "*.sink.graphite.host", "^\\*[._-]sink[._-]graphite[._-]host$", "metrics.properties" },
     { "master.sink.graphite.host", "^master[._-]sink[._-]graphite[._-]host$", "metrics.properties" },
@@ -224,7 +224,7 @@ ConfigParam spark_param_configs[] = {
     { "executor.sink.graphite.prefix", "^executor[._-]sink[._-]graphite[._-]prefix$", "metrics.properties" },
     { "driver.sink.graphite.prefix", "^driver[._-]sink[._-]graphite[._-]prefix$", "metrics.properties" },
     { "applications.sink.graphite.prefix", "^applications[._-]sink[._-]graphite[._-]prefix$", "metrics.properties" },
-    
+
     // MetricsServlet options
     { "*.sink.MetricsServlet.path", "^\\*[._-]sink[._-]metricsservlet[._-]path$", "metrics.properties" },
     { "master.sink.MetricsServlet.path", "^master[._-]sink[._-]metricsservlet[._-]path$", "metrics.properties" },
@@ -238,7 +238,7 @@ ConfigParam spark_param_configs[] = {
     { "executor.sink.MetricsServlet.sample", "^executor[._-]sink[._-]metricsservlet[._-]sample$", "metrics.properties" },
     { "driver.sink.MetricsServlet.sample", "^driver[._-]sink[._-]metricsservlet[._-]sample$", "metrics.properties" },
     { "applications.sink.MetricsServlet.sample", "^applications[._-]sink[._-]metricsservlet[._-]sample$", "metrics.properties" },
-    
+
     // JVM source class
     { "*.source.jvm.class", "^\\*[._-]source[._-]jvm[._-]class$", "metrics.properties" },
     { "master.source.jvm.class", "^master[._-]source[._-]jvm[._-]class$", "metrics.properties" },
@@ -314,8 +314,8 @@ ValidationResult validateSparkConfigParam(const char *param_name, const char *va
         return isValidSparkMasterFormat(value) ? VALIDATION_OK : ERROR_INVALID_FORMAT;
     }
     else if (strcmp(param_name, "spark.serializer") == 0) {
-        return strstr(value, "KryoSerializer") != NULL || 
-               strstr(value, "JavaSerializer") != NULL
+        return strstr(value, "KryoSerializer") != NULL ||
+            strstr(value, "JavaSerializer") != NULL
             ? VALIDATION_OK : ERROR_CONSTRAINT_VIOLATED;
     }
     else if (strcmp(param_name, "spark.submit.deployMode") == 0) {
@@ -324,7 +324,7 @@ ValidationResult validateSparkConfigParam(const char *param_name, const char *va
     }
     else if (strcmp(param_name, "spark.io.compression.codec") == 0) {
         return strstr(value, "lz4") != NULL || strstr(value, "snappy") != NULL ||
-               strstr(value, "zstd") != NULL || strstr(value, "lzf") != NULL
+            strstr(value, "zstd") != NULL || strstr(value, "lzf") != NULL
             ? VALIDATION_OK : ERROR_CONSTRAINT_VIOLATED;
     }
     else if (strcmp(param_name, "spark.sql.autoBroadcastJoinThreshold") == 0) {
@@ -464,7 +464,7 @@ update_spark_config(const char *param, const char *value, const char* configurat
         configure_hadoop_property(config_path, param, value);
         return SUCCESS;
     }
-    
+
     /*
      * Ensure parent directory exists. If not, attempt to create it with
      * appropriate permissions.

@@ -61,70 +61,70 @@
 
 typedef struct _internalconninfoOption
 {
-	char	   *keyword;		/* The keyword of the option			*/
-	char	   *envvar;			/* Fallback environment variable name	*/
-	char	   *compiled;		/* Fallback compiled in default value	*/
-	char	   *val;			/* Option's current value, or NULL		*/
-	char	   *label;			/* Label for field in connect dialog	*/
-	char	   *dispchar;		/* Indicates how to display this field in a
-								 * connect dialog. Values are: "" Display
-								 * entered value as is "*" Password field -
-								 * hide value "D"  Debug option - don't show
-								 * by default */
-	int			dispsize;		/* Field size in characters for dialog	*/
-	/* ---
-	 * Anything above this comment must be synchronized with
-	 * conninfoOption in libpq-fe.h, since we memcpy() data
-	 * between them!
-	 * ---
-	 */
-	off_t		connofs;		/* Offset into Conn struct, -1 if not there */
+    char	   *keyword;		/* The keyword of the option			*/
+    char	   *envvar;			/* Fallback environment variable name	*/
+    char	   *compiled;		/* Fallback compiled in default value	*/
+    char	   *val;			/* Option's current value, or NULL		*/
+    char	   *label;			/* Label for field in connect dialog	*/
+    char	   *dispchar;		/* Indicates how to display this field in a
+                                 * connect dialog. Values are: "" Display
+                                 * entered value as is "*" Password field -
+                                 * hide value "D"  Debug option - don't show
+                                 * by default */
+    int			dispsize;		/* Field size in characters for dialog	*/
+    /* ---
+     * Anything above this comment must be synchronized with
+     * conninfoOption in libpq-fe.h, since we memcpy() data
+     * between them!
+     * ---
+     */
+    off_t		connofs;		/* Offset into Conn struct, -1 if not there */
 } internalconninfoOption;
 
 static const internalconninfoOption conninfoOptions[] = {
-	{"user", "PGUSER", NULL, NULL,
-		"Database-User", "", 20,
-	offsetof(struct pg_conn, pguser)},
+    {"user", "PGUSER", NULL, NULL,
+        "Database-User", "", 20,
+        offsetof(struct pg_conn, pguser)},
 
-	{"password", "PGPASSWORD", NULL, NULL,
-		"Database-Password", "*", 20,
-	offsetof(struct pg_conn, pgpass)},
+    {"password", "PGPASSWORD", NULL, NULL,
+        "Database-Password", "*", 20,
+        offsetof(struct pg_conn, pgpass)},
 
-	{"passfile", "PGPASSFILE", NULL, NULL,
-		"Database-Password-File", "", 64,
-	offsetof(struct pg_conn, pgpassfile)},
-	{"connect_timeout", "ConnECT_TIMEOUT", NULL, NULL,
-		"Connect-timeout", "", 10,	/* strlen(INT32_MAX) == 10 */
-	offsetof(struct pg_conn, connect_timeout)},
+    {"passfile", "PGPASSFILE", NULL, NULL,
+        "Database-Password-File", "", 64,
+        offsetof(struct pg_conn, pgpassfile)},
+    {"connect_timeout", "ConnECT_TIMEOUT", NULL, NULL,
+        "Connect-timeout", "", 10,	/* strlen(INT32_MAX) == 10 */
+        offsetof(struct pg_conn, connect_timeout)},
 
-	{"host", "PGHOST", NULL, NULL,
-		"Database-Host", "", 40,
-	offsetof(struct pg_conn, pghost)},
+    {"host", "PGHOST", NULL, NULL,
+        "Database-Host", "", 40,
+        offsetof(struct pg_conn, pghost)},
 
-	{"hostaddr", "PGHOSTADDR", NULL, NULL,
-		"Database-Host-IP-Address", "", 45,
-	offsetof(struct pg_conn, pghostaddr)},
+    {"hostaddr", "PGHOSTADDR", NULL, NULL,
+        "Database-Host-IP-Address", "", 45,
+        offsetof(struct pg_conn, pghostaddr)},
 
-	{"port", "PGPORT", DEF_PGPORT_STR, NULL,
-		"Database-Port", "", 6,
-	offsetof(struct pg_conn, pgport)},
+    {"port", "PGPORT", DEF_PGPORT_STR, NULL,
+        "Database-Port", "", 6,
+        offsetof(struct pg_conn, pgport)},
 
-	{"client_encoding", "PGCLIENTENCODING", NULL, NULL,
-		"Client-Encoding", "", 10,
-	offsetof(struct pg_conn, client_encoding_initial)},
+    {"client_encoding", "PGCLIENTENCODING", NULL, NULL,
+        "Client-Encoding", "", 10,
+        offsetof(struct pg_conn, client_encoding_initial)},
 
-	{"options", "PGOPTIONS", DefaultOption, NULL,
-		"Backend-Options", "", 40,
-	offsetof(struct pg_conn, pgoptions)},
+    {"options", "PGOPTIONS", DefaultOption, NULL,
+        "Backend-Options", "", 40,
+        offsetof(struct pg_conn, pgoptions)},
 
-	{"tcp_user_timeout", NULL, NULL, NULL,
-		"TCP-User-Timeout", "", 10, /* strlen(INT32_MAX) == 10 */
-	offsetof(struct pg_conn, pgtcp_user_timeout)},
+    {"tcp_user_timeout", NULL, NULL, NULL,
+        "TCP-User-Timeout", "", 10, /* strlen(INT32_MAX) == 10 */
+        offsetof(struct pg_conn, pgtcp_user_timeout)},
 
 
-	/* Terminating entry --- MUST BE LAST */
-	{NULL, NULL, NULL, NULL,
-	NULL, NULL, 0, -1}
+    /* Terminating entry --- MUST BE LAST */
+    {NULL, NULL, NULL, NULL,
+        NULL, NULL, 0, -1}
 };
 
 
@@ -136,31 +136,31 @@ static bool fillConn(Conn *conn, conninfoOption *connOptions);
 static int	store_conn_addrinfo(Conn *conn, struct addrinfo *addrlist);
 static conninfoOption *conninfo_init(ExpBuffer errorMessage);
 static conninfoOption *parse_connection_string(const char *connstr,
-												 ExpBuffer errorMessage, bool use_defaults);
+                                               ExpBuffer errorMessage, bool use_defaults);
 static int	uri_prefix_length(const char *connstr);
 static conninfoOption *conninfo_parse(const char *conninfo,
-										ExpBuffer errorMessage, bool use_defaults);
+                                      ExpBuffer errorMessage, bool use_defaults);
 static conninfoOption *conninfo_array_parse(const char *const *keywords,
-											  const char *const *values, ExpBuffer errorMessage,
-											  bool use_defaults);
+                                            const char *const *values, ExpBuffer errorMessage,
+                                            bool use_defaults);
 static bool conninfo_add_defaults(conninfoOption *options,
-								  ExpBuffer errorMessage);
+                                  ExpBuffer errorMessage);
 static conninfoOption *conninfo_uri_parse(const char *uri,
-											ExpBuffer errorMessage, bool use_defaults);
+                                          ExpBuffer errorMessage, bool use_defaults);
 static bool conninfo_uri_parse_options(conninfoOption *options,
-									   const char *uri, ExpBuffer errorMessage);
+                                       const char *uri, ExpBuffer errorMessage);
 static bool conninfo_uri_parse_params(char *params,
-									  conninfoOption *connOptions,
-									  ExpBuffer errorMessage);
+                                      conninfoOption *connOptions,
+                                      ExpBuffer errorMessage);
 static char *conninfo_uri_decode(const char *str, ExpBuffer errorMessage);
 static bool get_hexdigit(char digit, int *value);
 static const char *conninfo_getval(conninfoOption *connOptions,
-								   const char *keyword);
+                                   const char *keyword);
 static conninfoOption *conninfo_storeval(conninfoOption *connOptions,
-										   const char *keyword, const char *value,
-										   ExpBuffer errorMessage, bool ignoreMissing, bool uri_decode);
+                                         const char *keyword, const char *value,
+                                         ExpBuffer errorMessage, bool ignoreMissing, bool uri_decode);
 static conninfoOption *conninfo_find(conninfoOption *connOptions,
-									   const char *keyword);
+                                     const char *keyword);
 /*
  *		connectStartParams
  *
@@ -180,57 +180,57 @@ static conninfoOption *conninfo_find(conninfoOption *connOptions,
  */
 Conn *
 connectStartParams(const char *const *keywords,
-					 const char *const *values)
+                   const char *const *values)
 {
-	Conn	   *conn;
-	conninfoOption *connOptions;
+    Conn	   *conn;
+    conninfoOption *connOptions;
 
-	/*
-	 * Allocate memory for the conn structure.  Note that we also expect this
-	 * to initialize conn->errorMessage to empty.  All subsequent steps during
-	 * connection initialization will only append to that buffer.
-	 */
-	conn = MakeEmptyConn();
-	if (conn == NULL)
-		return NULL;
+    /*
+     * Allocate memory for the conn structure.  Note that we also expect this
+     * to initialize conn->errorMessage to empty.  All subsequent steps during
+     * connection initialization will only append to that buffer.
+     */
+    conn = MakeEmptyConn();
+    if (conn == NULL)
+        return NULL;
 
-	/*
-	 * Parse the conninfo arrays
-	 */
-	connOptions = conninfo_array_parse(keywords, values,
-									   &conn->errorMessage,
-									   true);
-	if (connOptions == NULL)
-	{
-		conn->status = CONNECTION_BAD;
-		/* errorMessage is already set */
-		return conn;
-	}
+    /*
+     * Parse the conninfo arrays
+     */
+    connOptions = conninfo_array_parse(keywords, values,
+                                       &conn->errorMessage,
+                                       true);
+    if (connOptions == NULL)
+    {
+        conn->status = CONNECTION_BAD;
+        /* errorMessage is already set */
+        return conn;
+    }
 
-	/*
-	 * Move option values into conn structure
-	 */
-	if (!fillConn(conn, connOptions))
-	{
-		return conn;
-	}
+    /*
+     * Move option values into conn structure
+     */
+    if (!fillConn(conn, connOptions))
+    {
+        return conn;
+    }
 
-	/*
-	 * Compute derived options
-	 */
-	if (!ConnectOptions2(conn))
-		return conn;
+    /*
+     * Compute derived options
+     */
+    if (!ConnectOptions2(conn))
+        return conn;
 
-	/*
-	 * Connect to the database
-	 */
-	if (!ConnectStart(conn))
-	{
-		/* Just in case we failed to set it in ConnectDBStart */
-		conn->status = CONNECTION_BAD;
-	}
+    /*
+     * Connect to the database
+     */
+    if (!ConnectStart(conn))
+    {
+        /* Just in case we failed to set it in ConnectDBStart */
+        conn->status = CONNECTION_BAD;
+    }
 
-	return conn;
+    return conn;
 }
 
 
@@ -246,30 +246,30 @@ connectStartParams(const char *const *keywords,
 static bool
 fillConn(Conn *conn, conninfoOption *connOptions)
 {
-	const internalconninfoOption *option;
+    const internalconninfoOption *option;
 
-	for (option = conninfoOptions; option->keyword; option++)
-	{
-		if (option->connofs >= 0)
-		{
-			const char *tmp = conninfo_getval(connOptions, option->keyword);
+    for (option = conninfoOptions; option->keyword; option++)
+    {
+        if (option->connofs >= 0)
+        {
+            const char *tmp = conninfo_getval(connOptions, option->keyword);
 
-			if (tmp)
-			{
-				char	  **connmember = (char **) ((char *) conn + option->connofs);
+            if (tmp)
+            {
+                char	  **connmember = (char **) ((char *) conn + option->connofs);
 
-				free(*connmember);
-				*connmember = strdup(tmp);
-				if (*connmember == NULL)
-				{
-					db_append_conn_error(conn, "out of memory");
-					return false;
-				}
-			}
-		}
-	}
+                free(*connmember);
+                *connmember = strdup(tmp);
+                if (*connmember == NULL)
+                {
+                    db_append_conn_error(conn, "out of memory");
+                    return false;
+                }
+            }
+        }
+    }
 
-	return true;
+    return true;
 }
 
 
@@ -279,16 +279,16 @@ fillConn(Conn *conn, conninfoOption *connOptions)
 static int
 count_comma_separated_elems(const char *input)
 {
-	int			n;
+    int			n;
 
-	n = 1;
-	for (; *input != '\0'; input++)
-	{
-		if (*input == ',')
-			n++;
-	}
+    n = 1;
+    for (; *input != '\0'; input++)
+    {
+        if (*input == ',')
+            n++;
+    }
 
-	return n;
+    return n;
 }
 
 /*
@@ -303,30 +303,30 @@ count_comma_separated_elems(const char *input)
 static char *
 parse_comma_separated_list(char **startptr, bool *more)
 {
-	char	   *p;
-	char	   *s = *startptr;
-	char	   *e;
-	int			len;
+    char	   *p;
+    char	   *s = *startptr;
+    char	   *e;
+    int			len;
 
-	/*
-	 * Search for the end of the current element; a comma or end-of-string
-	 * acts as a terminator.
-	 */
-	e = s;
-	while (*e != '\0' && *e != ',')
-		++e;
-	*more = (*e == ',');
+    /*
+     * Search for the end of the current element; a comma or end-of-string
+     * acts as a terminator.
+     */
+    e = s;
+    while (*e != '\0' && *e != ',')
+        ++e;
+    *more = (*e == ',');
 
-	len = e - s;
-	p = (char *) malloc(sizeof(char) * (len + 1));
-	if (p)
-	{
-		memcpy(p, s, len);
-		p[len] = '\0';
-	}
-	*startptr = e + 1;
+    len = e - s;
+    p = (char *) malloc(sizeof(char) * (len + 1));
+    if (p)
+    {
+        memcpy(p, s, len);
+        p[len] = '\0';
+    }
+    *startptr = e + 1;
 
-	return p;
+    return p;
 }
 
 
@@ -342,191 +342,191 @@ parse_comma_separated_list(char **startptr, bool *more)
 bool
 ConnectOptions2(Conn *conn)
 {
-	int			i;
+    int			i;
 
-	/*
-	 * Allocate memory for details about each host to which we might possibly
-	 * try to connect.  For that, count the number of elements in the hostaddr
-	 * or host options.  If neither is given, assume one host.
-	 */
-	conn->whichhost = 0;
-	if (conn->pghostaddr && conn->pghostaddr[0] != '\0')
-		conn->nconnhost = count_comma_separated_elems(conn->pghostaddr);
-	else if (conn->pghost && conn->pghost[0] != '\0')
-		conn->nconnhost = count_comma_separated_elems(conn->pghost);
-	else
-		conn->nconnhost = 1;
-	conn->connhost = (pg_conn_host *)
-		calloc(conn->nconnhost, sizeof(pg_conn_host));
-	if (conn->connhost == NULL)
-		goto oom_error;
+    /*
+     * Allocate memory for details about each host to which we might possibly
+     * try to connect.  For that, count the number of elements in the hostaddr
+     * or host options.  If neither is given, assume one host.
+     */
+    conn->whichhost = 0;
+    if (conn->pghostaddr && conn->pghostaddr[0] != '\0')
+        conn->nconnhost = count_comma_separated_elems(conn->pghostaddr);
+    else if (conn->pghost && conn->pghost[0] != '\0')
+        conn->nconnhost = count_comma_separated_elems(conn->pghost);
+    else
+        conn->nconnhost = 1;
+    conn->connhost = (pg_conn_host *)
+        calloc(conn->nconnhost, sizeof(pg_conn_host));
+    if (conn->connhost == NULL)
+        goto oom_error;
 
-	/*
-	 * We now have one pg_conn_host structure per possible host.  Fill in the
-	 * host and hostaddr fields for each, by splitting the parameter strings.
-	 */
-	if (conn->pghostaddr != NULL && conn->pghostaddr[0] != '\0')
-	{
-		char	   *s = conn->pghostaddr;
-		bool		more = true;
+    /*
+     * We now have one pg_conn_host structure per possible host.  Fill in the
+     * host and hostaddr fields for each, by splitting the parameter strings.
+     */
+    if (conn->pghostaddr != NULL && conn->pghostaddr[0] != '\0')
+    {
+        char	   *s = conn->pghostaddr;
+        bool		more = true;
 
-		for (i = 0; i < conn->nconnhost && more; i++)
-		{
-			conn->connhost[i].hostaddr = parse_comma_separated_list(&s, &more);
-			if (conn->connhost[i].hostaddr == NULL)
-				goto oom_error;
-		}
+        for (i = 0; i < conn->nconnhost && more; i++)
+        {
+            conn->connhost[i].hostaddr = parse_comma_separated_list(&s, &more);
+            if (conn->connhost[i].hostaddr == NULL)
+                goto oom_error;
+        }
 
-		/*
-		 * If hostaddr was given, the array was allocated according to the
-		 * number of elements in the hostaddr list, so it really should be the
-		 * right size.
-		 */
-		Assert(!more);
-		Assert(i == conn->nconnhost);
-	}
+        /*
+         * If hostaddr was given, the array was allocated according to the
+         * number of elements in the hostaddr list, so it really should be the
+         * right size.
+         */
+        Assert(!more);
+        Assert(i == conn->nconnhost);
+    }
 
-	if (conn->pghost != NULL && conn->pghost[0] != '\0')
-	{
-		char	   *s = conn->pghost;
-		bool		more = true;
+    if (conn->pghost != NULL && conn->pghost[0] != '\0')
+    {
+        char	   *s = conn->pghost;
+        bool		more = true;
 
-		for (i = 0; i < conn->nconnhost && more; i++)
-		{
-			conn->connhost[i].host = parse_comma_separated_list(&s, &more);
-			if (conn->connhost[i].host == NULL)
-				goto oom_error;
-		}
+        for (i = 0; i < conn->nconnhost && more; i++)
+        {
+            conn->connhost[i].host = parse_comma_separated_list(&s, &more);
+            if (conn->connhost[i].host == NULL)
+                goto oom_error;
+        }
 
-		/* Check for wrong number of host items. */
-		if (more || i != conn->nconnhost)
-		{
-			conn->status = CONNECTION_BAD;
-			db_append_conn_error(conn, "could not match %d host names to %d hostaddr values",
-									count_comma_separated_elems(conn->pghost), conn->nconnhost);
-			return false;
-		}
-	}
+        /* Check for wrong number of host items. */
+        if (more || i != conn->nconnhost)
+        {
+            conn->status = CONNECTION_BAD;
+            db_append_conn_error(conn, "could not match %d host names to %d hostaddr values",
+                                 count_comma_separated_elems(conn->pghost), conn->nconnhost);
+            return false;
+        }
+    }
 
-	/*
-	 * Now, for each host slot, identify the type of address spec, and fill in
-	 * the default address if nothing was given.
-	 */
-	for (i = 0; i < conn->nconnhost; i++)
-	{
-		pg_conn_host *ch = &conn->connhost[i];
+    /*
+     * Now, for each host slot, identify the type of address spec, and fill in
+     * the default address if nothing was given.
+     */
+    for (i = 0; i < conn->nconnhost; i++)
+    {
+        pg_conn_host *ch = &conn->connhost[i];
 
-		if (ch->hostaddr != NULL && ch->hostaddr[0] != '\0')
-			ch->type = CHT_HOST_ADDRESS;
-		else if (ch->host != NULL && ch->host[0] != '\0')
-		{
-			ch->type = CHT_HOST_NAME;
-		}
-		else
-		{
-			free(ch->host);
+        if (ch->hostaddr != NULL && ch->hostaddr[0] != '\0')
+            ch->type = CHT_HOST_ADDRESS;
+        else if (ch->host != NULL && ch->host[0] != '\0')
+        {
+            ch->type = CHT_HOST_NAME;
+        }
+        else
+        {
+            free(ch->host);
 
-			/*
-			 * This bit selects the default host location.  If you change
-			 * this, see also pg_regress.
-			 */
-			if (DEFAULT_PGSOCKET_DIR[0])
-			{
-				ch->host = strdup(DEFAULT_PGSOCKET_DIR);
-				ch->type = CHT_UNIX_SOCKET;
-			}
-			else
-			{
-				ch->host = strdup(DefaultHost);
-				ch->type = CHT_HOST_NAME;
-			}
-			if (ch->host == NULL)
-				goto oom_error;
-		}
-	}
+            /*
+             * This bit selects the default host location.  If you change
+             * this, see also pg_regress.
+             */
+            if (DEFAULT_PGSOCKET_DIR[0])
+            {
+                ch->host = strdup(DEFAULT_PGSOCKET_DIR);
+                ch->type = CHT_UNIX_SOCKET;
+            }
+            else
+            {
+                ch->host = strdup(DefaultHost);
+                ch->type = CHT_HOST_NAME;
+            }
+            if (ch->host == NULL)
+                goto oom_error;
+        }
+    }
 
-	/*
-	 * Next, work out the port number corresponding to each host name.
-	 *
-	 * Note: unlike the above for host names, this could leave the port fields
-	 * as null or empty strings.  We will substitute DEF_PGPORT whenever we
-	 * read such a port field.
-	 */
-	if (conn->pgport != NULL && conn->pgport[0] != '\0')
-	{
-		char	   *s = conn->pgport;
-		bool		more = true;
+    /*
+     * Next, work out the port number corresponding to each host name.
+     *
+     * Note: unlike the above for host names, this could leave the port fields
+     * as null or empty strings.  We will substitute DEF_PGPORT whenever we
+     * read such a port field.
+     */
+    if (conn->pgport != NULL && conn->pgport[0] != '\0')
+    {
+        char	   *s = conn->pgport;
+        bool		more = true;
 
-		for (i = 0; i < conn->nconnhost && more; i++)
-		{
-			conn->connhost[i].port = parse_comma_separated_list(&s, &more);
-			if (conn->connhost[i].port == NULL)
-				goto oom_error;
-		}
+        for (i = 0; i < conn->nconnhost && more; i++)
+        {
+            conn->connhost[i].port = parse_comma_separated_list(&s, &more);
+            if (conn->connhost[i].port == NULL)
+                goto oom_error;
+        }
 
-		/*
-		 * If exactly one port was given, use it for every host.  Otherwise,
-		 * there must be exactly as many ports as there were hosts.
-		 */
-		if (i == 1 && !more)
-		{
-			for (i = 1; i < conn->nconnhost; i++)
-			{
-				conn->connhost[i].port = strdup(conn->connhost[0].port);
-				if (conn->connhost[i].port == NULL)
-					goto oom_error;
-			}
-		}
-		else if (more || i != conn->nconnhost)
-		{
-			conn->status = CONNECTION_BAD;
-			db_append_conn_error(conn, "could not match %d port numbers to %d hosts",
-									count_comma_separated_elems(conn->pgport), conn->nconnhost);
-			return false;
-		}
-	}
+        /*
+         * If exactly one port was given, use it for every host.  Otherwise,
+         * there must be exactly as many ports as there were hosts.
+         */
+        if (i == 1 && !more)
+        {
+            for (i = 1; i < conn->nconnhost; i++)
+            {
+                conn->connhost[i].port = strdup(conn->connhost[0].port);
+                if (conn->connhost[i].port == NULL)
+                    goto oom_error;
+            }
+        }
+        else if (more || i != conn->nconnhost)
+        {
+            conn->status = CONNECTION_BAD;
+            db_append_conn_error(conn, "could not match %d port numbers to %d hosts",
+                                 count_comma_separated_elems(conn->pgport), conn->nconnhost);
+            return false;
+        }
+    }
 
 
-	/*
-	 * If password was not given, try to look it up in password file.  Note
-	 * that the result might be different for each host/port pair.
-	 */
-	if (conn->pgpass == NULL || conn->pgpass[0] == '\0')
-	{
-		/* If password file wasn't specified, use ~/PGPASSFILE */
-		if (conn->pgpassfile == NULL || conn->pgpassfile[0] == '\0')
-		{
-			char		homedir[MAXPGPATH];
+    /*
+     * If password was not given, try to look it up in password file.  Note
+     * that the result might be different for each host/port pair.
+     */
+    if (conn->pgpass == NULL || conn->pgpass[0] == '\0')
+    {
+        /* If password file wasn't specified, use ~/PGPASSFILE */
+        if (conn->pgpassfile == NULL || conn->pgpassfile[0] == '\0')
+        {
+            char		homedir[MAXPGPATH];
 
-			if (GetHomeDirectory(homedir, sizeof(homedir)))
-			{
-				free(conn->pgpassfile);
-				conn->pgpassfile = malloc(MAXPGPATH);
-				if (!conn->pgpassfile)
-					goto oom_error;
-				int ret = snprintf(conn->pgpassfile, MAXPGPATH, "%s/%s",
-						 homedir, PGPASSFILE);
-						 if (ret >= MAXPGPATH) {
-						 db_append_conn_error(conn, "size error");
-						  }
+            if (GetHomeDirectory(homedir, sizeof(homedir)))
+            {
+                free(conn->pgpassfile);
+                conn->pgpassfile = malloc(MAXPGPATH);
+                if (!conn->pgpassfile)
+                    goto oom_error;
+                int ret = snprintf(conn->pgpassfile, MAXPGPATH, "%s/%s",
+                                   homedir, PGPASSFILE);
+                if (ret >= MAXPGPATH) {
+                    db_append_conn_error(conn, "size error");
+                }
 
-			}
-		}
-	}
+            }
+        }
+    }
 
-	/*
-	 * Only if we get this far is it appropriate to try to connect. (We need a
-	 * state flag, rather than just the boolean result of this function, in
-	 * case someone tries to reset() the Conn.)
-	 */
-	conn->options_valid = true;
+    /*
+     * Only if we get this far is it appropriate to try to connect. (We need a
+     * state flag, rather than just the boolean result of this function, in
+     * case someone tries to reset() the Conn.)
+     */
+    conn->options_valid = true;
 
-	return true;
+    return true;
 
 oom_error:
-	conn->status = CONNECTION_BAD;
-	db_append_conn_error(conn, "out of memory");
-	return false;
+    conn->status = CONNECTION_BAD;
+    db_append_conn_error(conn, "out of memory");
+    return false;
 }
 
 /*
@@ -542,26 +542,26 @@ oom_error:
 conninfoOption *
 conndefaults(void)
 {
-	ExpBufferData errorBuf;
-	conninfoOption *connOptions;
+    ExpBufferData errorBuf;
+    conninfoOption *connOptions;
 
-	/* We don't actually report any errors here, but callees want a buffer */
-	initExpBuffer(&errorBuf);
-	if (ExpBufferDataBroken(errorBuf))
-		return NULL;			/* out of memory already :-( */
+    /* We don't actually report any errors here, but callees want a buffer */
+    initExpBuffer(&errorBuf);
+    if (ExpBufferDataBroken(errorBuf))
+        return NULL;			/* out of memory already :-( */
 
-	connOptions = conninfo_init(&errorBuf);
-	if (connOptions != NULL)
-	{
-		/* pass NULL errorBuf to ignore errors */
-		if (!conninfo_add_defaults(connOptions, NULL))
-		{
-			connOptions = NULL;
-		}
-	}
+    connOptions = conninfo_init(&errorBuf);
+    if (connOptions != NULL)
+    {
+        /* pass NULL errorBuf to ignore errors */
+        if (!conninfo_add_defaults(connOptions, NULL))
+        {
+            connOptions = NULL;
+        }
+    }
 
-	termExpBuffer(&errorBuf);
-	return connOptions;
+    termExpBuffer(&errorBuf);
+    return connOptions;
 }
 
 
@@ -575,21 +575,21 @@ static int
 connectNoDelay(Conn *conn)
 {
 #ifdef	TCP_NODELAY
-	int			on = 1;
+    int			on = 1;
 
-	if (setsockopt(conn->sock, IPPROTO_TCP, TCP_NODELAY,
-				   (char *) &on,
-				   sizeof(on)) < 0)
-	{
-		char		sebuf[PG_STRERROR_R_BUFLEN];
+    if (setsockopt(conn->sock, IPPROTO_TCP, TCP_NODELAY,
+                   (char *) &on,
+                   sizeof(on)) < 0)
+    {
+        char		sebuf[PG_STRERROR_R_BUFLEN];
 
-		db_append_conn_error(conn, "could not set socket to TCP no delay mode: %s",
-								SOCK_STRERROR(SOCK_ERRNO, sebuf, sizeof(sebuf)));
-		return 0;
-	}
+        db_append_conn_error(conn, "could not set socket to TCP no delay mode: %s",
+                             SOCK_STRERROR(SOCK_ERRNO, sebuf, sizeof(sebuf)));
+        return 0;
+    }
 #endif
 
-	return 1;
+    return 1;
 }
 
 
@@ -611,145 +611,145 @@ connectNoDelay(Conn *conn)
 static int
 decoct(const u_char *src, int bytes, char *dst, size_t size)
 {
-	char	   *odst = dst;
-	char	   *t;
-	int			b;
+    char	   *odst = dst;
+    char	   *t;
+    int			b;
 
-	for (b = 1; b <= bytes; b++)
-	{
-		if (size <= sizeof "255.")
-			return (0);
-		t = dst;
-		dst += SPRINTF((dst, "%u", *src++));
-		if (b != bytes)
-		{
-			*dst++ = '.';
-			*dst = '\0';
-		}
-		size -= (size_t) (dst - t);
-	}
-	return (dst - odst);
+    for (b = 1; b <= bytes; b++)
+    {
+        if (size <= sizeof "255.")
+            return (0);
+        t = dst;
+        dst += SPRINTF((dst, "%u", *src++));
+        if (b != bytes)
+        {
+            *dst++ = '.';
+            *dst = '\0';
+        }
+        size -= (size_t) (dst - t);
+    }
+    return (dst - odst);
 }
 
 static char *
 inet_net_ntop_ipv6(const u_char *src, int bits, char *dst, size_t size)
 {
-	/*
-	 * Note that int32_t and int16_t need only be "at least" large enough to
-	 * contain a value of the specified size.  On some systems, like Crays,
-	 * there is no such thing as an integer variable with 16 bits. Keep this
-	 * in mind if you think this function should have been coded to use
-	 * pointer overlays.  All the world's not a VAX.
-	 */
-	char		tmp[sizeof "ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255/128"];
-	char	   *tp;
-	struct
-	{
-		int			base,
-					len;
-	}			best, cur;
-	u_int		words[NS_IN6ADDRSZ / NS_INT16SZ];
-	int			i;
+    /*
+     * Note that int32_t and int16_t need only be "at least" large enough to
+     * contain a value of the specified size.  On some systems, like Crays,
+     * there is no such thing as an integer variable with 16 bits. Keep this
+     * in mind if you think this function should have been coded to use
+     * pointer overlays.  All the world's not a VAX.
+     */
+    char		tmp[sizeof "ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255/128"];
+    char	   *tp;
+    struct
+    {
+        int			base,
+                    len;
+    }			best, cur;
+    u_int		words[NS_IN6ADDRSZ / NS_INT16SZ];
+    int			i;
 
-	if ((bits < -1) || (bits > 128))
-	{
-		errno = EINVAL;
-		return (NULL);
-	}
+    if ((bits < -1) || (bits > 128))
+    {
+        errno = EINVAL;
+        return (NULL);
+    }
 
-	/*
-	 * Preprocess: Copy the input (bytewise) array into a wordwise array. Find
-	 * the longest run of 0x00's in src[] for :: shorthanding.
-	 */
-	memset(words, '\0', sizeof words);
-	for (i = 0; i < NS_IN6ADDRSZ; i++)
-		words[i / 2] |= (src[i] << ((1 - (i % 2)) << 3));
-	best.base = -1;
-	cur.base = -1;
-	best.len = 0;
-	cur.len = 0;
-	for (i = 0; i < (NS_IN6ADDRSZ / NS_INT16SZ); i++)
-	{
-		if (words[i] == 0)
-		{
-			if (cur.base == -1)
-				cur.base = i, cur.len = 1;
-			else
-				cur.len++;
-		}
-		else
-		{
-			if (cur.base != -1)
-			{
-				if (best.base == -1 || cur.len > best.len)
-					best = cur;
-				cur.base = -1;
-			}
-		}
-	}
-	if (cur.base != -1)
-	{
-		if (best.base == -1 || cur.len > best.len)
-			best = cur;
-	}
-	if (best.base != -1 && best.len < 2)
-		best.base = -1;
+    /*
+     * Preprocess: Copy the input (bytewise) array into a wordwise array. Find
+     * the longest run of 0x00's in src[] for :: shorthanding.
+     */
+    memset(words, '\0', sizeof words);
+    for (i = 0; i < NS_IN6ADDRSZ; i++)
+        words[i / 2] |= (src[i] << ((1 - (i % 2)) << 3));
+    best.base = -1;
+    cur.base = -1;
+    best.len = 0;
+    cur.len = 0;
+    for (i = 0; i < (NS_IN6ADDRSZ / NS_INT16SZ); i++)
+    {
+        if (words[i] == 0)
+        {
+            if (cur.base == -1)
+                cur.base = i, cur.len = 1;
+            else
+                cur.len++;
+        }
+        else
+        {
+            if (cur.base != -1)
+            {
+                if (best.base == -1 || cur.len > best.len)
+                    best = cur;
+                cur.base = -1;
+            }
+        }
+    }
+    if (cur.base != -1)
+    {
+        if (best.base == -1 || cur.len > best.len)
+            best = cur;
+    }
+    if (best.base != -1 && best.len < 2)
+        best.base = -1;
 
-	/*
-	 * Format the result.
-	 */
-	tp = tmp;
-	for (i = 0; i < (NS_IN6ADDRSZ / NS_INT16SZ); i++)
-	{
-		/* Are we inside the best run of 0x00's? */
-		if (best.base != -1 && i >= best.base &&
-			i < (best.base + best.len))
-		{
-			if (i == best.base)
-				*tp++ = ':';
-			continue;
-		}
-		/* Are we following an initial run of 0x00s or any real hex? */
-		if (i != 0)
-			*tp++ = ':';
-		/* Is this address an encapsulated IPv4? */
-		if (i == 6 && best.base == 0 && (best.len == 6 ||
-										 (best.len == 7 && words[7] != 0x0001) ||
-										 (best.len == 5 && words[5] == 0xffff)))
-		{
-			int			n;
+    /*
+     * Format the result.
+     */
+    tp = tmp;
+    for (i = 0; i < (NS_IN6ADDRSZ / NS_INT16SZ); i++)
+    {
+        /* Are we inside the best run of 0x00's? */
+        if (best.base != -1 && i >= best.base &&
+            i < (best.base + best.len))
+        {
+            if (i == best.base)
+                *tp++ = ':';
+            continue;
+        }
+        /* Are we following an initial run of 0x00s or any real hex? */
+        if (i != 0)
+            *tp++ = ':';
+        /* Is this address an encapsulated IPv4? */
+        if (i == 6 && best.base == 0 && (best.len == 6 ||
+                                         (best.len == 7 && words[7] != 0x0001) ||
+                                         (best.len == 5 && words[5] == 0xffff)))
+        {
+            int			n;
 
-			n = decoct(src + 12, 4, tp, sizeof tmp - (tp - tmp));
-			if (n == 0)
-			{
-				errno = EMSGSIZE;
-				return (NULL);
-			}
-			tp += strlen(tp);
-			break;
-		}
-		tp += SPRINTF((tp, "%x", words[i]));
-	}
+            n = decoct(src + 12, 4, tp, sizeof tmp - (tp - tmp));
+            if (n == 0)
+            {
+                errno = EMSGSIZE;
+                return (NULL);
+            }
+            tp += strlen(tp);
+            break;
+        }
+        tp += SPRINTF((tp, "%x", words[i]));
+    }
 
-	/* Was it a trailing run of 0x00's? */
-	if (best.base != -1 && (best.base + best.len) ==
-		(NS_IN6ADDRSZ / NS_INT16SZ))
-		*tp++ = ':';
-	*tp = '\0';
+    /* Was it a trailing run of 0x00's? */
+    if (best.base != -1 && (best.base + best.len) ==
+        (NS_IN6ADDRSZ / NS_INT16SZ))
+        *tp++ = ':';
+    *tp = '\0';
 
-	if (bits != -1 && bits != 128)
-		tp += SPRINTF((tp, "/%u", bits));
+    if (bits != -1 && bits != 128)
+        tp += SPRINTF((tp, "/%u", bits));
 
-	/*
-	 * Check for overflow, copy, and we're done.
-	 */
-	if ((size_t) (tp - tmp) > size)
-	{
-		errno = EMSGSIZE;
-		return (NULL);
-	}
-	strcpy(dst, tmp);
-	return (dst);
+    /*
+     * Check for overflow, copy, and we're done.
+     */
+    if ((size_t) (tp - tmp) > size)
+    {
+        errno = EMSGSIZE;
+        return (NULL);
+    }
+    strcpy(dst, tmp);
+    return (dst);
 }
 /*
  * static char *
@@ -767,42 +767,42 @@ inet_net_ntop_ipv6(const u_char *src, int bits, char *dst, size_t size)
 static char *
 inet_net_ntop_ipv4(const u_char *src, int bits, char *dst, size_t size)
 {
-	char	   *odst = dst;
-	char	   *t;
-	int			len = 4;
-	int			b;
+    char	   *odst = dst;
+    char	   *t;
+    int			len = 4;
+    int			b;
 
-	if (bits < 0 || bits > 32)
-	{
-		errno = EINVAL;
-		return (NULL);
-	}
+    if (bits < 0 || bits > 32)
+    {
+        errno = EINVAL;
+        return (NULL);
+    }
 
-	/* Always format all four octets, regardless of mask length. */
-	for (b = len; b > 0; b--)
-	{
-		if (size <= sizeof ".255")
-			goto emsgsize;
-		t = dst;
-		if (dst != odst)
-			*dst++ = '.';
-		dst += SPRINTF((dst, "%u", *src++));
-		size -= (size_t) (dst - t);
-	}
+    /* Always format all four octets, regardless of mask length. */
+    for (b = len; b > 0; b--)
+    {
+        if (size <= sizeof ".255")
+            goto emsgsize;
+        t = dst;
+        if (dst != odst)
+            *dst++ = '.';
+        dst += SPRINTF((dst, "%u", *src++));
+        size -= (size_t) (dst - t);
+    }
 
-	/* don't print masklen if 32 bits */
-	if (bits != 32)
-	{
-		if (size <= sizeof "/32")
-			goto emsgsize;
-		dst += SPRINTF((dst, "/%u", bits));
-	}
+    /* don't print masklen if 32 bits */
+    if (bits != 32)
+    {
+        if (size <= sizeof "/32")
+            goto emsgsize;
+        dst += SPRINTF((dst, "/%u", bits));
+    }
 
-	return (odst);
+    return (odst);
 
 emsgsize:
-	errno = EMSGSIZE;
-	return (NULL);
+    errno = EMSGSIZE;
+    return (NULL);
 }
 
 
@@ -823,25 +823,25 @@ emsgsize:
 char *
 pg_inet_net_ntop(int af, const void *src, int bits, char *dst, size_t size)
 {
-	/*
-	 * We need to cover both the address family constants used by the PG inet
-	 * type (PGSQL_AF_INET and PGSQL_AF_INET6) and those used by the system
-	 * libraries (AF_INET and AF_INET6).  We can safely assume PGSQL_AF_INET
-	 * == AF_INET, but the INET6 constants are very likely to be different.
-	 */
-	switch (af)
-	{
-		case PGSQL_AF_INET:
-			return (inet_net_ntop_ipv4(src, bits, dst, size));
-		case PGSQL_AF_INET6:
+    /*
+     * We need to cover both the address family constants used by the PG inet
+     * type (PGSQL_AF_INET and PGSQL_AF_INET6) and those used by the system
+     * libraries (AF_INET and AF_INET6).  We can safely assume PGSQL_AF_INET
+     * == AF_INET, but the INET6 constants are very likely to be different.
+     */
+    switch (af)
+    {
+    case PGSQL_AF_INET:
+        return (inet_net_ntop_ipv4(src, bits, dst, size));
+    case PGSQL_AF_INET6:
 #if AF_INET6 != PGSQL_AF_INET6
-		case AF_INET6:
+    case AF_INET6:
 #endif
-			return (inet_net_ntop_ipv6(src, bits, dst, size));
-		default:
-			errno = EAFNOSUPPORT;
-			return (NULL);
-	}
+        return (inet_net_ntop_ipv6(src, bits, dst, size));
+    default:
+        errno = EAFNOSUPPORT;
+        return (NULL);
+    }
 }
 
 /* ----------
@@ -852,26 +852,26 @@ pg_inet_net_ntop(int af, const void *src, int bits, char *dst, size_t size)
 static void
 getHostaddr(Conn *conn, char *host_addr, int host_addr_len)
 {
-	struct sockaddr_storage *addr = &conn->raddr.addr;
+    struct sockaddr_storage *addr = &conn->raddr.addr;
 
-	if (addr->ss_family == AF_INET)
-	{
-		if (pg_inet_net_ntop(AF_INET,
-							 &((struct sockaddr_in *) addr)->sin_addr.s_addr,
-							 32,
-							 host_addr, host_addr_len) == NULL)
-			host_addr[0] = '\0';
-	}
-	else if (addr->ss_family == AF_INET6)
-	{
-		if (pg_inet_net_ntop(AF_INET6,
-							 &((struct sockaddr_in6 *) addr)->sin6_addr.s6_addr,
-							 128,
-							 host_addr, host_addr_len) == NULL)
-			host_addr[0] = '\0';
-	}
-	else
-		host_addr[0] = '\0';
+    if (addr->ss_family == AF_INET)
+    {
+        if (pg_inet_net_ntop(AF_INET,
+                             &((struct sockaddr_in *) addr)->sin_addr.s_addr,
+                             32,
+                             host_addr, host_addr_len) == NULL)
+            host_addr[0] = '\0';
+    }
+    else if (addr->ss_family == AF_INET6)
+    {
+        if (pg_inet_net_ntop(AF_INET6,
+                             &((struct sockaddr_in6 *) addr)->sin6_addr.s6_addr,
+                             128,
+                             host_addr, host_addr_len) == NULL)
+            host_addr[0] = '\0';
+    }
+    else
+        host_addr[0] = '\0';
 }
 
 /* ----------
@@ -884,16 +884,16 @@ getHostaddr(Conn *conn, char *host_addr, int host_addr_len)
 static void
 connectFailureMessage(Conn *conn, int errorno)
 {
-	char		sebuf[PG_STRERROR_R_BUFLEN];
+    char		sebuf[PG_STRERROR_R_BUFLEN];
 
-	appendExpBuffer(&conn->errorMessage,
-					  "%s\n",
-					  SOCK_STRERROR(errorno, sebuf, sizeof(sebuf)));
+    appendExpBuffer(&conn->errorMessage,
+                    "%s\n",
+                    SOCK_STRERROR(errorno, sebuf, sizeof(sebuf)));
 
-	if (conn->raddr.addr.ss_family == AF_UNIX)
-		db_append_conn_error(conn, "\tIs the server running locally and accepting connections on that socket?");
-	else
-		db_append_conn_error(conn, "\tIs the server running on that host and accepting TCP/IP connections?");
+    if (conn->raddr.addr.ss_family == AF_UNIX)
+        db_append_conn_error(conn, "\tIs the server running locally and accepting connections on that socket?");
+    else
+        db_append_conn_error(conn, "\tIs the server running on that host and accepting TCP/IP connections?");
 }
 
 
@@ -907,36 +907,36 @@ connectFailureMessage(Conn *conn, int errorno)
 int
 ConnectStart(Conn *conn)
 {
-	if (!conn)
-		return 0;
+    if (!conn)
+        return 0;
 
-	if (!conn->options_valid)
-		goto connect_errReturn;
-
-
-	/* Ensure our buffers are empty */
-	conn->inStart = conn->inCursor = conn->inEnd = 0;
-	conn->outCount = 0;
-	conn->whichhost = -1;
-	conn->try_next_host = true;
-	conn->try_next_addr = false;
-
-	conn->status = CONNECTION_NEEDED;
+    if (!conn->options_valid)
+        goto connect_errReturn;
 
 
-	/*
-	 * The code for processing CONNECTION_NEEDED state is in connectPoll(),
-	 * so that it can easily be re-executed if needed again during the
-	 * asynchronous startup process.  However, we must run it once here,
-	 * because callers expect a success return from this routine to mean that
-	 * we are in PGRES_POLLING_WRITING connection state.
-	 */
-	if (connectPoll(conn))
-		return 1;
+    /* Ensure our buffers are empty */
+    conn->inStart = conn->inCursor = conn->inEnd = 0;
+    conn->outCount = 0;
+    conn->whichhost = -1;
+    conn->try_next_host = true;
+    conn->try_next_addr = false;
+
+    conn->status = CONNECTION_NEEDED;
+
+
+    /*
+     * The code for processing CONNECTION_NEEDED state is in connectPoll(),
+     * so that it can easily be re-executed if needed again during the
+     * asynchronous startup process.  However, we must run it once here,
+     * because callers expect a success return from this routine to mean that
+     * we are in PGRES_POLLING_WRITING connection state.
+     */
+    if (connectPoll(conn))
+        return 1;
 
 connect_errReturn:
-	conn->status = CONNECTION_BAD;
-	return 0;
+    conn->status = CONNECTION_BAD;
+    return 0;
 }
 
 
@@ -947,47 +947,47 @@ int
 getpeereid(int sock, uid_t *uid, gid_t *gid)
 {
 #if defined(SO_PEERCRED)
-	/* Linux: use getsockopt(SO_PEERCRED) */
-	struct ucred peercred;
-	socklen_t	so_len = sizeof(peercred);
+    /* Linux: use getsockopt(SO_PEERCRED) */
+    struct ucred peercred;
+    socklen_t	so_len = sizeof(peercred);
 
-	if (getsockopt(sock, SOL_SOCKET, SO_PEERCRED, &peercred, &so_len) != 0 ||
-		so_len != sizeof(peercred))
-		return -1;
-	*uid = peercred.uid;
-	*gid = peercred.gid;
-	return 0;
+    if (getsockopt(sock, SOL_SOCKET, SO_PEERCRED, &peercred, &so_len) != 0 ||
+        so_len != sizeof(peercred))
+        return -1;
+    *uid = peercred.uid;
+    *gid = peercred.gid;
+    return 0;
 #elif defined(LOCAL_PEERCRED)
-	/* Debian with FreeBSD kernel: use getsockopt(LOCAL_PEERCRED) */
-	struct xucred peercred;
-	socklen_t	so_len = sizeof(peercred);
+    /* Debian with FreeBSD kernel: use getsockopt(LOCAL_PEERCRED) */
+    struct xucred peercred;
+    socklen_t	so_len = sizeof(peercred);
 
-	if (getsockopt(sock, 0, LOCAL_PEERCRED, &peercred, &so_len) != 0 ||
-		so_len != sizeof(peercred) ||
-		peercred.cr_version != XUCRED_VERSION)
-		return -1;
-	*uid = peercred.cr_uid;
-	*gid = peercred.cr_gid;
-	return 0;
+    if (getsockopt(sock, 0, LOCAL_PEERCRED, &peercred, &so_len) != 0 ||
+        so_len != sizeof(peercred) ||
+        peercred.cr_version != XUCRED_VERSION)
+        return -1;
+    *uid = peercred.cr_uid;
+    *gid = peercred.cr_gid;
+    return 0;
 #elif defined(HAVE_GETPEERUCRED)
-	/* Solaris: use getpeerucred() */
-	ucred_t    *ucred;
+    /* Solaris: use getpeerucred() */
+    ucred_t    *ucred;
 
-	ucred = NULL;				/* must be initialized to NULL */
-	if (getpeerucred(sock, &ucred) == -1)
-		return -1;
+    ucred = NULL;				/* must be initialized to NULL */
+    if (getpeerucred(sock, &ucred) == -1)
+        return -1;
 
-	*uid = ucred_geteuid(ucred);
-	*gid = ucred_getegid(ucred);
-	ucred_free(ucred);
+    *uid = ucred_geteuid(ucred);
+    *gid = ucred_getegid(ucred);
+    ucred_free(ucred);
 
-	if (*uid == (uid_t) (-1) || *gid == (gid_t) (-1))
-		return -1;
-	return 0;
+    if (*uid == (uid_t) (-1) || *gid == (gid_t) (-1))
+        return -1;
+    return 0;
 #else
-	/* No implementation available on this platform */
-	errno = ENOSYS;
-	return -1;
+    /* No implementation available on this platform */
+    errno = ENOSYS;
+    return -1;
 #endif
 }
 
@@ -997,19 +997,19 @@ getpeereid(int sock, uid_t *uid, gid_t *gid)
  */
 int
 pg_getaddrinfo_all(const char *hostname, const char *servname,
-				   const struct addrinfo *hintp, struct addrinfo **result)
+                   const struct addrinfo *hintp, struct addrinfo **result)
 {
-	int			rc;
+    int			rc;
 
-	/* not all versions of getaddrinfo() zero *result on failure */
-	*result = NULL;
+    /* not all versions of getaddrinfo() zero *result on failure */
+    *result = NULL;
 
 
-	/* NULL has special meaning to getaddrinfo(). */
-	rc = getaddrinfo((!hostname || hostname[0] == '\0') ? NULL : hostname,
-					 servname, hintp, result);
+    /* NULL has special meaning to getaddrinfo(). */
+    rc = getaddrinfo((!hostname || hostname[0] == '\0') ? NULL : hostname,
+                     servname, hintp, result);
 
-	return rc;
+    return rc;
 }
 
 
@@ -1044,312 +1044,312 @@ pg_getaddrinfo_all(const char *hostname, const char *servname,
 bool
 connectPoll(Conn *conn)
 {
-	char		sebuf[PG_STRERROR_R_BUFLEN];
-	int			optval;
-	int			save_whichhost;
-	int			save_whichaddr;
+    char		sebuf[PG_STRERROR_R_BUFLEN];
+    int			optval;
+    int			save_whichhost;
+    int			save_whichaddr;
 
-	if (conn == NULL)
-		return false;
+    if (conn == NULL)
+        return false;
 
-	save_whichhost = conn->whichhost;
-	save_whichaddr = conn->whichaddr;
+    save_whichhost = conn->whichhost;
+    save_whichaddr = conn->whichaddr;
 
-	for (; conn->whichhost < conn->nconnhost; conn->whichhost++)
-	{
-		pg_conn_host *ch;
-		struct addrinfo hint;
-		struct addrinfo *addrlist;
-		int			thisport;
-		int			ret;
-		char		portstr[MAXPGPATH];
+    for (; conn->whichhost < conn->nconnhost; conn->whichhost++)
+    {
+        pg_conn_host *ch;
+        struct addrinfo hint;
+        struct addrinfo *addrlist;
+        int			thisport;
+        int			ret;
+        char		portstr[MAXPGPATH];
 
-		ch = &conn->connhost[conn->whichhost];
-		MemSet(&hint, 0, sizeof(hint));
-		hint.ai_socktype = SOCK_STREAM;
-		hint.ai_family = AF_UNSPEC;
+        ch = &conn->connhost[conn->whichhost];
+        MemSet(&hint, 0, sizeof(hint));
+        hint.ai_socktype = SOCK_STREAM;
+        hint.ai_family = AF_UNSPEC;
 
-		if (ch->port == NULL || ch->port[0] == '\0')
-			thisport = DEF_PGPORT;
-		else
-		{
-			if (!ParseIntParam(ch->port, &thisport, conn, "port"))
-				goto error_return;
+        if (ch->port == NULL || ch->port[0] == '\0')
+            thisport = DEF_PGPORT;
+        else
+        {
+            if (!ParseIntParam(ch->port, &thisport, conn, "port"))
+                goto error_return;
 
-			if (thisport < 1 || thisport > 65535)
-			{
-				db_append_conn_error(conn, "invalid port number: \"%s\"", ch->port);
-				continue;
-			}
-		}
-		snprintf(portstr, sizeof(portstr), "%d", thisport);
+            if (thisport < 1 || thisport > 65535)
+            {
+                db_append_conn_error(conn, "invalid port number: \"%s\"", ch->port);
+                continue;
+            }
+        }
+        snprintf(portstr, sizeof(portstr), "%d", thisport);
 
-		switch (ch->type)
-		{
-			case CHT_HOST_NAME:
-				ret = pg_getaddrinfo_all(ch->host, portstr, &hint, &addrlist);
-				if (ret || !addrlist)
-				{
-					db_append_conn_error(conn, "could not translate host name \"%s\" to address: %s",
-										 ch->host, gai_strerror(ret));
-					continue;
-				}
-				break;
+        switch (ch->type)
+        {
+        case CHT_HOST_NAME:
+            ret = pg_getaddrinfo_all(ch->host, portstr, &hint, &addrlist);
+            if (ret || !addrlist)
+            {
+                db_append_conn_error(conn, "could not translate host name \"%s\" to address: %s",
+                                     ch->host, gai_strerror(ret));
+                continue;
+            }
+            break;
 
-			case CHT_HOST_ADDRESS:
-				hint.ai_flags = AI_NUMERICHOST;
-				ret = pg_getaddrinfo_all(ch->hostaddr, portstr, &hint, &addrlist);
-				if (ret || !addrlist)
-				{
-					db_append_conn_error(conn, "could not parse network address \"%s\": %s",
-										 ch->hostaddr, gai_strerror(ret));
-					continue;
-				}
-				break;
+        case CHT_HOST_ADDRESS:
+            hint.ai_flags = AI_NUMERICHOST;
+            ret = pg_getaddrinfo_all(ch->hostaddr, portstr, &hint, &addrlist);
+            if (ret || !addrlist)
+            {
+                db_append_conn_error(conn, "could not parse network address \"%s\": %s",
+                                     ch->hostaddr, gai_strerror(ret));
+                continue;
+            }
+            break;
 
-			case CHT_UNIX_SOCKET:
-				hint.ai_family = AF_UNIX;
-				UNIXSOCK_PATH(portstr, thisport, ch->host);
-				ret = pg_getaddrinfo_all(NULL, portstr, &hint, &addrlist);
-				if (ret || !addrlist)
-				{
-					db_append_conn_error(conn, "could not translate Unix-domain socket path \"%s\" to address: %s",
-										 portstr, gai_strerror(ret));
-					continue;
-				}
-				break;
+        case CHT_UNIX_SOCKET:
+            hint.ai_family = AF_UNIX;
+            UNIXSOCK_PATH(portstr, thisport, ch->host);
+            ret = pg_getaddrinfo_all(NULL, portstr, &hint, &addrlist);
+            if (ret || !addrlist)
+            {
+                db_append_conn_error(conn, "could not translate Unix-domain socket path \"%s\" to address: %s",
+                                     portstr, gai_strerror(ret));
+                continue;
+            }
+            break;
 
-			default:
-				continue;
-		}
+        default:
+            continue;
+        }
 
-		if (store_conn_addrinfo(conn, addrlist))
-		{
-			//pg_freeaddrinfo_all(hint.ai_family, addrlist);
-			continue;
-		}
+        if (store_conn_addrinfo(conn, addrlist))
+        {
+            //pg_freeaddrinfo_all(hint.ai_family, addrlist);
+            continue;
+        }
 
-		for (conn->whichaddr = (conn->whichhost == save_whichhost) ? save_whichaddr : 0;
-			 conn->whichaddr < conn->naddr;
-			 conn->whichaddr++)
-		{
-			char		host_addr[NI_MAXHOST];
-			int			sock_type;
-			AddrInfo   *addr_cur;
+        for (conn->whichaddr = (conn->whichhost == save_whichhost) ? save_whichaddr : 0;
+             conn->whichaddr < conn->naddr;
+             conn->whichaddr++)
+        {
+            char		host_addr[NI_MAXHOST];
+            int			sock_type;
+            AddrInfo   *addr_cur;
 
-			addr_cur = &conn->addr[conn->whichaddr];
-			memcpy(&conn->raddr, &addr_cur->addr, sizeof(SockAddr));
+            addr_cur = &conn->addr[conn->whichaddr];
+            memcpy(&conn->raddr, &addr_cur->addr, sizeof(SockAddr));
 
-			if (conn->connip != NULL)
-			{
-				free(conn->connip);
-				conn->connip = NULL;
-			}
-			getHostaddr(conn, host_addr, NI_MAXHOST);
-			if (host_addr[0])
-				conn->connip = strdup(host_addr);
+            if (conn->connip != NULL)
+            {
+                free(conn->connip);
+                conn->connip = NULL;
+            }
+            getHostaddr(conn, host_addr, NI_MAXHOST);
+            if (host_addr[0])
+                conn->connip = strdup(host_addr);
 
-			sock_type = SOCK_STREAM;
+            sock_type = SOCK_STREAM;
 #ifdef SOCK_CLOEXEC
-			sock_type |= SOCK_CLOEXEC;
+            sock_type |= SOCK_CLOEXEC;
 #endif
-			conn->sock = socket(addr_cur->family, sock_type, 0);
-			if (conn->sock == PGINVALID_SOCKET)
-			{
-				int			errorno = SOCK_ERRNO;
-				db_append_conn_error(conn, "could not create socket: %s",
-									 SOCK_STRERROR(errorno, sebuf, sizeof(sebuf)));
-				continue;
-			}
+            conn->sock = socket(addr_cur->family, sock_type, 0);
+            if (conn->sock == PGINVALID_SOCKET)
+            {
+                int			errorno = SOCK_ERRNO;
+                db_append_conn_error(conn, "could not create socket: %s",
+                                     SOCK_STRERROR(errorno, sebuf, sizeof(sebuf)));
+                continue;
+            }
 
-			if (addr_cur->family != AF_UNIX && !connectNoDelay(conn))
-			{
-				close(conn->sock);
-				conn->sock = PGINVALID_SOCKET;
-				continue;
-			}
+            if (addr_cur->family != AF_UNIX && !connectNoDelay(conn))
+            {
+                close(conn->sock);
+                conn->sock = PGINVALID_SOCKET;
+                continue;
+            }
 
 #ifndef SOCK_NONBLOCK
-		//	if (!pg_set_noblock(conn->sock))
-		//	{
-		//		db_append_conn_error(conn, "could not set socket to nonblocking mode: %s",
-		//							 SOCK_STRERROR(SOCK_ERRNO, sebuf, sizeof(sebuf)));
-		//		close(conn->sock);
-		//		conn->sock = PGINVALID_SOCKET;
-		//		continue;
-		//	}
+            //	if (!pg_set_noblock(conn->sock))
+            //	{
+            //		db_append_conn_error(conn, "could not set socket to nonblocking mode: %s",
+            //							 SOCK_STRERROR(SOCK_ERRNO, sebuf, sizeof(sebuf)));
+            //		close(conn->sock);
+            //		conn->sock = PGINVALID_SOCKET;
+            //		continue;
+            //	}
 #endif
-int flags = fcntl(conn->sock, F_GETFL, 0);
-fcntl(conn->sock, F_SETFL, flags & ~O_NONBLOCK);  // Disable non-blocking mode
+            int flags = fcntl(conn->sock, F_GETFL, 0);
+            fcntl(conn->sock, F_SETFL, flags & ~O_NONBLOCK);  // Disable non-blocking mode
 
 
 #ifndef SOCK_CLOEXEC
 #ifdef F_SETFD
-			if (fcntl(conn->sock, F_SETFD, FD_CLOEXEC) == -1)
-			{
-				db_append_conn_error(conn, "could not set socket to close-on-exec mode: %s",
-									 SOCK_STRERROR(SOCK_ERRNO, sebuf, sizeof(sebuf)));
-				close(conn->sock);
-				conn->sock = PGINVALID_SOCKET;
-				continue;
-			}
+            if (fcntl(conn->sock, F_SETFD, FD_CLOEXEC) == -1)
+            {
+                db_append_conn_error(conn, "could not set socket to close-on-exec mode: %s",
+                                     SOCK_STRERROR(SOCK_ERRNO, sebuf, sizeof(sebuf)));
+                close(conn->sock);
+                conn->sock = PGINVALID_SOCKET;
+                continue;
+            }
 #endif
 #endif
 
-			conn->sigpipe_so = false;
+            conn->sigpipe_so = false;
 #ifdef MSG_NOSIGNAL
-			conn->sigpipe_flag = true;
+            conn->sigpipe_flag = true;
 #else
-			conn->sigpipe_flag = false;
+            conn->sigpipe_flag = false;
 #endif
 
 #ifdef SO_NOSIGPIPE
-			optval = 1;
-			if (setsockopt(conn->sock, SOL_SOCKET, SO_NOSIGPIPE,
-						   (char *) &optval, sizeof(optval)) == 0)
-			{
-				conn->sigpipe_so = true;
-				conn->sigpipe_flag = false;
-			}
+            optval = 1;
+            if (setsockopt(conn->sock, SOL_SOCKET, SO_NOSIGPIPE,
+                           (char *) &optval, sizeof(optval)) == 0)
+            {
+                conn->sigpipe_so = true;
+                conn->sigpipe_flag = false;
+            }
 #endif
 
-			while (connect(conn->sock, (struct sockaddr *) &addr_cur->addr.addr,
-						   addr_cur->addr.salen) < 0)
-			{
-				if (errno == EINTR)
-					continue;
-				connectFailureMessage(conn, errno);
-				close(conn->sock);
-				conn->sock = PGINVALID_SOCKET;
-				break;
-			}
+            while (connect(conn->sock, (struct sockaddr *) &addr_cur->addr.addr,
+                           addr_cur->addr.salen) < 0)
+            {
+                if (errno == EINTR)
+                    continue;
+                connectFailureMessage(conn, errno);
+                close(conn->sock);
+                conn->sock = PGINVALID_SOCKET;
+                break;
+            }
 
-			if (conn->sock == PGINVALID_SOCKET)
-				continue;
+            if (conn->sock == PGINVALID_SOCKET)
+                continue;
 
-			socklen_t	optlen = sizeof(optval);
-			if (getsockopt(conn->sock, SOL_SOCKET, SO_ERROR,
-						   (char *) &optval, &optlen) == -1)
-			{
-				db_append_conn_error(conn, "could not get socket error status: %s",
-									 SOCK_STRERROR(SOCK_ERRNO, sebuf, sizeof(sebuf)));
-				close(conn->sock);
-				conn->sock = PGINVALID_SOCKET;
-				continue;
-			}
-			else if (optval != 0)
-			{
-				connectFailureMessage(conn, optval);
-				close(conn->sock);
-				conn->sock = PGINVALID_SOCKET;
-				continue;
-			}
+            socklen_t	optlen = sizeof(optval);
+            if (getsockopt(conn->sock, SOL_SOCKET, SO_ERROR,
+                           (char *) &optval, &optlen) == -1)
+            {
+                db_append_conn_error(conn, "could not get socket error status: %s",
+                                     SOCK_STRERROR(SOCK_ERRNO, sebuf, sizeof(sebuf)));
+                close(conn->sock);
+                conn->sock = PGINVALID_SOCKET;
+                continue;
+            }
+            else if (optval != 0)
+            {
+                connectFailureMessage(conn, optval);
+                close(conn->sock);
+                conn->sock = PGINVALID_SOCKET;
+                continue;
+            }
 
-			conn->laddr.salen = sizeof(conn->laddr.addr);
-			if (getsockname(conn->sock,
-							(struct sockaddr *) &conn->laddr.addr,
-							&conn->laddr.salen) < 0)
-			{
-				db_append_conn_error(conn, "could not get client address from socket: %s",
-									 SOCK_STRERROR(SOCK_ERRNO, sebuf, sizeof(sebuf)));
-				close(conn->sock);
-				conn->sock = PGINVALID_SOCKET;
-				continue;
-			}
+            conn->laddr.salen = sizeof(conn->laddr.addr);
+            if (getsockname(conn->sock,
+                            (struct sockaddr *) &conn->laddr.addr,
+                            &conn->laddr.salen) < 0)
+            {
+                db_append_conn_error(conn, "could not get client address from socket: %s",
+                                     SOCK_STRERROR(SOCK_ERRNO, sebuf, sizeof(sebuf)));
+                close(conn->sock);
+                conn->sock = PGINVALID_SOCKET;
+                continue;
+            }
 
-			if (conn->requirepeer && conn->requirepeer[0] &&
-				conn->raddr.addr.ss_family == AF_UNIX)
-			{
-				uid_t		uid;
-				gid_t		gid;
+            if (conn->requirepeer && conn->requirepeer[0] &&
+                conn->raddr.addr.ss_family == AF_UNIX)
+            {
+                uid_t		uid;
+                gid_t		gid;
 
-				errno = 0;
-				if (getpeereid(conn->sock, &uid, &gid) != 0)
-				{
-					if (errno == ENOSYS)
-						db_append_conn_error(conn, "requirepeer parameter is not supported on this platform");
-					else
-						db_append_conn_error(conn, "could not get peer credentials: %s",
-											 strerror_r(errno, sebuf, sizeof(sebuf)));
-					close(conn->sock);
-					conn->sock = PGINVALID_SOCKET;
-					continue;
-				}
-				Assert(false);
-			}
+                errno = 0;
+                if (getpeereid(conn->sock, &uid, &gid) != 0)
+                {
+                    if (errno == ENOSYS)
+                        db_append_conn_error(conn, "requirepeer parameter is not supported on this platform");
+                    else
+                        db_append_conn_error(conn, "could not get peer credentials: %s",
+                                             strerror_r(errno, sebuf, sizeof(sebuf)));
+                    close(conn->sock);
+                    conn->sock = PGINVALID_SOCKET;
+                    continue;
+                }
+                Assert(false);
+            }
 
-			PollingStatusType gss_status;
-			bool		gss_done = false;
-			bool		gss_success = false;
-			
+            PollingStatusType gss_status;
+            bool		gss_done = false;
+            bool		gss_success = false;
 
-			while (!gss_done)
-			{
-				gss_status = pqsecure_open_gss(conn);
 
-				switch (gss_status)
-				{
-					case PGRES_POLLING_OK:
-						gss_done = true;
-						gss_success = true;
-						break;
+            while (!gss_done)
+            {
+                gss_status = pqsecure_open_gss(conn);
 
-					case PGRES_POLLING_READING:
-					case PGRES_POLLING_WRITING:
-						{
-							fd_set		read_fds;
-							fd_set		write_fds;
-							int			nfds = conn->sock + 1;
+                switch (gss_status)
+                {
+                case PGRES_POLLING_OK:
+                    gss_done = true;
+                    gss_success = true;
+                    break;
 
-							FD_ZERO(&read_fds);
-							FD_ZERO(&write_fds);
+                case PGRES_POLLING_READING:
+                case PGRES_POLLING_WRITING:
+                    {
+                        fd_set		read_fds;
+                        fd_set		write_fds;
+                        int			nfds = conn->sock + 1;
 
-							if (gss_status == PGRES_POLLING_READING)
-								FD_SET(conn->sock, &read_fds);
-							else
-								FD_SET(conn->sock, &write_fds);
+                        FD_ZERO(&read_fds);
+                        FD_ZERO(&write_fds);
 
-							if (select(nfds, &read_fds, &write_fds, NULL, NULL) < 0)
-							{
-								if (errno == EINTR)
-									continue;
-								db_append_conn_error(conn, "select() failed: %s",
-													 strerror(errno));
-								gss_done = true;
-							}
-						}
-						break;
+                        if (gss_status == PGRES_POLLING_READING)
+                            FD_SET(conn->sock, &read_fds);
+                        else
+                            FD_SET(conn->sock, &write_fds);
 
-					case PGRES_POLLING_FAILED:
-						gss_done = true;
-						break;
+                        if (select(nfds, &read_fds, &write_fds, NULL, NULL) < 0)
+                        {
+                            if (errno == EINTR)
+                                continue;
+                            db_append_conn_error(conn, "select() failed: %s",
+                                                 strerror(errno));
+                            gss_done = true;
+                        }
+                    }
+                    break;
 
-					default:
-						db_append_conn_error(conn, "unexpected GSSAPI polling status: %d",
-											 (int) gss_status);
-						gss_done = true;
-						break;
-				}
-			}
+                case PGRES_POLLING_FAILED:
+                    gss_done = true;
+                    break;
 
-			if (gss_success)
-			{
-				conn->status = CONNECTION_STARTED;
-				return true;
-			}
-			else
-			{
-				close(conn->sock);
-				conn->sock = PGINVALID_SOCKET;
-			}
-		}
-	}
+                default:
+                    db_append_conn_error(conn, "unexpected GSSAPI polling status: %d",
+                                         (int) gss_status);
+                    gss_done = true;
+                    break;
+                }
+            }
+
+            if (gss_success)
+            {
+                conn->status = CONNECTION_STARTED;
+                return true;
+            }
+            else
+            {
+                close(conn->sock);
+                conn->sock = PGINVALID_SOCKET;
+            }
+        }
+    }
 
 error_return:
-	conn->whichhost = save_whichhost;
-	conn->whichaddr = save_whichaddr;
-	conn->status = CONNECTION_BAD;
-	return false;
+    conn->whichhost = save_whichhost;
+    conn->whichaddr = save_whichaddr;
+    conn->status = CONNECTION_BAD;
+    return false;
 }
 
 /*
@@ -1359,56 +1359,56 @@ error_return:
 Conn *
 MakeEmptyConn(void)
 {
-	Conn	   *conn;
+    Conn	   *conn;
 
-							/* WIN32 */
+    /* WIN32 */
 
-	conn = (Conn *) malloc(sizeof(Conn));
-	if (conn == NULL)
-		return conn;
+    conn = (Conn *) malloc(sizeof(Conn));
+    if (conn == NULL)
+        return conn;
 
-	/* Zero all pointers and booleans */
-	MemSet(conn, 0, sizeof(Conn));
+    /* Zero all pointers and booleans */
+    MemSet(conn, 0, sizeof(Conn));
 
-	conn->status = CONNECTION_BAD;
-	conn->options_valid = false;
-	conn->nonblocking = false;
-	conn->std_strings = false;	/* unless server says differently */
-	conn->default_transaction_read_only = PG_BOOL_UNKNOWN;
-	conn->in_hot_standby = PG_BOOL_UNKNOWN;
-	conn->sock = PGINVALID_SOCKET;
-	conn->Pfdebug = NULL;
+    conn->status = CONNECTION_BAD;
+    conn->options_valid = false;
+    conn->nonblocking = false;
+    conn->std_strings = false;	/* unless server says differently */
+    conn->default_transaction_read_only = PG_BOOL_UNKNOWN;
+    conn->in_hot_standby = PG_BOOL_UNKNOWN;
+    conn->sock = PGINVALID_SOCKET;
+    conn->Pfdebug = NULL;
 
-	/*
-	 * We try to send at least 8K at a time, which is the usual size of pipe
-	 * buffers on Unix systems.  That way, when we are sending a large amount
-	 * of data, we avoid incurring extra kernel context swaps for partial
-	 * bufferloads.  The output buffer is initially made 16K in size, and we
-	 * try to dump it after accumulating 8K.
-	 *
-	 * With the same goal of minimizing context swaps, the input buffer will
-	 * be enlarged anytime it has less than 8K free, so we initially allocate
-	 * twice that.
-	 */
-	conn->inBufSize = 16 * 1024;
-	conn->inBuffer = (char *) malloc(conn->inBufSize);
-	conn->outBufSize = 16 * 1024;
-	conn->outBuffer = (char *) malloc(conn->outBufSize);
-	conn->rowBufLen = 32;
-	conn->rowBuf = (PGdataValue *) malloc(conn->rowBufLen * sizeof(PGdataValue));
-	initExpBuffer(&conn->errorMessage);
-	initExpBuffer(&conn->workBuffer);
+    /*
+     * We try to send at least 8K at a time, which is the usual size of pipe
+     * buffers on Unix systems.  That way, when we are sending a large amount
+     * of data, we avoid incurring extra kernel context swaps for partial
+     * bufferloads.  The output buffer is initially made 16K in size, and we
+     * try to dump it after accumulating 8K.
+     *
+     * With the same goal of minimizing context swaps, the input buffer will
+     * be enlarged anytime it has less than 8K free, so we initially allocate
+     * twice that.
+     */
+    conn->inBufSize = 16 * 1024;
+    conn->inBuffer = (char *) malloc(conn->inBufSize);
+    conn->outBufSize = 16 * 1024;
+    conn->outBuffer = (char *) malloc(conn->outBufSize);
+    conn->rowBufLen = 32;
+    conn->rowBuf = (PGdataValue *) malloc(conn->rowBufLen * sizeof(PGdataValue));
+    initExpBuffer(&conn->errorMessage);
+    initExpBuffer(&conn->workBuffer);
 
-	if (conn->inBuffer == NULL ||
-		conn->outBuffer == NULL ||
-		conn->rowBuf == NULL ||
-		ExpBufferBroken(&conn->errorMessage) ||
-		ExpBufferBroken(&conn->workBuffer))
-	{
-		conn = NULL;
-	}
+    if (conn->inBuffer == NULL ||
+        conn->outBuffer == NULL ||
+        conn->rowBuf == NULL ||
+        ExpBufferBroken(&conn->errorMessage) ||
+        ExpBufferBroken(&conn->workBuffer))
+    {
+        conn = NULL;
+    }
 
-	return conn;
+    return conn;
 }
 
 
@@ -1423,36 +1423,36 @@ MakeEmptyConn(void)
 static int
 store_conn_addrinfo(Conn *conn, struct addrinfo *addrlist)
 {
-	struct addrinfo *ai = addrlist;
+    struct addrinfo *ai = addrlist;
 
-	conn->whichaddr = 0;
+    conn->whichaddr = 0;
 
-	conn->naddr = 0;
-	while (ai)
-	{
-		ai = ai->ai_next;
-		conn->naddr++;
-	}
+    conn->naddr = 0;
+    while (ai)
+    {
+        ai = ai->ai_next;
+        conn->naddr++;
+    }
 
-	conn->addr = calloc(conn->naddr, sizeof(AddrInfo));
-	if (conn->addr == NULL)
-	{
-		db_append_conn_error(conn, "out of memory");
-		return 1;
-	}
+    conn->addr = calloc(conn->naddr, sizeof(AddrInfo));
+    if (conn->addr == NULL)
+    {
+        db_append_conn_error(conn, "out of memory");
+        return 1;
+    }
 
-	ai = addrlist;
-	for (int i = 0; i < conn->naddr; i++)
-	{
-		conn->addr[i].family = ai->ai_family;
+    ai = addrlist;
+    for (int i = 0; i < conn->naddr; i++)
+    {
+        conn->addr[i].family = ai->ai_family;
 
-		memcpy(&conn->addr[i].addr.addr, ai->ai_addr,
-			   ai->ai_addrlen);
-		conn->addr[i].addr.salen = ai->ai_addrlen;
-		ai = ai->ai_next;
-	}
+        memcpy(&conn->addr[i].addr.addr, ai->ai_addr,
+               ai->ai_addrlen);
+        conn->addr[i].addr.salen = ai->ai_addrlen;
+        ai = ai->ai_next;
+    }
 
-	return 0;
+    return 0;
 }
 
 
@@ -1476,20 +1476,20 @@ store_conn_addrinfo(Conn *conn, struct addrinfo *addrlist)
 conninfoOption *
 conninfoParse(const char *conninfo, char **errmsg)
 {
-	ExpBufferData errorBuf;
-	conninfoOption *connOptions;
+    ExpBufferData errorBuf;
+    conninfoOption *connOptions;
 
-	if (errmsg)
-		*errmsg = NULL;			/* default */
-	initExpBuffer(&errorBuf);
-	if (ExpBufferDataBroken(errorBuf))
-		return NULL;			/* out of memory already :-( */
-	connOptions = parse_connection_string(conninfo, &errorBuf, false);
-	if (connOptions == NULL && errmsg)
-		*errmsg = errorBuf.data;
-	else
-		termExpBuffer(&errorBuf);
-	return connOptions;
+    if (errmsg)
+        *errmsg = NULL;			/* default */
+    initExpBuffer(&errorBuf);
+    if (ExpBufferDataBroken(errorBuf))
+        return NULL;			/* out of memory already :-( */
+    connOptions = parse_connection_string(conninfo, &errorBuf, false);
+    if (connOptions == NULL && errmsg)
+        *errmsg = errorBuf.data;
+    else
+        termExpBuffer(&errorBuf);
+    return connOptions;
 }
 
 /*
@@ -1498,31 +1498,31 @@ conninfoParse(const char *conninfo, char **errmsg)
 static conninfoOption *
 conninfo_init(ExpBuffer errorMessage)
 {
-	conninfoOption *options;
-	conninfoOption *opt_dest;
-	const internalconninfoOption *cur_opt;
+    conninfoOption *options;
+    conninfoOption *opt_dest;
+    const internalconninfoOption *cur_opt;
 
-	/*
-	 * Get enough memory for all options in conninfoOptions, even if some
-	 * end up being filtered out.
-	 */
-	options = (conninfoOption *) malloc(sizeof(conninfoOption) * sizeof(conninfoOptions) / sizeof(conninfoOptions[0]));
-	if (options == NULL)
-	{
-		db_append_error(errorMessage, "out of memory");
-		return NULL;
-	}
-	opt_dest = options;
+    /*
+     * Get enough memory for all options in conninfoOptions, even if some
+     * end up being filtered out.
+     */
+    options = (conninfoOption *) malloc(sizeof(conninfoOption) * sizeof(conninfoOptions) / sizeof(conninfoOptions[0]));
+    if (options == NULL)
+    {
+        db_append_error(errorMessage, "out of memory");
+        return NULL;
+    }
+    opt_dest = options;
 
-	for (cur_opt = conninfoOptions; cur_opt->keyword; cur_opt++)
-	{
-		/* Only copy the public part of the struct, not the full internal */
-		memcpy(opt_dest, cur_opt, sizeof(conninfoOption));
-		opt_dest++;
-	}
-	MemSet(opt_dest, 0, sizeof(conninfoOption));
+    for (cur_opt = conninfoOptions; cur_opt->keyword; cur_opt++)
+    {
+        /* Only copy the public part of the struct, not the full internal */
+        memcpy(opt_dest, cur_opt, sizeof(conninfoOption));
+        opt_dest++;
+    }
+    MemSet(opt_dest, 0, sizeof(conninfoOption));
 
-	return options;
+    return options;
 }
 
 /*
@@ -1536,14 +1536,14 @@ conninfo_init(ExpBuffer errorMessage)
  */
 static conninfoOption *
 parse_connection_string(const char *connstr, ExpBuffer errorMessage,
-						bool use_defaults)
+                        bool use_defaults)
 {
-	/* Parse as URI if connection string matches URI prefix */
-	if (uri_prefix_length(connstr) != 0)
-		return conninfo_uri_parse(connstr, errorMessage, use_defaults);
+    /* Parse as URI if connection string matches URI prefix */
+    if (uri_prefix_length(connstr) != 0)
+        return conninfo_uri_parse(connstr, errorMessage, use_defaults);
 
-	/* Parse as default otherwise */
-	return conninfo_parse(connstr, errorMessage, use_defaults);
+    /* Parse as default otherwise */
+    return conninfo_parse(connstr, errorMessage, use_defaults);
 }
 
 /*
@@ -1557,15 +1557,15 @@ parse_connection_string(const char *connstr, ExpBuffer errorMessage,
 static int
 uri_prefix_length(const char *connstr)
 {
-	if (strncmp(connstr, uri_designator,
-				sizeof(uri_designator) - 1) == 0)
-		return sizeof(uri_designator) - 1;
+    if (strncmp(connstr, uri_designator,
+                sizeof(uri_designator) - 1) == 0)
+        return sizeof(uri_designator) - 1;
 
-	if (strncmp(connstr, short_uri_designator,
-				sizeof(short_uri_designator) - 1) == 0)
-		return sizeof(short_uri_designator) - 1;
+    if (strncmp(connstr, short_uri_designator,
+                sizeof(short_uri_designator) - 1) == 0)
+        return sizeof(short_uri_designator) - 1;
 
-	return 0;
+    return 0;
 }
 
 /*
@@ -1575,154 +1575,154 @@ uri_prefix_length(const char *connstr)
  */
 static conninfoOption *
 conninfo_parse(const char *conninfo, ExpBuffer errorMessage,
-			   bool use_defaults)
+               bool use_defaults)
 {
-	char	   *pname;
-	char	   *pval;
-	char	   *buf;
-	char	   *cp;
-	char	   *cp2;
-	conninfoOption *options;
+    char	   *pname;
+    char	   *pval;
+    char	   *buf;
+    char	   *cp;
+    char	   *cp2;
+    conninfoOption *options;
 
-	/* Make a working copy of conninfoOptions */
-	options = conninfo_init(errorMessage);
-	if (options == NULL)
-		return NULL;
+    /* Make a working copy of conninfoOptions */
+    options = conninfo_init(errorMessage);
+    if (options == NULL)
+        return NULL;
 
-	/* Need a modifiable copy of the input string */
-	if ((buf = strdup(conninfo)) == NULL)
-	{
-		db_append_error(errorMessage, "out of memory");
-		return NULL;
-	}
-	cp = buf;
+    /* Need a modifiable copy of the input string */
+    if ((buf = strdup(conninfo)) == NULL)
+    {
+        db_append_error(errorMessage, "out of memory");
+        return NULL;
+    }
+    cp = buf;
 
-	while (*cp)
-	{
-		/* Skip blanks before the parameter name */
-		if (isspace((unsigned char) *cp))
-		{
-			cp++;
-			continue;
-		}
+    while (*cp)
+    {
+        /* Skip blanks before the parameter name */
+        if (isspace((unsigned char) *cp))
+        {
+            cp++;
+            continue;
+        }
 
-		/* Get the parameter name */
-		pname = cp;
-		while (*cp)
-		{
-			if (*cp == '=')
-				break;
-			if (isspace((unsigned char) *cp))
-			{
-				*cp++ = '\0';
-				while (*cp)
-				{
-					if (!isspace((unsigned char) *cp))
-						break;
-					cp++;
-				}
-				break;
-			}
-			cp++;
-		}
+        /* Get the parameter name */
+        pname = cp;
+        while (*cp)
+        {
+            if (*cp == '=')
+                break;
+            if (isspace((unsigned char) *cp))
+            {
+                *cp++ = '\0';
+                while (*cp)
+                {
+                    if (!isspace((unsigned char) *cp))
+                        break;
+                    cp++;
+                }
+                break;
+            }
+            cp++;
+        }
 
-		/* Check that there is a following '=' */
-		if (*cp != '=')
-		{
-			db_append_error(errorMessage,
-							   "missing \"=\" after \"%s\" in connection info string",
-							   pname);
-			free(buf);
-			return NULL;
-		}
-		*cp++ = '\0';
+        /* Check that there is a following '=' */
+        if (*cp != '=')
+        {
+            db_append_error(errorMessage,
+                            "missing \"=\" after \"%s\" in connection info string",
+                            pname);
+            free(buf);
+            return NULL;
+        }
+        *cp++ = '\0';
 
-		/* Skip blanks after the '=' */
-		while (*cp)
-		{
-			if (!isspace((unsigned char) *cp))
-				break;
-			cp++;
-		}
+        /* Skip blanks after the '=' */
+        while (*cp)
+        {
+            if (!isspace((unsigned char) *cp))
+                break;
+            cp++;
+        }
 
-		/* Get the parameter value */
-		pval = cp;
+        /* Get the parameter value */
+        pval = cp;
 
-		if (*cp != '\'')
-		{
-			cp2 = pval;
-			while (*cp)
-			{
-				if (isspace((unsigned char) *cp))
-				{
-					*cp++ = '\0';
-					break;
-				}
-				if (*cp == '\\')
-				{
-					cp++;
-					if (*cp != '\0')
-						*cp2++ = *cp++;
-				}
-				else
-					*cp2++ = *cp++;
-			}
-			*cp2 = '\0';
-		}
-		else
-		{
-			cp2 = pval;
-			cp++;
-			for (;;)
-			{
-				if (*cp == '\0')
-				{
-					db_append_error(errorMessage, "unterminated quoted string in connection info string");
-					free(buf);
-					return NULL;
-				}
-				if (*cp == '\\')
-				{
-					cp++;
-					if (*cp != '\0')
-						*cp2++ = *cp++;
-					continue;
-				}
-				if (*cp == '\'')
-				{
-					*cp2 = '\0';
-					cp++;
-					break;
-				}
-				*cp2++ = *cp++;
-			}
-		}
+        if (*cp != '\'')
+        {
+            cp2 = pval;
+            while (*cp)
+            {
+                if (isspace((unsigned char) *cp))
+                {
+                    *cp++ = '\0';
+                    break;
+                }
+                if (*cp == '\\')
+                {
+                    cp++;
+                    if (*cp != '\0')
+                        *cp2++ = *cp++;
+                }
+                else
+                    *cp2++ = *cp++;
+            }
+            *cp2 = '\0';
+        }
+        else
+        {
+            cp2 = pval;
+            cp++;
+            for (;;)
+            {
+                if (*cp == '\0')
+                {
+                    db_append_error(errorMessage, "unterminated quoted string in connection info string");
+                    free(buf);
+                    return NULL;
+                }
+                if (*cp == '\\')
+                {
+                    cp++;
+                    if (*cp != '\0')
+                        *cp2++ = *cp++;
+                    continue;
+                }
+                if (*cp == '\'')
+                {
+                    *cp2 = '\0';
+                    cp++;
+                    break;
+                }
+                *cp2++ = *cp++;
+            }
+        }
 
-		/*
-		 * Now that we have the name and the value, store the record.
-		 */
-		if (!conninfo_storeval(options, pname, pval, errorMessage, false, false))
-		{
-			free(buf);
-			return NULL;
-		}
-	}
+        /*
+         * Now that we have the name and the value, store the record.
+         */
+        if (!conninfo_storeval(options, pname, pval, errorMessage, false, false))
+        {
+            free(buf);
+            return NULL;
+        }
+    }
 
-	/* Done with the modifiable input string */
-	free(buf);
+    /* Done with the modifiable input string */
+    free(buf);
 
-	/*
-	 * Add in defaults if the caller wants that.
-	 */
-	if (use_defaults)
-	{
-		if (!conninfo_add_defaults(options, errorMessage))
-		{
-			return NULL;
-		}
-	}
+    /*
+     * Add in defaults if the caller wants that.
+     */
+    if (use_defaults)
+    {
+        if (!conninfo_add_defaults(options, errorMessage))
+        {
+            return NULL;
+        }
+    }
 
-	return options;
+    return options;
 }
 
 /*
@@ -1730,87 +1730,87 @@ conninfo_parse(const char *conninfo, ExpBuffer errorMessage,
  */
 static conninfoOption *
 conninfo_array_parse(const char *const *keywords, const char *const *values,
-					 ExpBuffer errorMessage, bool use_defaults)
+                     ExpBuffer errorMessage, bool use_defaults)
 {
-	conninfoOption *options;
-	conninfoOption *option;
-	int			i = 0;
+    conninfoOption *options;
+    conninfoOption *option;
+    int			i = 0;
 
-	/* Make a working copy of conninfoOptions */
-	options = conninfo_init(errorMessage);
-	if (options == NULL)
-	{
-		return NULL;
-	}
+    /* Make a working copy of conninfoOptions */
+    options = conninfo_init(errorMessage);
+    if (options == NULL)
+    {
+        return NULL;
+    }
 
-	/* Parse the keywords/values arrays */
-	i = 0;
-	while (keywords[i])
-	{
-		const char *pname = keywords[i];
-		const char *pvalue = values[i];
+    /* Parse the keywords/values arrays */
+    i = 0;
+    while (keywords[i])
+    {
+        const char *pname = keywords[i];
+        const char *pvalue = values[i];
 
-		if (pvalue != NULL && pvalue[0] != '\0')
-		{
-			/* Search for the param record */
-			for (option = options; option->keyword != NULL; option++)
-			{
-				if (strcmp(option->keyword, pname) == 0)
-					break;
-			}
+        if (pvalue != NULL && pvalue[0] != '\0')
+        {
+            /* Search for the param record */
+            for (option = options; option->keyword != NULL; option++)
+            {
+                if (strcmp(option->keyword, pname) == 0)
+                    break;
+            }
 
-			/* Skip unrecognized keywords */
-			if (option->keyword == NULL)
-			{
-				++i;
-				continue;
-			}
+            /* Skip unrecognized keywords */
+            if (option->keyword == NULL)
+            {
+                ++i;
+                continue;
+            }
 
-			/* Process only user, password, host, and port */
-			if (strcmp(pname, "user") != 0 &&
-				strcmp(pname, "password") != 0 &&
-				strcmp(pname, "host") != 0 &&
-				strcmp(pname, "port") != 0)
-			{
-				++i;
-				continue;
-			}
+            /* Process only user, password, host, and port */
+            if (strcmp(pname, "user") != 0 &&
+                strcmp(pname, "password") != 0 &&
+                strcmp(pname, "host") != 0 &&
+                strcmp(pname, "port") != 0)
+            {
+                ++i;
+                continue;
+            }
 
-			/* Store the value */
-			free(option->val);
-			option->val = strdup(pvalue);
-			if (!option->val)
-			{
-				db_append_error(errorMessage, "out of memory");
-				return NULL;
-			}
-		}
-		++i;
-	}
+            /* Store the value */
+            free(option->val);
+            option->val = strdup(pvalue);
+            if (!option->val)
+            {
+                db_append_error(errorMessage, "out of memory");
+                return NULL;
+            }
+        }
+        ++i;
+    }
 
-	/* Apply defaults if required */
-	if (use_defaults)
-	{
-		if (!conninfo_add_defaults(options, errorMessage))
-		{
-			return NULL;
-		}
-	}
+    /* Apply defaults if required */
+    if (use_defaults)
+    {
+        if (!conninfo_add_defaults(options, errorMessage))
+        {
+            return NULL;
+        }
+    }
 
-	/* Clear all non-target parameters */
-	for (option = options; option->keyword != NULL; option++)
-	{
-		if (strcmp(option->keyword, "user") != 0 &&
-			strcmp(option->keyword, "password") != 0 &&
-			strcmp(option->keyword, "host") != 0 &&
-			strcmp(option->keyword, "port") != 0)
-		{
-			free(option->val);
-			option->val = NULL;
-		}
-	}
+    /* Clear all non-target parameters */
+    for (option = options; option->keyword != NULL; option++)
+    {
+        if (strcmp(option->keyword, "user") != 0 &&
+            strcmp(option->keyword, "password") != 0 &&
+            strcmp(option->keyword, "host") != 0 &&
+            strcmp(option->keyword, "port") != 0)
+        {
+            free(option->val);
+            option->val = NULL;
+        }
+    }
 
-	return options;
+    return options;
 }
 /*
  * Add the default values for any unspecified options to the connection
@@ -1826,57 +1826,57 @@ conninfo_array_parse(const char *const *keywords, const char *const *values,
 static bool
 conninfo_add_defaults(conninfoOption *options, ExpBuffer errorMessage)
 {
-	conninfoOption *option;
-	char	   *tmp;
+    conninfoOption *option;
+    char	   *tmp;
 
-	/*
-	 * Get the fallback resources for parameters not specified in the conninfo
-	 * string nor the service.
-	 */
-	for (option = options; option->keyword != NULL; option++)
-	{
-		if (option->val != NULL)
-			continue;			/* Value was in conninfo or service */
+    /*
+     * Get the fallback resources for parameters not specified in the conninfo
+     * string nor the service.
+     */
+    for (option = options; option->keyword != NULL; option++)
+    {
+        if (option->val != NULL)
+            continue;			/* Value was in conninfo or service */
 
-		/*
-		 * Try to get the environment variable fallback
-		 */
-		if (option->envvar != NULL)
-		{
-			if ((tmp = getenv(option->envvar)) != NULL)
-			{
-				option->val = strdup(tmp);
-				if (!option->val)
-				{
-					if (errorMessage)
-						db_append_error(errorMessage, "out of memory");
-					return false;
-				}
-				continue;
-			}
-		}
-
-
-		/*
-		 * No environment variable specified or the variable isn't set - try
-		 * compiled-in default
-		 */
-		if (option->compiled != NULL)
-		{
-			option->val = strdup(option->compiled);
-			if (!option->val)
-			{
-				if (errorMessage)
-					db_append_error(errorMessage, "out of memory");
-				return false;
-			}
-			continue;
-		}
-
-	}
+        /*
+         * Try to get the environment variable fallback
+         */
+        if (option->envvar != NULL)
+        {
+            if ((tmp = getenv(option->envvar)) != NULL)
+            {
+                option->val = strdup(tmp);
+                if (!option->val)
+                {
+                    if (errorMessage)
+                        db_append_error(errorMessage, "out of memory");
+                    return false;
+                }
+                continue;
+            }
+        }
 
 
-	return true;
+        /*
+         * No environment variable specified or the variable isn't set - try
+         * compiled-in default
+         */
+        if (option->compiled != NULL)
+        {
+            option->val = strdup(option->compiled);
+            if (!option->val)
+            {
+                if (errorMessage)
+                    db_append_error(errorMessage, "out of memory");
+                return false;
+            }
+            continue;
+        }
+
+    }
+
+
+    return true;
 }
 
 /*
@@ -1886,32 +1886,32 @@ conninfo_add_defaults(conninfoOption *options, ExpBuffer errorMessage)
  */
 static conninfoOption *
 conninfo_uri_parse(const char *uri, ExpBuffer errorMessage,
-				   bool use_defaults)
+                   bool use_defaults)
 {
-	conninfoOption *options;
+    conninfoOption *options;
 
-	/* Make a working copy of conninfoOptions */
-	options = conninfo_init(errorMessage);
-	if (options == NULL)
-		return NULL;
+    /* Make a working copy of conninfoOptions */
+    options = conninfo_init(errorMessage);
+    if (options == NULL)
+        return NULL;
 
-	if (!conninfo_uri_parse_options(options, uri, errorMessage))
-	{
-		return NULL;
-	}
+    if (!conninfo_uri_parse_options(options, uri, errorMessage))
+    {
+        return NULL;
+    }
 
-	/*
-	 * Add in defaults if the caller wants that.
-	 */
-	if (use_defaults)
-	{
-		if (!conninfo_add_defaults(options, errorMessage))
-		{
-			return NULL;
-		}
-	}
+    /*
+     * Add in defaults if the caller wants that.
+     */
+    if (use_defaults)
+    {
+        if (!conninfo_add_defaults(options, errorMessage))
+        {
+            return NULL;
+        }
+    }
 
-	return options;
+    return options;
 }
 
 /*
@@ -1936,236 +1936,236 @@ conninfo_uri_parse(const char *uri, ExpBuffer errorMessage,
  * Any of the URI parts might use percent-encoding (%xy).
  */
 static bool
-conninfo_uri_parse_options(conninfoOption *options, const char *uri,
-						   ExpBuffer errorMessage)
+    conninfo_uri_parse_options(conninfoOption *options, const char *uri,
+                               ExpBuffer errorMessage)
 {
-	int			prefix_len;
-	char	   *p;
-	char	   *buf = NULL;
-	char	   *start;
-	char		prevchar = '\0';
-	char	   *user = NULL;
-	char	   *host = NULL;
-	bool		retval = false;
-	ExpBufferData hostbuf;
-	ExpBufferData portbuf;
+    int			prefix_len;
+    char	   *p;
+    char	   *buf = NULL;
+    char	   *start;
+    char		prevchar = '\0';
+    char	   *user = NULL;
+    char	   *host = NULL;
+    bool		retval = false;
+    ExpBufferData hostbuf;
+    ExpBufferData portbuf;
 
-	initExpBuffer(&hostbuf);
-	initExpBuffer(&portbuf);
-	if (ExpBufferDataBroken(hostbuf) || ExpBufferDataBroken(portbuf))
-	{
-		db_append_error(errorMessage, "out of memory");
-		goto cleanup;
-	}
+    initExpBuffer(&hostbuf);
+    initExpBuffer(&portbuf);
+    if (ExpBufferDataBroken(hostbuf) || ExpBufferDataBroken(portbuf))
+    {
+        db_append_error(errorMessage, "out of memory");
+        goto cleanup;
+    }
 
-	/* need a modifiable copy of the input URI */
-	buf = strdup(uri);
-	if (buf == NULL)
-	{
-		db_append_error(errorMessage, "out of memory");
-		goto cleanup;
-	}
-	start = buf;
+    /* need a modifiable copy of the input URI */
+    buf = strdup(uri);
+    if (buf == NULL)
+    {
+        db_append_error(errorMessage, "out of memory");
+        goto cleanup;
+    }
+    start = buf;
 
-	/* Skip the URI prefix */
-	prefix_len = uri_prefix_length(uri);
-	if (prefix_len == 0)
-	{
-		/* Should never happen */
-		db_append_error(errorMessage,
-						   "invalid URI propagated to internal parser routine: \"%s\"",
-						   uri);
-		goto cleanup;
-	}
-	start += prefix_len;
-	p = start;
+    /* Skip the URI prefix */
+    prefix_len = uri_prefix_length(uri);
+    if (prefix_len == 0)
+    {
+        /* Should never happen */
+        db_append_error(errorMessage,
+                        "invalid URI propagated to internal parser routine: \"%s\"",
+                        uri);
+        goto cleanup;
+    }
+    start += prefix_len;
+    p = start;
 
-	/* Look ahead for possible user credentials designator */
-	while (*p && *p != '@' && *p != '/')
-		++p;
-	if (*p == '@')
-	{
-		/*
-		 * Found username/password designator, so URI should be of the form
-		 * "scheme://user[:password]@[netloc]".
-		 */
-		user = start;
+    /* Look ahead for possible user credentials designator */
+    while (*p && *p != '@' && *p != '/')
+        ++p;
+    if (*p == '@')
+    {
+        /*
+         * Found username/password designator, so URI should be of the form
+         * "scheme://user[:password]@[netloc]".
+         */
+        user = start;
 
-		p = user;
-		while (*p != ':' && *p != '@')
-			++p;
+        p = user;
+        while (*p != ':' && *p != '@')
+            ++p;
 
-		/* Save last char and cut off at end of user name */
-		prevchar = *p;
-		*p = '\0';
+        /* Save last char and cut off at end of user name */
+        prevchar = *p;
+        *p = '\0';
 
-		if (*user &&
-			!conninfo_storeval(options, "user", user,
-							   errorMessage, false, true))
-			goto cleanup;
+        if (*user &&
+            !conninfo_storeval(options, "user", user,
+                               errorMessage, false, true))
+            goto cleanup;
 
-		if (prevchar == ':')
-		{
-			const char *password = p + 1;
+        if (prevchar == ':')
+        {
+            const char *password = p + 1;
 
-			while (*p != '@')
-				++p;
-			*p = '\0';
+            while (*p != '@')
+                ++p;
+            *p = '\0';
 
-			if (*password &&
-				!conninfo_storeval(options, "password", password,
-								   errorMessage, false, true))
-				goto cleanup;
-		}
+            if (*password &&
+                !conninfo_storeval(options, "password", password,
+                                   errorMessage, false, true))
+                goto cleanup;
+        }
 
-		/* Advance past end of parsed user name or password token */
-		++p;
-	}
-	else
-	{
-		/*
-		 * No username/password designator found.  Reset to start of URI.
-		 */
-		p = start;
-	}
+        /* Advance past end of parsed user name or password token */
+        ++p;
+    }
+    else
+    {
+        /*
+         * No username/password designator found.  Reset to start of URI.
+         */
+        p = start;
+    }
 
-	/*
-	 * There may be multiple netloc[:port] pairs, each separated from the next
-	 * by a comma.  When we initially enter this loop, "p" has been
-	 * incremented past optional URI credential information at this point and
-	 * now points at the "netloc" part of the URI.  On subsequent loop
-	 * iterations, "p" has been incremented past the comma separator and now
-	 * points at the start of the next "netloc".
-	 */
-	for (;;)
-	{
-		/*
-		 * Look for IPv6 address.
-		 */
-		if (*p == '[')
-		{
-			host = ++p;
-			while (*p && *p != ']')
-				++p;
-			if (!*p)
-			{
-				db_append_error(errorMessage,
-								   "end of string reached when looking for matching \"]\" in IPv6 host address in URI: \"%s\"",
-								   uri);
-				goto cleanup;
-			}
-			if (p == host)
-			{
-				db_append_error(errorMessage,
-								   "IPv6 host address may not be empty in URI: \"%s\"",
-								   uri);
-				goto cleanup;
-			}
+    /*
+     * There may be multiple netloc[:port] pairs, each separated from the next
+     * by a comma.  When we initially enter this loop, "p" has been
+     * incremented past optional URI credential information at this point and
+     * now points at the "netloc" part of the URI.  On subsequent loop
+     * iterations, "p" has been incremented past the comma separator and now
+     * points at the start of the next "netloc".
+     */
+    for (;;)
+    {
+        /*
+         * Look for IPv6 address.
+         */
+        if (*p == '[')
+        {
+            host = ++p;
+            while (*p && *p != ']')
+                ++p;
+            if (!*p)
+            {
+                db_append_error(errorMessage,
+                                "end of string reached when looking for matching \"]\" in IPv6 host address in URI: \"%s\"",
+                                uri);
+                goto cleanup;
+            }
+            if (p == host)
+            {
+                db_append_error(errorMessage,
+                                "IPv6 host address may not be empty in URI: \"%s\"",
+                                uri);
+                goto cleanup;
+            }
 
-			/* Cut off the bracket and advance */
-			*(p++) = '\0';
+            /* Cut off the bracket and advance */
+            *(p++) = '\0';
 
-			/*
-			 * The address may be followed by a port specifier or a slash or a
-			 * query or a separator comma.
-			 */
-			if (*p && *p != ':' && *p != '/' && *p != '?' && *p != ',')
-			{
-				db_append_error(errorMessage,
-								   "unexpected character \"%c\" at position %d in URI (expected \":\" or \"/\"): \"%s\"",
-								   *p, (int) (p - buf + 1), uri);
-				goto cleanup;
-			}
-		}
-		else
-		{
-			/* not an IPv6 address: DNS-named or IPv4 netloc */
-			host = p;
+            /*
+             * The address may be followed by a port specifier or a slash or a
+             * query or a separator comma.
+             */
+            if (*p && *p != ':' && *p != '/' && *p != '?' && *p != ',')
+            {
+                db_append_error(errorMessage,
+                                "unexpected character \"%c\" at position %d in URI (expected \":\" or \"/\"): \"%s\"",
+                                *p, (int) (p - buf + 1), uri);
+                goto cleanup;
+            }
+        }
+        else
+        {
+            /* not an IPv6 address: DNS-named or IPv4 netloc */
+            host = p;
 
-			/*
-			 * Look for port specifier (colon) or end of host specifier
-			 * (slash) or query (question mark) or host separator (comma).
-			 */
-			while (*p && *p != ':' && *p != '/' && *p != '?' && *p != ',')
-				++p;
-		}
+            /*
+             * Look for port specifier (colon) or end of host specifier
+             * (slash) or query (question mark) or host separator (comma).
+             */
+            while (*p && *p != ':' && *p != '/' && *p != '?' && *p != ',')
+                ++p;
+        }
 
-		/* Save the hostname terminator before we null it */
-		prevchar = *p;
-		*p = '\0';
+        /* Save the hostname terminator before we null it */
+        prevchar = *p;
+        *p = '\0';
 
-		appendExpBufferStr(&hostbuf, host);
+        appendExpBufferStr(&hostbuf, host);
 
-		if (prevchar == ':')
-		{
-			const char *port = ++p; /* advance past host terminator */
+        if (prevchar == ':')
+        {
+            const char *port = ++p; /* advance past host terminator */
 
-			while (*p && *p != '/' && *p != '?' && *p != ',')
-				++p;
+            while (*p && *p != '/' && *p != '?' && *p != ',')
+                ++p;
 
-			prevchar = *p;
-			*p = '\0';
+            prevchar = *p;
+            *p = '\0';
 
-			appendExpBufferStr(&portbuf, port);
-		}
+            appendExpBufferStr(&portbuf, port);
+        }
 
-		if (prevchar != ',')
-			break;
-		++p;					/* advance past comma separator */
-		appendExpBufferChar(&hostbuf, ',');
-		appendExpBufferChar(&portbuf, ',');
-	}
+        if (prevchar != ',')
+            break;
+        ++p;					/* advance past comma separator */
+        appendExpBufferChar(&hostbuf, ',');
+        appendExpBufferChar(&portbuf, ',');
+    }
 
-	/* Save final values for host and port. */
-	if (ExpBufferDataBroken(hostbuf) || ExpBufferDataBroken(portbuf))
-		goto cleanup;
-	if (hostbuf.data[0] &&
-		!conninfo_storeval(options, "host", hostbuf.data,
-						   errorMessage, false, true))
-		goto cleanup;
-	if (portbuf.data[0] &&
-		!conninfo_storeval(options, "port", portbuf.data,
-						   errorMessage, false, true))
-		goto cleanup;
+    /* Save final values for host and port. */
+    if (ExpBufferDataBroken(hostbuf) || ExpBufferDataBroken(portbuf))
+        goto cleanup;
+    if (hostbuf.data[0] &&
+        !conninfo_storeval(options, "host", hostbuf.data,
+                           errorMessage, false, true))
+        goto cleanup;
+    if (portbuf.data[0] &&
+        !conninfo_storeval(options, "port", portbuf.data,
+                           errorMessage, false, true))
+        goto cleanup;
 
-	if (prevchar && prevchar != '?')
-	{
-		const char *dbname = ++p;	/* advance past host terminator */
+    if (prevchar && prevchar != '?')
+    {
+        const char *dbname = ++p;	/* advance past host terminator */
 
-		/* Look for query parameters */
-		while (*p && *p != '?')
-			++p;
+        /* Look for query parameters */
+        while (*p && *p != '?')
+            ++p;
 
-		prevchar = *p;
-		*p = '\0';
+        prevchar = *p;
+        *p = '\0';
 
-		/*
-		 * Avoid setting dbname to an empty string, as it forces the default
-		 * value (username) and ignores $PGDATABASE, as opposed to not setting
-		 * it at all.
-		 */
-		if (*dbname &&
-			!conninfo_storeval(options, "dbname", dbname,
-							   errorMessage, false, true))
-			goto cleanup;
-	}
+        /*
+         * Avoid setting dbname to an empty string, as it forces the default
+         * value (username) and ignores $PGDATABASE, as opposed to not setting
+         * it at all.
+         */
+        if (*dbname &&
+            !conninfo_storeval(options, "dbname", dbname,
+                               errorMessage, false, true))
+            goto cleanup;
+    }
 
-	if (prevchar)
-	{
-		++p;					/* advance past terminator */
+    if (prevchar)
+    {
+        ++p;					/* advance past terminator */
 
-		if (!conninfo_uri_parse_params(p, options, errorMessage))
-			goto cleanup;
-	}
+        if (!conninfo_uri_parse_params(p, options, errorMessage))
+            goto cleanup;
+    }
 
-	/* everything parsed okay */
-	retval = true;
+    /* everything parsed okay */
+    retval = true;
 
 cleanup:
-	termExpBuffer(&hostbuf);
-	termExpBuffer(&portbuf);
-	free(buf);
-	return retval;
+    termExpBuffer(&hostbuf);
+    termExpBuffer(&portbuf);
+    free(buf);
+    return retval;
 }
 
 /*
@@ -2178,123 +2178,123 @@ cleanup:
  */
 static bool
 conninfo_uri_parse_params(char *params,
-						  conninfoOption *connOptions,
-						  ExpBuffer errorMessage)
+                          conninfoOption *connOptions,
+                          ExpBuffer errorMessage)
 {
-	while (*params)
-	{
-		char	   *keyword = params;
-		char	   *value = NULL;
-		char	   *p = params;
-		bool		malloced = false;
-		int			oldmsglen;
+    while (*params)
+    {
+        char	   *keyword = params;
+        char	   *value = NULL;
+        char	   *p = params;
+        bool		malloced = false;
+        int			oldmsglen;
 
-		/*
-		 * Scan the params string for '=' and '&', marking the end of keyword
-		 * and value respectively.
-		 */
-		for (;;)
-		{
-			if (*p == '=')
-			{
-				/* Was there '=' already? */
-				if (value != NULL)
-				{
-					db_append_error(errorMessage,
-									   "extra key/value separator \"=\" in URI query parameter: \"%s\"",
-									   keyword);
-					return false;
-				}
-				/* Cut off keyword, advance to value */
-				*p++ = '\0';
-				value = p;
-			}
-			else if (*p == '&' || *p == '\0')
-			{
-				/*
-				 * If not at the end, cut off value and advance; leave p
-				 * pointing to start of the next parameter, if any.
-				 */
-				if (*p != '\0')
-					*p++ = '\0';
-				/* Was there '=' at all? */
-				if (value == NULL)
-				{
-					db_append_error(errorMessage,
-									   "missing key/value separator \"=\" in URI query parameter: \"%s\"",
-									   keyword);
-					return false;
-				}
-				/* Got keyword and value, go process them. */
-				break;
-			}
-			else
-				++p;			/* Advance over all other bytes. */
-		}
+        /*
+         * Scan the params string for '=' and '&', marking the end of keyword
+         * and value respectively.
+         */
+        for (;;)
+        {
+            if (*p == '=')
+            {
+                /* Was there '=' already? */
+                if (value != NULL)
+                {
+                    db_append_error(errorMessage,
+                                    "extra key/value separator \"=\" in URI query parameter: \"%s\"",
+                                    keyword);
+                    return false;
+                }
+                /* Cut off keyword, advance to value */
+                *p++ = '\0';
+                value = p;
+            }
+            else if (*p == '&' || *p == '\0')
+            {
+                /*
+                 * If not at the end, cut off value and advance; leave p
+                 * pointing to start of the next parameter, if any.
+                 */
+                if (*p != '\0')
+                    *p++ = '\0';
+                /* Was there '=' at all? */
+                if (value == NULL)
+                {
+                    db_append_error(errorMessage,
+                                    "missing key/value separator \"=\" in URI query parameter: \"%s\"",
+                                    keyword);
+                    return false;
+                }
+                /* Got keyword and value, go process them. */
+                break;
+            }
+            else
+                ++p;			/* Advance over all other bytes. */
+        }
 
-		keyword = conninfo_uri_decode(keyword, errorMessage);
-		if (keyword == NULL)
-		{
-			/* conninfo_uri_decode already set an error message */
-			return false;
-		}
-		value = conninfo_uri_decode(value, errorMessage);
-		if (value == NULL)
-		{
-			/* conninfo_uri_decode already set an error message */
-			free(keyword);
-			return false;
-		}
-		malloced = true;
+        keyword = conninfo_uri_decode(keyword, errorMessage);
+        if (keyword == NULL)
+        {
+            /* conninfo_uri_decode already set an error message */
+            return false;
+        }
+        value = conninfo_uri_decode(value, errorMessage);
+        if (value == NULL)
+        {
+            /* conninfo_uri_decode already set an error message */
+            free(keyword);
+            return false;
+        }
+        malloced = true;
 
-		/*
-		 * Special keyword handling for improved JDBC compatibility.
-		 */
-		if (strcmp(keyword, "ssl") == 0 &&
-			strcmp(value, "true") == 0)
-		{
-			free(keyword);
-			free(value);
-			malloced = false;
+        /*
+         * Special keyword handling for improved JDBC compatibility.
+         */
+        if (strcmp(keyword, "ssl") == 0 &&
+            strcmp(value, "true") == 0)
+        {
+            free(keyword);
+            free(value);
+            malloced = false;
 
-			keyword = "sslmode";
-			value = "require";
-		}
+            keyword = "sslmode";
+            value = "require";
+        }
 
-		/*
-		 * Store the value if the corresponding option exists; ignore
-		 * otherwise.  At this point both keyword and value are not
-		 * URI-encoded.
-		 */
-		oldmsglen = errorMessage->len;
-		if (!conninfo_storeval(connOptions, keyword, value,
-							   errorMessage, true, false))
-		{
-			/* Insert generic message if conninfo_storeval didn't give one. */
-			if ((int)errorMessage->len == oldmsglen)
-				db_append_error(errorMessage,
-								   "invalid URI query parameter: \"%s\"",
-								   keyword);
-			/* And fail. */
-			if (malloced)
-			{
-				free(keyword);
-				free(value);
-			}
-			return false;
-		}
+        /*
+         * Store the value if the corresponding option exists; ignore
+         * otherwise.  At this point both keyword and value are not
+         * URI-encoded.
+         */
+        oldmsglen = errorMessage->len;
+        if (!conninfo_storeval(connOptions, keyword, value,
+                               errorMessage, true, false))
+        {
+            /* Insert generic message if conninfo_storeval didn't give one. */
+            if ((int)errorMessage->len == oldmsglen)
+                db_append_error(errorMessage,
+                                "invalid URI query parameter: \"%s\"",
+                                keyword);
+            /* And fail. */
+            if (malloced)
+            {
+                free(keyword);
+                free(value);
+            }
+            return false;
+        }
 
-		if (malloced)
-		{
-			free(keyword);
-			free(value);
-		}
+        if (malloced)
+        {
+            free(keyword);
+            free(value);
+        }
 
-		/* Proceed to next key=value pair, if any */
-		params = p;
-	}
+        /* Proceed to next key=value pair, if any */
+        params = p;
+    }
 
-	return true;
+    return true;
 }
 
 /*
@@ -2312,93 +2312,93 @@ conninfo_uri_parse_params(char *params,
 static char *
 conninfo_uri_decode(const char *str, ExpBuffer errorMessage)
 {
-	char	   *buf;			/* result */
-	char	   *p;				/* output location */
-	const char *q = str;		/* input location */
+    char	   *buf;			/* result */
+    char	   *p;				/* output location */
+    const char *q = str;		/* input location */
 
-	buf = malloc(strlen(str) + 1);
-	if (buf == NULL)
-	{
-		db_append_error(errorMessage, "out of memory");
-		return NULL;
-	}
-	p = buf;
+    buf = malloc(strlen(str) + 1);
+    if (buf == NULL)
+    {
+        db_append_error(errorMessage, "out of memory");
+        return NULL;
+    }
+    p = buf;
 
-	/* skip leading whitespaces */
-	for (const char *s = q; *s == ' '; s++)
-	{
-		q++;
-		continue;
-	}
+    /* skip leading whitespaces */
+    for (const char *s = q; *s == ' '; s++)
+    {
+        q++;
+        continue;
+    }
 
-	for (;;)
-	{
-		if (*q != '%')
-		{
-			/* if found a whitespace or NUL, the string ends */
-			if (*q == ' ' || *q == '\0')
-				goto end;
+    for (;;)
+    {
+        if (*q != '%')
+        {
+            /* if found a whitespace or NUL, the string ends */
+            if (*q == ' ' || *q == '\0')
+                goto end;
 
-			/* copy character */
-			*(p++) = *(q++);
-		}
-		else
-		{
-			int			hi;
-			int			lo;
-			int			c;
+            /* copy character */
+            *(p++) = *(q++);
+        }
+        else
+        {
+            int			hi;
+            int			lo;
+            int			c;
 
-			++q;				/* skip the percent sign itself */
+            ++q;				/* skip the percent sign itself */
 
-			/*
-			 * Possible EOL will be caught by the first call to
-			 * get_hexdigit(), so we never dereference an invalid q pointer.
-			 */
-			if (!(get_hexdigit(*q++, &hi) && get_hexdigit(*q++, &lo)))
-			{
-				db_append_error(errorMessage,
-								   "invalid percent-encoded token: \"%s\"",
-								   str);
-				free(buf);
-				return NULL;
-			}
+            /*
+             * Possible EOL will be caught by the first call to
+             * get_hexdigit(), so we never dereference an invalid q pointer.
+             */
+            if (!(get_hexdigit(*q++, &hi) && get_hexdigit(*q++, &lo)))
+            {
+                db_append_error(errorMessage,
+                                "invalid percent-encoded token: \"%s\"",
+                                str);
+                free(buf);
+                return NULL;
+            }
 
-			c = (hi << 4) | lo;
-			if (c == 0)
-			{
-				db_append_error(errorMessage,
-								   "forbidden value %%00 in percent-encoded value: \"%s\"",
-								   str);
-				free(buf);
-				return NULL;
-			}
-			*(p++) = c;
-		}
-	}
+            c = (hi << 4) | lo;
+            if (c == 0)
+            {
+                db_append_error(errorMessage,
+                                "forbidden value %%00 in percent-encoded value: \"%s\"",
+                                str);
+                free(buf);
+                return NULL;
+            }
+            *(p++) = c;
+        }
+    }
 
 end:
 
-	/* skip trailing whitespaces */
-	for (const char *s = q; *s == ' '; s++)
-	{
-		q++;
-		continue;
-	}
+    /* skip trailing whitespaces */
+    for (const char *s = q; *s == ' '; s++)
+    {
+        q++;
+        continue;
+    }
 
-	/* Not at the end of the string yet?  Fail. */
-	if (*q != '\0')
-	{
-		db_append_error(errorMessage,
-						   "unexpected spaces found in \"%s\", use percent-encoded spaces (%%20) instead",
-						   str);
-		free(buf);
-		return NULL;
-	}
+    /* Not at the end of the string yet?  Fail. */
+    if (*q != '\0')
+    {
+        db_append_error(errorMessage,
+                        "unexpected spaces found in \"%s\", use percent-encoded spaces (%%20) instead",
+                        str);
+        free(buf);
+        return NULL;
+    }
 
-	/* Copy NUL terminator */
-	*p = '\0';
+    /* Copy NUL terminator */
+    *p = '\0';
 
-	return buf;
+    return buf;
 }
 
 /*
@@ -2412,16 +2412,16 @@ end:
 static bool
 get_hexdigit(char digit, int *value)
 {
-	if ('0' <= digit && digit <= '9')
-		*value = digit - '0';
-	else if ('A' <= digit && digit <= 'F')
-		*value = digit - 'A' + 10;
-	else if ('a' <= digit && digit <= 'f')
-		*value = digit - 'a' + 10;
-	else
-		return false;
+    if ('0' <= digit && digit <= '9')
+        *value = digit - '0';
+    else if ('A' <= digit && digit <= 'F')
+        *value = digit - 'A' + 10;
+    else if ('a' <= digit && digit <= 'f')
+        *value = digit - 'a' + 10;
+    else
+        return false;
 
-	return true;
+    return true;
 }
 
 /*
@@ -2432,13 +2432,13 @@ get_hexdigit(char digit, int *value)
  */
 static const char *
 conninfo_getval(conninfoOption *connOptions,
-				const char *keyword)
+                const char *keyword)
 {
-	conninfoOption *option;
+    conninfoOption *option;
 
-	option = conninfo_find(connOptions, keyword);
+    option = conninfo_find(connOptions, keyword);
 
-	return option ? option->val : NULL;
+    return option ? option->val : NULL;
 }
 
 /*
@@ -2458,58 +2458,58 @@ conninfo_getval(conninfoOption *connOptions,
  */
 static conninfoOption *
 conninfo_storeval(conninfoOption *connOptions,
-				  const char *keyword, const char *value,
-				  ExpBuffer errorMessage, bool ignoreMissing,
-				  bool uri_decode)
+                  const char *keyword, const char *value,
+                  ExpBuffer errorMessage, bool ignoreMissing,
+                  bool uri_decode)
 {
-	conninfoOption *option;
-	char	   *value_copy;
+    conninfoOption *option;
+    char	   *value_copy;
 
-	/*
-	 * For backwards compatibility, requiressl=1 gets translated to
-	 * sslmode=require, and requiressl=0 gets translated to sslmode=prefer
-	 * (which is the default for sslmode).
-	 */
-	if (strcmp(keyword, "requiressl") == 0)
-	{
-		keyword = "sslmode";
-		if (value[0] == '1')
-			value = "require";
-		else
-			value = "prefer";
-	}
+    /*
+     * For backwards compatibility, requiressl=1 gets translated to
+     * sslmode=require, and requiressl=0 gets translated to sslmode=prefer
+     * (which is the default for sslmode).
+     */
+    if (strcmp(keyword, "requiressl") == 0)
+    {
+        keyword = "sslmode";
+        if (value[0] == '1')
+            value = "require";
+        else
+            value = "prefer";
+    }
 
-	option = conninfo_find(connOptions, keyword);
-	if (option == NULL)
-	{
-		if (!ignoreMissing)
-			db_append_error(errorMessage,
-							   "invalid connection option \"%s\"",
-							   keyword);
-		return NULL;
-	}
+    option = conninfo_find(connOptions, keyword);
+    if (option == NULL)
+    {
+        if (!ignoreMissing)
+            db_append_error(errorMessage,
+                            "invalid connection option \"%s\"",
+                            keyword);
+        return NULL;
+    }
 
-	if (uri_decode)
-	{
-		value_copy = conninfo_uri_decode(value, errorMessage);
-		if (value_copy == NULL)
-			/* conninfo_uri_decode already set an error message */
-			return NULL;
-	}
-	else
-	{
-		value_copy = strdup(value);
-		if (value_copy == NULL)
-		{
-			db_append_error(errorMessage, "out of memory");
-			return NULL;
-		}
-	}
+    if (uri_decode)
+    {
+        value_copy = conninfo_uri_decode(value, errorMessage);
+        if (value_copy == NULL)
+            /* conninfo_uri_decode already set an error message */
+            return NULL;
+    }
+    else
+    {
+        value_copy = strdup(value);
+        if (value_copy == NULL)
+        {
+            db_append_error(errorMessage, "out of memory");
+            return NULL;
+        }
+    }
 
-	free(option->val);
-	option->val = value_copy;
+    free(option->val);
+    option->val = value_copy;
 
-	return option;
+    return option;
 }
 
 /*
@@ -2523,15 +2523,15 @@ conninfo_storeval(conninfoOption *connOptions,
 static conninfoOption *
 conninfo_find(conninfoOption *connOptions, const char *keyword)
 {
-	conninfoOption *option;
+    conninfoOption *option;
 
-	for (option = connOptions; option->keyword != NULL; option++)
-	{
-		if (strcmp(option->keyword, keyword) == 0)
-			return option;
-	}
+    for (option = connOptions; option->keyword != NULL; option++)
+    {
+        if (strcmp(option->keyword, keyword) == 0)
+            return option;
+    }
 
-	return NULL;
+    return NULL;
 }
 
 
@@ -2541,44 +2541,44 @@ conninfo_find(conninfoOption *connOptions, const char *keyword)
 conninfoOption *
 conninfo(Conn *conn)
 {
-	ExpBufferData errorBuf;
-	conninfoOption *connOptions;
+    ExpBufferData errorBuf;
+    conninfoOption *connOptions;
 
-	if (conn == NULL)
-		return NULL;
+    if (conn == NULL)
+        return NULL;
 
-	/*
-	 * We don't actually report any errors here, but callees want a buffer,
-	 * and we prefer not to trash the conn's errorMessage.
-	 */
-	initExpBuffer(&errorBuf);
-	if (ExpBufferDataBroken(errorBuf))
-		return NULL;			/* out of memory already :-( */
+    /*
+     * We don't actually report any errors here, but callees want a buffer,
+     * and we prefer not to trash the conn's errorMessage.
+     */
+    initExpBuffer(&errorBuf);
+    if (ExpBufferDataBroken(errorBuf))
+        return NULL;			/* out of memory already :-( */
 
-	connOptions = conninfo_init(&errorBuf);
+    connOptions = conninfo_init(&errorBuf);
 
-	if (connOptions != NULL)
-	{
-		const internalconninfoOption *option;
+    if (connOptions != NULL)
+    {
+        const internalconninfoOption *option;
 
-		for (option = conninfoOptions; option->keyword; option++)
-		{
-			char	  **connmember;
+        for (option = conninfoOptions; option->keyword; option++)
+        {
+            char	  **connmember;
 
-			if (option->connofs < 0)
-				continue;
+            if (option->connofs < 0)
+                continue;
 
-			connmember = (char **) ((char *) conn + option->connofs);
+            connmember = (char **) ((char *) conn + option->connofs);
 
-			if (*connmember)
-				conninfo_storeval(connOptions, option->keyword, *connmember,
-								  &errorBuf, true, false);
-		}
-	}
+            if (*connmember)
+                conninfo_storeval(connOptions, option->keyword, *connmember,
+                                  &errorBuf, true, false);
+        }
+    }
 
-	termExpBuffer(&errorBuf);
+    termExpBuffer(&errorBuf);
 
-	return connOptions;
+    return connOptions;
 }
 
 
@@ -2604,35 +2604,35 @@ bool
 GetHomeDirectory(char *buf, int bufsize)
 {
 #ifndef WIN32
-	const char *home;
+    const char *home;
 
-	home = getenv("HOME");
-	if (home && home[0])
-	{
-		strlcpy(buf, home, bufsize);
-		return true;
-	}
-	else
-	{
-		struct passwd pwbuf;
-		struct passwd *pw;
-		char		tmpbuf[1024];
-		int			rc;
+    home = getenv("HOME");
+    if (home && home[0])
+    {
+        strlcpy(buf, home, bufsize);
+        return true;
+    }
+    else
+    {
+        struct passwd pwbuf;
+        struct passwd *pw;
+        char		tmpbuf[1024];
+        int			rc;
 
-		rc = getpwuid_r(geteuid(), &pwbuf, tmpbuf, sizeof tmpbuf, &pw);
-		if (rc != 0 || !pw)
-			return false;
-		strlcpy(buf, pw->pw_dir, bufsize);
-		return true;
-	}
+        rc = getpwuid_r(geteuid(), &pwbuf, tmpbuf, sizeof tmpbuf, &pw);
+        if (rc != 0 || !pw)
+            return false;
+        strlcpy(buf, pw->pw_dir, bufsize);
+        return true;
+    }
 #else
-	char		tmppath[MAX_PATH];
+    char		tmppath[MAX_PATH];
 
-	ZeroMemory(tmppath, sizeof(tmppath));
-	if (SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, tmppath) != S_OK)
-		return false;
-	snprintf(buf, bufsize, "%s/postgresql", tmppath);
-	return true;
+    ZeroMemory(tmppath, sizeof(tmppath));
+    if (SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, tmppath) != S_OK)
+        return false;
+    snprintf(buf, bufsize, "%s/postgresql", tmppath);
+    return true;
 #endif
 }
 
@@ -2643,42 +2643,42 @@ GetHomeDirectory(char *buf, int bufsize)
  */
 bool
 ParseIntParam(const char *value, int *result, Conn *conn,
-				const char *context)
+              const char *context)
 {
-	char	   *end;
-	long		numval;
+    char	   *end;
+    long		numval;
 
-	Assert(value != NULL);
+    Assert(value != NULL);
 
-	*result = 0;
+    *result = 0;
 
-	/* strtol(3) skips leading whitespaces */
-	errno = 0;
-	numval = strtol(value, &end, 10);
+    /* strtol(3) skips leading whitespaces */
+    errno = 0;
+    numval = strtol(value, &end, 10);
 
-	/*
-	 * If no progress was done during the parsing or an error happened, fail.
-	 * This tests properly for overflows of the result.
-	 */
-	if (value == end || errno != 0 || numval != (int) numval)
-		goto error;
+    /*
+     * If no progress was done during the parsing or an error happened, fail.
+     * This tests properly for overflows of the result.
+     */
+    if (value == end || errno != 0 || numval != (int) numval)
+        goto error;
 
-	/*
-	 * Skip any trailing whitespace; if anything but whitespace remains before
-	 * the terminating character, fail
-	 */
-	while (*end != '\0' && isspace((unsigned char) *end))
-		end++;
+    /*
+     * Skip any trailing whitespace; if anything but whitespace remains before
+     * the terminating character, fail
+     */
+    while (*end != '\0' && isspace((unsigned char) *end))
+        end++;
 
-	if (*end != '\0')
-		goto error;
+    if (*end != '\0')
+        goto error;
 
-	*result = numval;
-	return true;
+    *result = numval;
+    return true;
 
 error:
-	db_append_conn_error(conn, "invalid integer value \"%s\" for connection option \"%s\"",
-							value, context);
-	return false;
+    db_append_conn_error(conn, "invalid integer value \"%s\" for connection option \"%s\"",
+                         value, context);
+    return false;
 }
 

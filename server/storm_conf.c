@@ -14,7 +14,7 @@ StormConfigParam storm_predefined_params[] = {
     {"storm.zookeeper.connection.timeout", "storm.yaml"},
     {"storm.local.dir", "storm.yaml"},
     {"storm.cluster.mode", "storm.yaml"},
-    
+
     // Nimbus Configuration
     {"nimbus.seeds", "storm.yaml"},
     {"nimbus.host", "storm.yaml"},
@@ -24,7 +24,7 @@ StormConfigParam storm_predefined_params[] = {
     {"nimbus.supervisor.timeout.secs", "storm.yaml"},
     {"nimbus.code.sync.freq.secs", "storm.yaml"},
     {"nimbus.blobstore.class", "storm.yaml"},
-    
+
     // Supervisor Configuration
     {"supervisor.slots.ports", "storm.yaml"},
     {"supervisor.worker.timeout.secs", "storm.yaml"},
@@ -34,20 +34,20 @@ StormConfigParam storm_predefined_params[] = {
     {"supervisor.monitor.frequency.secs", "storm.yaml"},
     {"supervisor.enable", "storm.yaml"},
     {"supervisor.worker.port", "storm.yaml"},
-    
+
     // Worker Configuration
     {"worker.childopts", "storm.yaml"},
     {"worker.heap.memory.mb", "storm.yaml"},
     {"worker.gc.childopts", "storm.yaml"},
     {"worker.log.level.reset.interval.secs", "storm.yaml"},
     {"worker.profiler.enabled", "storm.yaml"},
-    
+
     // Network and Messaging
     {"storm.messaging.transport", "storm.yaml"},
     {"storm.messaging.netty.buffer_size", "storm.yaml"},
     {"storm.network.topography.plugin", "storm.yaml"},
     {"storm.thrift.socket.timeout.ms", "storm.yaml"},
-    
+
     // UI and Logging
     {"ui.port", "storm.yaml"},
     {"ui.host", "storm.yaml"},
@@ -55,26 +55,26 @@ StormConfigParam storm_predefined_params[] = {
     {"logviewer.port", "storm.yaml"},
     {"logviewer.max.per.worker.logs.mb", "storm.yaml"},
     {"storm.log4j2.conf.dir", "storm.yaml"},
-    
+
     // Security
     {"storm.kerberos.principal", "storm.yaml"},
     {"storm.kerberos.keytab", "storm.yaml"},
     {"java.security.auth.login.config", "storm.yaml"},
     {"supervisor.run.worker.as.user", "storm.yaml"},
-    
+
     // DRPC Configuration
     {"drpc.servers", "storm.yaml"},
     {"drpc.port", "storm.yaml"},
     {"drpc.worker.threads", "storm.yaml"},
     {"drpc.queue.size", "storm.yaml"},
-    
+
     // Resource Management
     {"topology.priority", "defaults.yaml"},
     {"topology.scheduler.strategy", "defaults.yaml"},
     {"topology.component.resources.onheap.memory.mb", "defaults.yaml"},
     {"topology.component.resources.offheap.memory.mb", "defaults.yaml"},
     {"topology.component.cpu.pcore.percent", "defaults.yaml"},
-    
+
     // Topology Execution
     {"topology.workers", "defaults.yaml"},
     {"topology.acker.executors", "defaults.yaml"},
@@ -84,33 +84,33 @@ StormConfigParam storm_predefined_params[] = {
     {"topology.tasks", "defaults.yaml"},
     {"topology.state.checkpoint.interval.ms", "defaults.yaml"},
     {"topology.enable.message.timeouts", "defaults.yaml"},
-    
+
     // Fault Tolerance
     {"topology.state.synchronization.timeout.secs", "defaults.yaml"},
     {"topology.max.task.parallelism", "defaults.yaml"},
     {"topology.worker.gc.ratio", "defaults.yaml"},
-    
+
     // Serialization
     {"topology.multilang.serializer", "defaults.yaml"},
     {"topology.skip.missing.kryo.registrations", "defaults.yaml"},
     {"topology.fall.back.on.java.serialization", "defaults.yaml"},
-    
+
     // Metrics and Monitoring
     {"topology.builtin.metrics.bucket.size.secs", "defaults.yaml"},
     {"topology.stats.sample.rate", "defaults.yaml"},
     {"topology.metrics.consumer.register", "defaults.yaml"},
-    
+
     // Advanced Configuration
     {"storm.blobstore.replication.factor", "storm.yaml"},
     {"storm.health.check.timeout.ms", "storm.yaml"},
     {"topology.auto-credentials", "defaults.yaml"},
     {"topology.enable.classloader", "defaults.yaml"},
     {"topology.testing.always.try.serialize", "defaults.yaml"},
-    
+
     // Transactional Topologies
     {"topology.transactional.id.seed", "defaults.yaml"},
     {"topology.state.provider", "defaults.yaml"},
-    
+
     // Add new parameters here
 };
 #define NUM_PARAMS sizeof(storm_predefined_params) / sizeof(storm_predefined_params[0])
@@ -453,7 +453,7 @@ ConfigStatus modify_storm_config(const char *param, const char *value, const cha
                     return SAVE_FAILED;
                 }
                 lines[line_count++] = new_line;
-             //   param_found = true;
+                //   param_found = true;
             } else {
                 // Not the target parameter, keep original line
                 free(line_copy);

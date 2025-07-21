@@ -21,8 +21,8 @@ typedef int64_t int64;
 #define FLEXIBLE_ARRAY_MEMBER   /* empty */
 struct varlena
 {
-        char            vl_len_[4];             /* Do not touch this field directly! */
-        char            vl_dat[FLEXIBLE_ARRAY_MEMBER];  /* Data content is here */
+    char            vl_len_[4];             /* Do not touch this field directly! */
+    char            vl_dat[FLEXIBLE_ARRAY_MEMBER];  /* Data content is here */
 };
 
 
@@ -60,11 +60,11 @@ extern void sendfloat8(StringInfo buf, float8 f);
 static inline void
 writeint8(StringInfoData *db_restrict buf, uint8 i)
 {
-	uint8		ni = i;
+    uint8		ni = i;
 
-	Assert(buf->len + (int) sizeof(uint8) <= buf->maxlen);
-	memcpy((char *db_restrict) (buf->data + buf->len), &ni, sizeof(uint8));
-	buf->len += sizeof(uint8);
+    Assert(buf->len + (int) sizeof(uint8) <= buf->maxlen);
+    memcpy((char *db_restrict) (buf->data + buf->len), &ni, sizeof(uint8));
+    buf->len += sizeof(uint8);
 }
 
 /*
@@ -74,11 +74,11 @@ writeint8(StringInfoData *db_restrict buf, uint8 i)
 static inline void
 writeint16(StringInfoData *db_restrict buf, uint16 i)
 {
-	uint16		ni = hton16(i);
+    uint16		ni = hton16(i);
 
-	Assert(buf->len + (int) sizeof(uint16) <= buf->maxlen);
-	memcpy((char *db_restrict) (buf->data + buf->len), &ni, sizeof(uint16));
-	buf->len += sizeof(uint16);
+    Assert(buf->len + (int) sizeof(uint16) <= buf->maxlen);
+    memcpy((char *db_restrict) (buf->data + buf->len), &ni, sizeof(uint16));
+    buf->len += sizeof(uint16);
 }
 
 /*
@@ -88,11 +88,11 @@ writeint16(StringInfoData *db_restrict buf, uint16 i)
 static inline void
 writeint32(StringInfoData *db_restrict buf, uint32 i)
 {
-	uint32		ni = hton32(i);
+    uint32		ni = hton32(i);
 
-	Assert(buf->len + (int) sizeof(uint32) <= buf->maxlen);
-	memcpy((char *db_restrict) (buf->data + buf->len), &ni, sizeof(uint32));
-	buf->len += sizeof(uint32);
+    Assert(buf->len + (int) sizeof(uint32) <= buf->maxlen);
+    memcpy((char *db_restrict) (buf->data + buf->len), &ni, sizeof(uint32));
+    buf->len += sizeof(uint32);
 }
 
 /*
@@ -102,11 +102,11 @@ writeint32(StringInfoData *db_restrict buf, uint32 i)
 static inline void
 writeint64(StringInfoData *db_restrict buf, uint64 i)
 {
-	uint64		ni = hton64(i);
+    uint64		ni = hton64(i);
 
-	Assert(buf->len + (int) sizeof(uint64) <= buf->maxlen);
-	memcpy((char *db_restrict) (buf->data + buf->len), &ni, sizeof(uint64));
-	buf->len += sizeof(uint64);
+    Assert(buf->len + (int) sizeof(uint64) <= buf->maxlen);
+    memcpy((char *db_restrict) (buf->data + buf->len), &ni, sizeof(uint64));
+    buf->len += sizeof(uint64);
 }
 
 /*
@@ -122,55 +122,55 @@ writeint64(StringInfoData *db_restrict buf, uint64 i)
 static inline void
 writestring(StringInfoData *db_restrict buf, const char *db_restrict str)
 {
-	int			slen = strlen(str);
-	char	   *p;
+    int			slen = strlen(str);
+    char	   *p;
 
-	Assert(buf->len + slen + 1 <= buf->maxlen);
+    Assert(buf->len + slen + 1 <= buf->maxlen);
 
-	memcpy(((char *db_restrict) buf->data + buf->len), p, slen + 1);
-	buf->len += slen + 1;
+    memcpy(((char *db_restrict) buf->data + buf->len), p, slen + 1);
+    buf->len += slen + 1;
 
-	if (p != str)
-		free(p);
+    if (p != str)
+        free(p);
 }
 
 /* append a binary [u]int8 to a StringInfo buffer */
 static inline void
 sendint8(StringInfo buf, uint8 i)
 {
-	enlargeStringInfo(buf, sizeof(uint8));
-	writeint8(buf, i);
+    enlargeStringInfo(buf, sizeof(uint8));
+    writeint8(buf, i);
 }
 
 /* append a binary [u]int16 to a StringInfo buffer */
 static inline void
 sendint16(StringInfo buf, uint16 i)
 {
-	enlargeStringInfo(buf, sizeof(uint16));
-	writeint16(buf, i);
+    enlargeStringInfo(buf, sizeof(uint16));
+    writeint16(buf, i);
 }
 
 /* append a binary [u]int32 to a StringInfo buffer */
 static inline void
 sendint32(StringInfo buf, uint32 i)
 {
-	enlargeStringInfo(buf, sizeof(uint32));
-	writeint32(buf, i);
+    enlargeStringInfo(buf, sizeof(uint32));
+    writeint32(buf, i);
 }
 
 /* append a binary [u]int64 to a StringInfo buffer */
 static inline void
 sendint64(StringInfo buf, uint64 i)
 {
-	enlargeStringInfo(buf, sizeof(uint64));
-	writeint64(buf, i);
+    enlargeStringInfo(buf, sizeof(uint64));
+    writeint64(buf, i);
 }
 
 /* append a binary byte to a StringInfo buffer */
 static inline void
 sendbyte(StringInfo buf, uint8 byt)
 {
-	sendint8(buf, byt);
+    sendint8(buf, byt);
 }
 
 /*
@@ -181,21 +181,21 @@ sendbyte(StringInfo buf, uint8 byt)
 static inline void
 sendint(StringInfo buf, uint32 i, int b)
 {
-	switch (b)
-	{
-		case 1:
-			sendint8(buf, (uint8) i);
-			break;
-		case 2:
-			sendint16(buf, (uint16) i);
-			break;
-		case 4:
-			sendint32(buf, (uint32) i);
-			break;
-		default:
-			fprintf(stderr, "unsupported integer size %d", b);
-			break;
-	}
+    switch (b)
+    {
+    case 1:
+        sendint8(buf, (uint8) i);
+        break;
+    case 2:
+        sendint16(buf, (uint16) i);
+        break;
+    case 4:
+        sendint32(buf, (uint32) i);
+        break;
+    default:
+        fprintf(stderr, "unsupported integer size %d", b);
+        break;
+    }
 }
 
 

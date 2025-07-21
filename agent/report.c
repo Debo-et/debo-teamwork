@@ -169,11 +169,11 @@ char *report_hive() {
     // Check if Hive processes are running
     FILE *pgrep = popen("pgrep -f 'HiveMetaStore\\|HiveServer2'", "r");
     if (!pgrep) return strdup("Error checking Hive status.");
-    
+
     char buf[128];
     int running = fgets(buf, sizeof(buf), pgrep) != NULL;
     pclose(pgrep);
-    
+
     if (!running) {
         return strdup("Hive is not started.");
     }
@@ -181,7 +181,7 @@ char *report_hive() {
     // Build path to Hive executable
     char hive_path[1024];
     snprintf(hive_path, sizeof(hive_path), "%s/bin/hive", hive_dir);
-    
+
     if (access(hive_path, X_OK) != 0) {
         return strdup("Hive executable not found or not executable.");
     }
@@ -230,10 +230,10 @@ char *report_kafka() {
     // Construct and execute JMX command
     char command[4096];
     size_t cmd_len = snprintf(command, sizeof(command),
-        "%s/bin/kafka-run-class.sh kafka.tools.JmxTool "
-        "--object-name \"kafka.server:type=KafkaServer,name=BrokerState\" "
-        "--attributes Value --one-time true 2>&1",
-        install_dir);
+                              "%s/bin/kafka-run-class.sh kafka.tools.JmxTool "
+                              "--object-name \"kafka.server:type=KafkaServer,name=BrokerState\" "
+                              "--attributes Value --one-time true 2>&1",
+                              install_dir);
 
     if (cmd_len >= sizeof(command)) {
         return strdup("Command too long.");
@@ -306,8 +306,8 @@ char *report_livy() {
         close(sock);
         char *msg;
         if (asprintf(&msg, "Apache Livy is installed at %s but is not started.", found_path) == -1)
-                FPRINTF(global_client_socket, "Error: Failed to allocate memory for the message.\n");
-        
+            FPRINTF(global_client_socket, "Error: Failed to allocate memory for the message.\n");
+
         return msg;
     }
     close(sock);

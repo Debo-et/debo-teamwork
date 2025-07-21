@@ -40,31 +40,31 @@ int                     MyProcPid;
 
 
 #define MemSet(start, val, len) \
-        do \
-        { \
-                /* must be void* because we don't know if it is integer aligned yet */ \
-                void   *_vstart = (void *) (start); \
-                int             _val = (val); \
-                Size    _len = (len); \
-\
-                if ((((uintptr_t) _vstart) & LONG_ALIGN_MASK) == 0 && \
-                        (_len & LONG_ALIGN_MASK) == 0 && \
-                        _val == 0 && \
-                        _len <= MEMSET_LOOP_LIMIT && \
-                        /* \
-                         *      If MEMSET_LOOP_LIMIT == 0, optimizer should find \
-                         *      the whole "if" false at compile time. \
-                         */ \
-                        MEMSET_LOOP_LIMIT != 0) \
-                { \
-                        long *_start = (long *) _vstart; \
-                        long *_stop = (long *) ((char *) _start + _len); \
-                        while (_start < _stop) \
-                                *_start++ = 0; \
-                } \
-                else \
-                        memset(_vstart, _val, _len); \
-        } while (0)
+    do \
+{ \
+    /* must be void* because we don't know if it is integer aligned yet */ \
+    void   *_vstart = (void *) (start); \
+    int             _val = (val); \
+    Size    _len = (len); \
+    \
+    if ((((uintptr_t) _vstart) & LONG_ALIGN_MASK) == 0 && \
+        (_len & LONG_ALIGN_MASK) == 0 && \
+        _val == 0 && \
+        _len <= MEMSET_LOOP_LIMIT && \
+        /* \
+         *      If MEMSET_LOOP_LIMIT == 0, optimizer should find \
+         *      the whole "if" false at compile time. \
+         */ \
+         MEMSET_LOOP_LIMIT != 0) \
+    { \
+        long *_start = (long *) _vstart; \
+        long *_stop = (long *) ((char *) _start + _len); \
+        while (_start < _stop) \
+        *_start++ = 0; \
+    } \
+    else \
+    memset(_vstart, _val, _len); \
+} while (0)
 
 int                     MyPMChildSlot;
 
@@ -181,9 +181,9 @@ int main() {
     char *curhost = strtok(hostlist, ",");
 
     while (curhost != NULL && NumListenSockets < MAXLISTEN) {
-        int status = ListenServerPort(AF_UNSPEC, curhost, PostPortNumber, ListenSockets, &NumListenSockets, 
-                                     MAXLISTEN);
-        
+        int status = ListenServerPort(AF_UNSPEC, curhost, PostPortNumber, ListenSockets, &NumListenSockets,
+                                      MAXLISTEN);
+
         if (status != 0) {
             fprintf(stderr, "Failed to create socket for '%d'\n", ListenSockets[NumListenSockets]);
         }
@@ -196,12 +196,12 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-   int  status = AgentLoop();
+    int  status = AgentLoop();
 
-        /*
-         * ServerLoop probably shouldn't ever return, but if it does, close down.
-         */
-        if(status != STATUS_OK)
+    /*
+     * ServerLoop probably shouldn't ever return, but if it does, close down.
+     */
+    if(status != STATUS_OK)
         exit(EXIT_FAILURE);
 }
 
@@ -244,27 +244,27 @@ AgentLoop(void)
 {
 
     WaitEventSet *event_set = CreateConnectionEventSet(MAXLISTEN);
-    
+
     /* Register all listening sockets */
     for (int i = 0; i < NumListenSockets; i++) {
         AddSocketEvent(event_set, WL_SOCKET_ACCEPT, ListenSockets[i], NULL);
     }
-    
+
     while (!shutdown_requested){
         int nevents = 0; // Initialize to 0
         WaitEvent events[MAXLISTEN];
 
 #if defined(WAIT_USE_EPOLL)
-        nevents = epoll_wait(event_set->epoll_fd, event_set->epoll_ret_events, 
-                           MAXLISTEN, -1);
+        nevents = epoll_wait(event_set->epoll_fd, event_set->epoll_ret_events,
+                             MAXLISTEN, -1);
         /* Convert epoll events to generic format */
         for (int i = 0; i < nevents; i++) {
             events[i] = *(WaitEvent*)event_set->epoll_ret_events[i].data.ptr;
         }
 #elif defined(WAIT_USE_KQUEUE)
         struct timespec timeout = {0};
-        nevents = kevent(event_set->kqueue_fd, NULL, 0, 
-                        event_set->kqueue_ret_events, MAXLISTEN, &timeout);
+        nevents = kevent(event_set->kqueue_fd, NULL, 0,
+                         event_set->kqueue_ret_events, MAXLISTEN, &timeout);
         /* Convert kqueue events */
         for (int i = 0; i < nevents; i++) {
             events[i] = *(WaitEvent*)event_set->kqueue_ret_events[i].udata;
@@ -280,98 +280,98 @@ AgentLoop(void)
         }
         nevents = event_count; // Correct the nevents after processing
 #elif defined(WAIT_USE_WIN32)
-        nevents = WSAWaitForMultipleEvents(event_set->nevents, 
-                                          event_set->handles, FALSE, 
-                                          WSA_INFINITE, FALSE);
+        nevents = WSAWaitForMultipleEvents(event_set->nevents,
+                                           event_set->handles, FALSE,
+                                           WSA_INFINITE, FALSE);
         /* Handle Windows events */
         // ... Windows-specific event processing ...
 #endif
 
         /* Process all events */
 
-		for (int i = 0; i < nevents; i++)
-		{
-		    if (events[i].events & WL_SOCKET_ACCEPT)
-		    {
-		        ClientSocket s;
+        for (int i = 0; i < nevents; i++)
+        {
+            if (events[i].events & WL_SOCKET_ACCEPT)
+            {
+                ClientSocket s;
 
-		        if (AcceptConnection(events[i].fd, &s) == STATUS_OK)
-		            BackendStartup(&s);
+                if (AcceptConnection(events[i].fd, &s) == STATUS_OK)
+                    BackendStartup(&s);
 
-		        /* Close client socket in the postmaster process */
-		        if (s.sock != DBINVALID_SOCKET)
-		        {
-		            if (closesocket(s.sock) != 0)
-		                fprintf(stderr, "could not close client socket");
-		        }
-		    }
-		}
+                /* Close client socket in the postmaster process */
+                if (s.sock != DBINVALID_SOCKET)
+                {
+                    if (closesocket(s.sock) != 0)
+                        fprintf(stderr, "could not close client socket");
+                }
+            }
+        }
 
-	}
-	return 0;
+    }
+    return 0;
 }
 
 void
 CloseDeboPorts(void)
 {
-	/* Release resources held by  WaitEventSet. */
-	if (pm_wait_set)
-	{
-		FreeWaitEventSetAfterFork(pm_wait_set);
-		pm_wait_set = NULL;
-	}
+    /* Release resources held by  WaitEventSet. */
+    if (pm_wait_set)
+    {
+        FreeWaitEventSetAfterFork(pm_wait_set);
+        pm_wait_set = NULL;
+    }
     for (int i = 0; i < NumListenSockets; i++) {
         if (ListenSockets[i] != DBINVALID_SOCKET) {
             closesocket(ListenSockets[i]);  // Close the socket FD
             ListenSockets[i] = DBINVALID_SOCKET;  // Mark as closed
         }
-	}
-	NumListenSockets = 0;
-	//ListenSockets = NULL;
+    }
+    NumListenSockets = 0;
+    //ListenSockets = NULL;
 
 }
 
 pid_t
 fork_process(void)
 {
-	pid_t		result;
-	//sigset_t	save_mask;
+    pid_t		result;
+    //sigset_t	save_mask;
 
 #ifdef LINUX_PROFILE
-	struct itimerval prof_itimer;
+    struct itimerval prof_itimer;
 #endif
 
-	/*
-	 * Flush stdio channels just before fork, to avoid double-output problems.
-	 */
-	fflush(NULL);
+    /*
+     * Flush stdio channels just before fork, to avoid double-output problems.
+     */
+    fflush(NULL);
 
 #ifdef LINUX_PROFILE
 
-	/*
-	 * Linux's fork() resets the profiling timer in the child process. If we
-	 * want to profile child processes then we need to save and restore the
-	 * timer setting.  This is a waste of time if not profiling, however, so
-	 * only do it if commanded by specific -DLINUX_PROFILE switch.
-	 */
-	getitimer(ITIMER_PROF, &prof_itimer);
+    /*
+     * Linux's fork() resets the profiling timer in the child process. If we
+     * want to profile child processes then we need to save and restore the
+     * timer setting.  This is a waste of time if not profiling, however, so
+     * only do it if commanded by specific -DLINUX_PROFILE switch.
+     */
+    getitimer(ITIMER_PROF, &prof_itimer);
 #endif
 
-	//sigprocmask(SIG_SETMASK, &BlockSig, &save_mask);
-	result = fork();
-	if (result == 0)
-	{
-	//printf("Child (PID: %d) continuing execution.\n", getpid());
-	//sleep(50);
-		/* fork succeeded, in child */
-		//MyProcPid = getpid();
+    //sigprocmask(SIG_SETMASK, &BlockSig, &save_mask);
+    result = fork();
+    if (result == 0)
+    {
+        //printf("Child (PID: %d) continuing execution.\n", getpid());
+        //sleep(50);
+        /* fork succeeded, in child */
+        //MyProcPid = getpid();
 #ifdef LINUX_PROFILE
-		setitimer(ITIMER_PROF, &prof_itimer, NULL);
+        setitimer(ITIMER_PROF, &prof_itimer, NULL);
 #endif
 
-	}
+    }
 
-	return result;
+    return result;
 }
 
 static void
@@ -387,7 +387,7 @@ debo_child_launch(ClientSocket *client_sock)
 {
     pid_t pid = fork_process();
     if (pid == 0) {  // Child process
-        // Close parent's listening sockets (no memory deallocation!)
+                     // Close parent's listening sockets (no memory deallocation!)
         CloseDeboPorts();
         // Deep copy the entire ClientSocket
         ClientSocket *MyClientSocket = malloc(sizeof(ClientSocket));
@@ -395,17 +395,17 @@ debo_child_launch(ClientSocket *client_sock)
             fprintf(stderr, "Child: malloc failed\n");
             _exit(1);
         }
-int flags = fcntl(client_sock->sock, F_GETFL, 0);
-fcntl(client_sock->sock, F_SETFL, flags & ~O_NONBLOCK);  // Disable non-blocking mode
+        int flags = fcntl(client_sock->sock, F_GETFL, 0);
+        fcntl(client_sock->sock, F_SETFL, flags & ~O_NONBLOCK);  // Disable non-blocking mode
 
         // Copy the socket FD and SockAddr
         MyClientSocket->sock = client_sock->sock;  // Integer copy is safe
         CopySockAddr(&MyClientSocket->raddr, &client_sock->raddr);  // Deep copy
-    // Perform GSSAPI handshake
-    if (secure_open_gssapi(MyClientSocket) != 0)
-    {
-        fprintf(stderr, "GSSAPI handshake failed\n");
-    }
+                                                                    // Perform GSSAPI handshake
+        if (secure_open_gssapi(MyClientSocket) != 0)
+        {
+            fprintf(stderr, "GSSAPI handshake failed\n");
+        }
         // Handle the client command
         handle_command(MyClientSocket);
 
@@ -428,22 +428,22 @@ fcntl(client_sock->sock, F_SETFL, flags & ~O_NONBLOCK);  // Disable non-blocking
 static int
 BackendStartup(ClientSocket *client_sock)
 {
-	pid_t		pid;
+    pid_t		pid;
 
 
 
-	pid = debo_child_launch(client_sock);
-	if (pid < 0)
-	{
-		/* in parent, fork failed */
-		int			save_errno = errno;
+    pid = debo_child_launch(client_sock);
+    if (pid < 0)
+    {
+        /* in parent, fork failed */
+        int			save_errno = errno;
 
-		errno = save_errno;
-		fprintf(stderr, "could not fork new process for connection:\n");
-		return STATUS_ERROR;
-	}
+        errno = save_errno;
+        fprintf(stderr, "could not fork new process for connection:\n");
+        return STATUS_ERROR;
+    }
 
-	return STATUS_OK;
+    return STATUS_OK;
 }
 
 
@@ -451,579 +451,1083 @@ BackendStartup(ClientSocket *client_sock)
 #define MAX_LIMIT 1024
 
 static void handle_command(ClientSocket *client_socket) {
-        StringInfoData param_buffer;
-        StringInfoData value_buffer;
-        initStringInfo(&param_buffer);
-        initStringInfo(&value_buffer);
-        global_client_socket = client_socket;
+    StringInfoData param_buffer;
+    StringInfoData value_buffer;
+    initStringInfo(&param_buffer);
+    initStringInfo(&value_buffer);
+    global_client_socket = client_socket;
     for (;;) {
-       resetStringInfo(&param_buffer);
-       int action_code = getbyte(client_socket);
-      if (getmessage(&param_buffer, client_socket, MAX_LIMIT))
-               free(param_buffer.data);
-    if (action_code == EOF || action_code == CliMsg_Finish) {
-        close(client_socket->sock);
-        return;  // Let ServerLoop free client_socket and update event_set
-    }
-               
+        resetStringInfo(&param_buffer);
+        int action_code = getbyte(client_socket);
+        if (getmessage(&param_buffer, client_socket, MAX_LIMIT))
+            free(param_buffer.data);
+        if (action_code == EOF || action_code == CliMsg_Finish) {
+            close(client_socket->sock);
+            return;  // Let ServerLoop free client_socket and update event_set
+        }
+
         char **result = split_string(param_buffer.data);
         printf(" the  data %s", param_buffer.data);
-       // printf(" first second data %s", result[0]);
+        // printf(" first second data %s", result[0]);
         //printf(" first second data %s", result[1]);
 
         switch (action_code) {
             /* ===================== HDFS Commands ===================== */
-            case CliMsg_Hdfs_Start:
-                hadoop_action(START);
+        case CliMsg_Hdfs_Start:
+            if (!isComponentInstalled(HDFS)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(HDFS));
                 break;
-            case CliMsg_Hdfs_Stop:
-                hadoop_action(STOP);
+            }
+            hadoop_action(START);
+            break;
+        case CliMsg_Hdfs_Stop:
+            if (!isComponentInstalled(HDFS)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(HDFS));
                 break;
-            case CliMsg_Hdfs_Restart:
-                hadoop_action(RESTART);
+            }
+            hadoop_action(STOP);
+            break;
+        case CliMsg_Hdfs_Restart:
+            if (!isComponentInstalled(HDFS)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(HDFS));
                 break;
-            case CliMsg_Hdfs_Uninstall:
-                uninstall_hadoop();
+            }
+            hadoop_action(RESTART);
+            break;
+        case CliMsg_Hdfs_Uninstall:
+            if (!isComponentInstalled(HDFS)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(HDFS));
                 break;
-            case CliMsg_Hdfs_Install_Version:
-                install_hadoop(result[0],result[1]);
-                configure_target_component(HDFS);
+            }
+            uninstall_hadoop();
+            break;
+        case CliMsg_Hdfs_Install_Version:
+            if (isComponentInstalled(HDFS)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(HDFS));
                 break;
-            case CliMsg_Hdfs_Install:
-                install_hadoop(NULL, NULL);
-                configure_target_component(HDFS);
+            }
+            install_hadoop(result[0],result[1]);
+            configure_target_component(HDFS);
+            break;
+        case CliMsg_Hdfs_Install:
+            if (isComponentInstalled(HDFS)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(HDFS));
                 break;
-            case CliMsg_Hdfs:
-                FPRINTF(global_client_socket, report_hdfs());
+            }
+            install_hadoop(NULL, NULL);
+            configure_target_component(HDFS);
+            break;
+        case CliMsg_Hdfs:
+            if (!isComponentInstalled(HDFS)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(HDFS));
                 break;
+            }
+            FPRINTF(global_client_socket, report_hdfs());
+            break;
 
 
             /* ===================== Spark Commands ==================== */
-            case CliMsg_Spark_Start:
-                spark_action(START);
+        case CliMsg_Spark_Start:
+            if (!isComponentInstalled(SPARK)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(SPARK));
                 break;
-            case CliMsg_Spark_Stop:
-                spark_action(STOP);
+            }
+            spark_action(START);
+            break;
+        case CliMsg_Spark_Stop:
+            if (!isComponentInstalled(SPARK)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(SPARK));
                 break;
-            case CliMsg_Spark_Restart:
-                spark_action(RESTART);
+            }
+            spark_action(STOP);
+            break;
+        case CliMsg_Spark_Restart:
+            if (!isComponentInstalled(SPARK)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(SPARK));
                 break;
-            case CliMsg_Spark_Uninstall:
-                uninstall_spark();
+            }
+            spark_action(RESTART);
+            break;
+        case CliMsg_Spark_Uninstall:
+            if (!isComponentInstalled(SPARK)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(SPARK));
                 break;
-            case CliMsg_Spark_Install_Version:
-                install_spark(result[0],result[1]);
-                configure_target_component(SPARK);
+            }
+            uninstall_spark();
+            break;
+        case CliMsg_Spark_Install_Version:
+            if (isComponentInstalled(SPARK)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(SPARK));
                 break;
-            case CliMsg_Spark_Install:
-                install_spark(NULL, NULL);
-                configure_target_component(SPARK);
+            }
+            install_spark(result[0],result[1]);
+            configure_target_component(SPARK);
+            break;
+        case CliMsg_Spark_Install:
+            if (isComponentInstalled(SPARK)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(SPARK));
                 break;
-            case CliMsg_Spark:
-                FPRINTF(global_client_socket, report_spark());
+            }
+            install_spark(NULL, NULL);
+            configure_target_component(SPARK);
+            break;
+        case CliMsg_Spark:
+            if (!isComponentInstalled(SPARK)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(SPARK));
                 break;
+            }
+            FPRINTF(global_client_socket, report_spark());
+            break;
             /* ===================== Kafka Commands ===================== */
-            case CliMsg_Kafka_Start:
-                kafka_action(START);
+        case CliMsg_Kafka_Start:
+            if (!isComponentInstalled(KAFKA)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(KAFKA));
                 break;
-            case CliMsg_Kafka_Stop:
-                kafka_action(STOP);
+            }
+            kafka_action(START);
+            break;
+        case CliMsg_Kafka_Stop:
+            if (!isComponentInstalled(KAFKA)){
+                PRINTF(global_client_socket, "%s is not installed.\n", component_to_string(KAFKA));
                 break;
-            case CliMsg_Kafka_Restart:
-                kafka_action(RESTART);
+            }
+            kafka_action(STOP);
+            break;
+        case CliMsg_Kafka_Restart:
+            if (!isComponentInstalled(KAFKA)){
+                PRINTF(global_client_socket, "%s is not installed.\n", component_to_string(KAFKA));
                 break;
-            case CliMsg_Kafka_Uninstall:
-                uninstall_kafka();
+            }
+            kafka_action(RESTART);
+            break;
+        case CliMsg_Kafka_Uninstall:
+            if (!isComponentInstalled(KAFKA)){
+                PRINTF(global_client_socket, "%s is not installed.\n", component_to_string(KAFKA));
                 break;
-            case CliMsg_Kafka_Install_Version:
-                install_kafka(result[0],result[1]);
-                configure_target_component(KAFKA);
+            }
+            uninstall_kafka();
+            break;
+        case CliMsg_Kafka_Install_Version:
+            if (isComponentInstalled(KAFKA)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(KAFKA));
                 break;
-            case CliMsg_Kafka_Install:
-                install_kafka(NULL, NULL);
-                configure_target_component(KAFKA);
+            }
+            install_kafka(result[0],result[1]);
+            configure_target_component(KAFKA);
+            break;
+        case CliMsg_Kafka_Install:
+            if (isComponentInstalled(KAFKA)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(KAFKA));
                 break;
-            case CliMsg_Kafka:
-                FPRINTF(global_client_socket, report_kafka());
+            }
+            install_kafka(NULL, NULL);
+            configure_target_component(KAFKA);
+            break;
+        case CliMsg_Kafka:
+            if (!isComponentInstalled(KAFKA)){
+                PRINTF(global_client_socket, "%s is not installed.\n", component_to_string(KAFKA));
                 break;
-                
+            }
+            FPRINTF(global_client_socket, report_kafka());
+            break;
+
             /* ===================== HBase Commands ===================== */
-            case CliMsg_HBase_Start:
-                HBase_action(START);
+        case CliMsg_HBase_Start:
+            if (!isComponentInstalled(HBASE)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(HBASE));
                 break;
-            case CliMsg_HBase_Stop:
-                HBase_action(STOP);
+            }
+            HBase_action(START);
+            break;
+        case CliMsg_HBase_Stop:
+            if (!isComponentInstalled(HBASE)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(HBASE));
                 break;
-            case CliMsg_HBase_Restart:
-                HBase_action(RESTART);
+            }
+            HBase_action(STOP);
+            break;
+        case CliMsg_HBase_Restart:
+            if (!isComponentInstalled(HBASE)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(HBASE));
                 break;
-            case CliMsg_HBase_Uninstall:
-                uninstall_HBase();
+            }
+            HBase_action(RESTART);
+            break;
+        case CliMsg_HBase_Uninstall:
+            if (!isComponentInstalled(HBASE)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(HBASE));
                 break;
-            case CliMsg_HBase_Install_Version:
-                install_HBase(result[0],result[1]);
-                configure_target_component(HBASE);
+            }
+            uninstall_HBase();
+            break;
+        case CliMsg_HBase_Install_Version:
+            if (isComponentInstalled(HBASE)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(HBASE));
                 break;
-            case CliMsg_HBase_Install:
-                install_HBase(NULL, NULL);
-                configure_target_component(HBASE);
+            }
+            install_HBase(result[0],result[1]);
+            configure_target_component(HBASE);
+            break;
+        case CliMsg_HBase_Install:
+            if (isComponentInstalled(HBASE)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(HBASE));
                 break;
-            case CliMsg_HBase:
-                FPRINTF(global_client_socket, report_hbase());
+            }
+            install_HBase(NULL, NULL);
+            configure_target_component(HBASE);
+            break;
+        case CliMsg_HBase:
+            if (!isComponentInstalled(HBASE)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(HBASE));
                 break;
-                
+            }
+            FPRINTF(global_client_socket, report_hbase());
+            break;
+
             /* =================== ZooKeeper Commands =================== */
-            case CliMsg_ZooKeeper_Start:
-                zookeeper_action(START);
+        case CliMsg_ZooKeeper_Start:
+            if (!isComponentInstalled(ZOOKEEPER)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(ZOOKEEPER));
                 break;
-            case CliMsg_ZooKeeper_Stop:
-                zookeeper_action(STOP);
+            }
+            zookeeper_action(START);
+            break;
+        case CliMsg_ZooKeeper_Stop:
+            if (!isComponentInstalled(ZOOKEEPER)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(ZOOKEEPER));
                 break;
-            case CliMsg_ZooKeeper_Restart:
-                zookeeper_action(RESTART);
+            }
+            zookeeper_action(STOP);
+            break;
+        case CliMsg_ZooKeeper_Restart:
+            if (!isComponentInstalled(ZOOKEEPER)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(ZOOKEEPER));
                 break;
-            case CliMsg_ZooKeeper_Uninstall:
-                uninstall_zookeeper();
+            }
+            zookeeper_action(RESTART);
+            break;
+        case CliMsg_ZooKeeper_Uninstall:
+            if (!isComponentInstalled(ZOOKEEPER)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(ZOOKEEPER));
                 break;
-            case CliMsg_ZooKeeper_Install_Version:
-                install_zookeeper(result[0],result[1]);
-                configure_target_component(ZOOKEEPER);
+            }
+            uninstall_zookeeper();
+            break;
+        case CliMsg_ZooKeeper_Install_Version:
+            if (isComponentInstalled(ZOOKEEPER)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(ZOOKEEPER));
                 break;
-            case CliMsg_ZooKeeper_Install:
-                install_zookeeper(NULL, NULL);
-                configure_target_component(ZOOKEEPER);
+            }
+            install_zookeeper(result[0],result[1]);
+            configure_target_component(ZOOKEEPER);
+            break;
+        case CliMsg_ZooKeeper_Install:
+            if (isComponentInstalled(ZOOKEEPER)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(ZOOKEEPER));
                 break;
-            case CliMsg_ZooKeeper:
-                FPRINTF(global_client_socket, report_zookeeper());
+            }
+            install_zookeeper(NULL, NULL);
+            configure_target_component(ZOOKEEPER);
+            break;
+        case CliMsg_ZooKeeper:
+            if (!isComponentInstalled(ZOOKEEPER)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(ZOOKEEPER));
                 break;
-                
+            }
+            FPRINTF(global_client_socket, report_zookeeper());
+            break;
+
             /* ===================== Flink Commands ===================== */
-            case CliMsg_Flink_Start:
-                flink_action(START);
+        case CliMsg_Flink_Start:
+            if (!isComponentInstalled(FLINK)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(FLINK));
                 break;
-            case CliMsg_Flink_Stop:
-                flink_action(STOP);
+            }
+            flink_action(START);
+            break;
+        case CliMsg_Flink_Stop:
+            if (!isComponentInstalled(FLINK)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(FLINK));
                 break;
-            case CliMsg_Flink_Restart:
-                flink_action(RESTART);
+            }
+            flink_action(STOP);
+            break;
+        case CliMsg_Flink_Restart:
+            if (!isComponentInstalled(FLINK)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(FLINK));
                 break;
-            case CliMsg_Flink_Uninstall:
-                uninstall_flink();
+            }
+            flink_action(RESTART);
+            break;
+        case CliMsg_Flink_Uninstall:
+            if (!isComponentInstalled(FLINK)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(FLINK));
                 break;
-            case CliMsg_Flink_Install_Version:
-                install_flink(result[0],result[1]);
-                configure_target_component(FLINK);
+            }
+            uninstall_flink();
+            break;
+        case CliMsg_Flink_Install_Version:
+            if (isComponentInstalled(FLINK)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(FLINK));
                 break;
-            case CliMsg_Flink_Install:
-                install_flink(NULL, NULL);
-                configure_target_component(FLINK);
+            }
+            install_flink(result[0],result[1]);
+            configure_target_component(FLINK);
+            break;
+        case CliMsg_Flink_Install:
+            if (isComponentInstalled(FLINK)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(FLINK));
                 break;
-            case CliMsg_Flink:
-                FPRINTF(global_client_socket, report_flink());
+            }
+            install_flink(NULL, NULL);
+            configure_target_component(FLINK);
+            break;
+        case CliMsg_Flink:
+            if (!isComponentInstalled(FLINK)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(FLINK));
                 break;
-                
+            }
+            FPRINTF(global_client_socket, report_flink());
+            break;
+
             /* ===================== Storm Commands ===================== */
-            case CliMsg_Storm_Start:
-                storm_action(START);
+        case CliMsg_Storm_Start:
+            if (!isComponentInstalled(STORM)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(STORM));
                 break;
-            case CliMsg_Storm_Stop:
-                storm_action(STOP);
+            }
+            storm_action(START);
+            break;
+        case CliMsg_Storm_Stop:
+            if (!isComponentInstalled(STORM)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(STORM));
                 break;
-            case CliMsg_Storm_Restart:
-                storm_action(RESTART);
+            }
+            storm_action(STOP);
+            break;
+        case CliMsg_Storm_Restart:
+            if (!isComponentInstalled(STORM)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(STORM));
                 break;
-            case CliMsg_Storm_Uninstall:
-                uninstall_Storm();
+            }
+            storm_action(RESTART);
+            break;
+        case CliMsg_Storm_Uninstall:
+            if (!isComponentInstalled(STORM)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(STORM));
                 break;
-            case CliMsg_Storm_Install_Version:
-                install_Storm(result[0],result[1]);
-                configure_target_component(STORM);
+            }
+            uninstall_Storm();
+            break;
+        case CliMsg_Storm_Install_Version:
+            if (isComponentInstalled(STORM)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(STORM));
                 break;
-            case CliMsg_Storm_Install:
-                install_Storm(NULL, NULL);
-                configure_target_component(STORM);
+            }
+            install_Storm(result[0],result[1]);
+            configure_target_component(STORM);
+            break;
+        case CliMsg_Storm_Install:
+            if (isComponentInstalled(STORM)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(STORM));
                 break;
-            case CliMsg_Storm:
-                FPRINTF(global_client_socket, report_storm());
+            }
+            install_Storm(NULL, NULL);
+            configure_target_component(STORM);
+            break;
+        case CliMsg_Storm:
+            if (!isComponentInstalled(STORM)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(STORM));
                 break;
-                
+            }
+            PRINTF(global_client_socket, report_storm());
+            break;
+
             /* ===================== Hive Commands ====================== */
-            case CliMsg_Hive_Start:
-                hive_action(START);
+        case CliMsg_Hive_Start:
+            if (!isComponentInstalled(HIVE)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(HIVE));
                 break;
-            case CliMsg_Hive_Stop:
-                hive_action(STOP);
+            }
+            hive_action(START);
+            break;
+        case CliMsg_Hive_Stop:
+            if (!isComponentInstalled(HIVE)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(HIVE));
                 break;
-            case CliMsg_Hive_Restart:
-                hive_action(RESTART);
+            }
+            hive_action(STOP);
+            break;
+        case CliMsg_Hive_Restart:
+            if (!isComponentInstalled(HIVE)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(HIVE));
                 break;
-            case CliMsg_Hive_Uninstall:
-                uninstall_hive();
+            }
+            hive_action(RESTART);
+            break;
+        case CliMsg_Hive_Uninstall:
+            if (!isComponentInstalled(HIVE)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(HIVE));
                 break;
-            case CliMsg_Hive_Install_Version:
-                install_hive(result[0],result[1]);
-                configure_target_component(HIVE);
+            }
+            uninstall_hive();
+            break;
+        case CliMsg_Hive_Install_Version:
+            if (isComponentInstalled(HIVE)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(HIVE));
                 break;
-            case CliMsg_Hive_Install:
-                install_hive(NULL, NULL);
-                configure_target_component(HIVE);
+            }
+            install_hive(result[0],result[1]);
+            configure_target_component(HIVE);
+            break;
+        case CliMsg_Hive_Install:
+            if (isComponentInstalled(HIVE)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(HIVE));
                 break;
-            case CliMsg_Hive:
-                FPRINTF(global_client_socket, report_hive());
+            }
+            install_hive(NULL, NULL);
+            configure_target_component(HIVE);
+            break;
+        case CliMsg_Hive:
+            if (!isComponentInstalled(HIVE)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(HIVE));
                 break;
-                
+            }
+            FPRINTF(global_client_socket, report_hive());
+            break;
+
             /* ===================== Pig Commands ====================== */
-            case CliMsg_Pig_Start:
-                pig_action(START);
+        case CliMsg_Pig_Start:
+            if (!isComponentInstalled(PIG)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PIG));
                 break;
-            case CliMsg_Pig_Stop:
-                pig_action(STOP);
+            }
+            pig_action(START);
+            break;
+        case CliMsg_Pig_Stop:
+            if (!isComponentInstalled(PIG)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PIG));
                 break;
-            case CliMsg_Pig_Restart:
-                pig_action(RESTART);
+            }
+            pig_action(STOP);
+            break;
+        case CliMsg_Pig_Restart:
+            if (!isComponentInstalled(PIG)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PIG));
                 break;
-            case CliMsg_Pig_Uninstall:
-                uninstall_pig();
+            }
+            pig_action(RESTART);
+            break;
+        case CliMsg_Pig_Uninstall:
+            if (!isComponentInstalled(PIG)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PIG));
                 break;
-            case CliMsg_Pig_Install_Version:
-                install_pig(result[0],result[1]);
-                configure_target_component(PIG);
+            }
+            uninstall_pig();
+            break;
+        case CliMsg_Pig_Install_Version:
+            if (isComponentInstalled(PIG)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(PIG));
                 break;
-            case CliMsg_Pig_Install:
-                install_pig(NULL, NULL);
-                configure_target_component(PIG);
+            }
+            install_pig(result[0],result[1]);
+            configure_target_component(PIG);
+            break;
+        case CliMsg_Pig_Install:
+            if (isComponentInstalled(PIG)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(PIG));
                 break;
-            case CliMsg_Pig:
-                FPRINTF(global_client_socket, report_pig());
+            }
+            install_pig(NULL, NULL);
+            configure_target_component(PIG);
+            break;
+        case CliMsg_Pig:
+            if (!isComponentInstalled(PIG)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PIG));
                 break;
-                
+            }
+            FPRINTF(global_client_socket, report_pig());
+            break;
+
             /* ===================== Tez Commands ====================== */
-            case CliMsg_Tez_Start:
-                tez_action(START);
+        case CliMsg_Tez_Start:
+            if (!isComponentInstalled(TEZ)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(TEZ));
                 break;
-            case CliMsg_Tez_Stop:
-                tez_action(STOP);
+            }
+            tez_action(START);
+            break;
+        case CliMsg_Tez_Stop:
+            if (!isComponentInstalled(TEZ)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(TEZ));
                 break;
-            case CliMsg_Tez_Restart:
-                tez_action(RESTART);
+            }
+            tez_action(STOP);
+            break;
+        case CliMsg_Tez_Restart:
+            if (!isComponentInstalled(TEZ)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(TEZ));
                 break;
-            case CliMsg_Tez_Uninstall:
-                uninstall_Tez();
+            }
+            tez_action(RESTART);
+            break;
+        case CliMsg_Tez_Uninstall:
+            if (!isComponentInstalled(TEZ)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(TEZ));
                 break;
-            case CliMsg_Tez_Install_Version:
-                install_Tez(result[0],result[1]);
-                configure_target_component(TEZ);
+            }
+            uninstall_Tez();
+            break;
+        case CliMsg_Tez_Install_Version:
+            if (isComponentInstalled(TEZ)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(TEZ));
                 break;
-            case CliMsg_Tez_Install:
-                install_Tez(NULL, NULL);
-                configure_target_component(TEZ);
+            }
+            install_Tez(result[0],result[1]);
+            configure_target_component(TEZ);
+            break;
+        case CliMsg_Tez_Install:
+            if (isComponentInstalled(TEZ)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(TEZ));
                 break;
-            case CliMsg_Tez:
-                FPRINTF(global_client_socket, report_tez());
+            }
+            install_Tez(NULL, NULL);
+            configure_target_component(TEZ);
+            break;
+        case CliMsg_Tez:
+            if (!isComponentInstalled(TEZ)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(TEZ));
                 break;
-                
+            }
+            FPRINTF(global_client_socket, report_tez());
+            break;
+
             /* ==================== Atlas Commands ===================== */
-            case CliMsg_Atlas_Start:
-                atlas_action(START);
+        case CliMsg_Atlas_Start:
+            if (!isComponentInstalled(ATLAS)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(ATLAS));
                 break;
-            case CliMsg_Atlas_Stop:
-                atlas_action(STOP);
+            }
+            atlas_action(START);
+            break;
+        case CliMsg_Atlas_Stop:
+            if (!isComponentInstalled(ATLAS)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(ATLAS));
                 break;
-            case CliMsg_Atlas_Restart:
-                atlas_action(RESTART);
+            }
+            atlas_action(STOP);
+            break;
+        case CliMsg_Atlas_Restart:
+            if (!isComponentInstalled(ATLAS)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(ATLAS));
                 break;
-            case CliMsg_Atlas_Uninstall:
-                uninstall_Atlas();
+            }
+            atlas_action(RESTART);
+            break;
+        case CliMsg_Atlas_Uninstall:
+            if (!isComponentInstalled(ATLAS)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(ATLAS));
                 break;
-            case CliMsg_Atlas_Install_Version:
-                install_Atlas(result[0],result[1]);
-                configure_target_component(ATLAS);
+            }
+            uninstall_Atlas();
+            break;
+        case CliMsg_Atlas_Install_Version:
+            if (isComponentInstalled(ATLAS)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(ATLAS));
                 break;
-            case CliMsg_Atlas_Install:
-                install_Atlas(NULL, NULL);
-                configure_target_component(ATLAS);
+            }
+            install_Atlas(result[0],result[1]);
+            configure_target_component(ATLAS);
+            break;
+        case CliMsg_Atlas_Install:
+            if (isComponentInstalled(ATLAS)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(ATLAS));
                 break;
-            case CliMsg_Atlas:
-                FPRINTF(global_client_socket, report_atlas());
+            }
+            install_Atlas(NULL, NULL);
+            configure_target_component(ATLAS);
+            break;
+        case CliMsg_Atlas:
+            if (!isComponentInstalled(ATLAS)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(ATLAS));
                 break;
-                
+            }
+            FPRINTF(global_client_socket, report_atlas());
+            break;
+
             /* ==================== Ranger Commands ==================== */
-            case CliMsg_Ranger_Start:
-                ranger_action(START);
+        case CliMsg_Ranger_Start:
+            if (!isComponentInstalled(RANGER)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(RANGER));
                 break;
-            case CliMsg_Ranger_Stop:
-                ranger_action(STOP);
+            }
+            ranger_action(START);
+            break;
+        case CliMsg_Ranger_Stop:
+            if (!isComponentInstalled(RANGER)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(RANGER));
                 break;
-            case CliMsg_Ranger_Restart:
-                ranger_action(RESTART);
+            }
+            ranger_action(STOP);
+            break;
+        case CliMsg_Ranger_Restart:
+            if (!isComponentInstalled(RANGER)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(RANGER));
                 break;
-            case CliMsg_Ranger_Uninstall:
-                uninstall_ranger();
+            }
+            ranger_action(RESTART);
+            break;
+        case CliMsg_Ranger_Uninstall:
+            if (!isComponentInstalled(RANGER)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(RANGER));
                 break;
-            case CliMsg_Ranger_Install_Version:
-                install_Ranger(result[0],result[1]);
-                configure_target_component(RANGER);
+            }
+            uninstall_ranger();
+            break;
+        case CliMsg_Ranger_Install_Version:
+            if (isComponentInstalled(RANGER)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(RANGER));
                 break;
-            case CliMsg_Ranger_Install:
-                install_Ranger(NULL, NULL);
-                configure_target_component(RANGER);
+            }
+            install_Ranger(result[0],result[1]);
+            configure_target_component(RANGER);
+            break;
+        case CliMsg_Ranger_Install:
+            if (isComponentInstalled(RANGER)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(RANGER));
                 break;
-            case CliMsg_Ranger:
-                FPRINTF(global_client_socket, report_ranger());
+            }
+            install_Ranger(NULL, NULL);
+            configure_target_component(RANGER);
+            break;
+        case CliMsg_Ranger:
+            if (!isComponentInstalled(RANGER)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(RANGER));
                 break;
-                
+            }
+            FPRINTF(global_client_socket, report_ranger());
+            break;
+
             /* ===================== Livy Commands ===================== */
-            case CliMsg_Livy_Start:
-                livy_action(START);
+        case CliMsg_Livy_Start:
+            if (!isComponentInstalled(LIVY)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(LIVY));
                 break;
-            case CliMsg_Livy_Stop:
-                livy_action(STOP);
+            }
+            livy_action(START);
+            break;
+        case CliMsg_Livy_Stop:
+            if (!isComponentInstalled(LIVY)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(LIVY));
                 break;
-            case CliMsg_Livy_Restart:
-                livy_action(RESTART);
+            }
+            livy_action(STOP);
+            break;
+        case CliMsg_Livy_Restart:
+            if (!isComponentInstalled(LIVY)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(LIVY));
                 break;
-            case CliMsg_Livy_Uninstall:
-                uninstall_livy();
+            }
+            livy_action(RESTART);
+            break;
+        case CliMsg_Livy_Uninstall:
+            if (!isComponentInstalled(LIVY)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(LIVY));
                 break;
-            case CliMsg_Livy_Install_Version:
-                install_Livy(result[0],result[1]);
-                configure_target_component(LIVY);
+            }
+            uninstall_livy();
+            break;
+        case CliMsg_Livy_Install_Version:
+            if (isComponentInstalled(LIVY)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(LIVY));
                 break;
-            case CliMsg_Livy_Install:
-                install_Livy(NULL, NULL);
-                configure_target_component(LIVY);
+            }
+            install_Livy(result[0],result[1]);
+            configure_target_component(LIVY);
+            break;
+        case CliMsg_Livy_Install:
+            if (isComponentInstalled(LIVY)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(LIVY));
                 break;
-            case CliMsg_Livy:
-                FPRINTF(global_client_socket, report_livy());
+            }
+            install_Livy(NULL, NULL);
+            configure_target_component(LIVY);
+            break;
+        case CliMsg_Livy:
+            if (!isComponentInstalled(LIVY)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(LIVY));
                 break;
-                
+            }
+            FPRINTF(global_client_socket, report_livy());
+            break;
+
             /* =================== Phoenix Commands =================== */
-            case CliMsg_Phoenix_Start:
-                phoenix_action(START);
+        case CliMsg_Phoenix_Start:
+            if (!isComponentInstalled(PHOENIX)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PHOENIX));
                 break;
-            case CliMsg_Phoenix_Stop:
-                phoenix_action(STOP);
+            }
+            phoenix_action(START);
+            break;
+        case CliMsg_Phoenix_Stop:
+            if (!isComponentInstalled(PHOENIX)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PHOENIX));
                 break;
-            case CliMsg_Phoenix_Restart:
-                phoenix_action(RESTART);
+            }
+            phoenix_action(STOP);
+            break;
+        case CliMsg_Phoenix_Restart:
+            if (!isComponentInstalled(PHOENIX)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PHOENIX));
                 break;
-            case CliMsg_Phoenix_Uninstall:
-                uninstall_phoenix();
+            }
+            phoenix_action(RESTART);
+            break;
+        case CliMsg_Phoenix_Uninstall:
+            if (!isComponentInstalled(PHOENIX)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PHOENIX));
                 break;
-            case CliMsg_Phoenix_Install_Version:
-                install_phoenix(result[0],result[1]);
-                configure_target_component(PHOENIX);
+            }
+            uninstall_phoenix();
+            break;
+        case CliMsg_Phoenix_Install_Version:
+            if (isComponentInstalled(PHOENIX)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(PHOENIX));
                 break;
+            }
+            install_phoenix(result[0],result[1]);
+            configure_target_component(PHOENIX);
+            break;
             /* =================== Phoenix Commands =================== */
-            case CliMsg_Phoenix_Install:
-                install_phoenix(NULL, NULL);
-                configure_target_component(PHOENIX);
+        case CliMsg_Phoenix_Install:
+            if (isComponentInstalled(PHOENIX)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(PHOENIX));
                 break;
-            case CliMsg_Phoenix:
-                FPRINTF(global_client_socket, report_phoenix());
+            }
+            install_phoenix(NULL, NULL);
+            configure_target_component(PHOENIX);
+            break;
+        case CliMsg_Phoenix:
+            if (!isComponentInstalled(PHOENIX)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PHOENIX));
                 break;
-                
+            }
+            PRINTF(global_client_socket, report_phoenix());
+            break;
+
             /* ===================== Solr Commands =================== */
-            case CliMsg_Solr_Start:
-                Solr_action(START);
+        case CliMsg_Solr_Start:
+            if (!isComponentInstalled(SOLR)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(SOLR));
                 break;
-            case CliMsg_Solr_Stop:
-                Solr_action(STOP);
+            }
+            Solr_action(START);
+            break;
+        case CliMsg_Solr_Stop:
+            if (!isComponentInstalled(SOLR)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(SOLR));
                 break;
-            case CliMsg_Solr_Restart:
-                Solr_action(RESTART);
+            }
+            Solr_action(STOP);
+            break;
+        case CliMsg_Solr_Restart:
+            if (!isComponentInstalled(SOLR)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(SOLR));
                 break;
-            case CliMsg_Solr_Uninstall:
-                uninstall_Solr();
+            }
+            Solr_action(RESTART);
+            break;
+        case CliMsg_Solr_Uninstall:
+            if (!isComponentInstalled(SOLR)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(SOLR));
                 break;
-            case CliMsg_Solr_Install_Version:
-                install_Solr(result[0],result[1]);
-                configure_target_component(SOLR);
+            }
+            uninstall_Solr();
+            break;
+        case CliMsg_Solr_Install_Version:
+            if (isComponentInstalled(SOLR)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(SOLR));
                 break;
-            case CliMsg_Solr_Install:
-                install_Solr(NULL, NULL);
-                configure_target_component(SOLR);
+            }
+            install_Solr(result[0],result[1]);
+            configure_target_component(SOLR);
+            break;
+        case CliMsg_Solr_Install:
+            if (isComponentInstalled(SOLR)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(SOLR));
                 break;
-            case CliMsg_Solr:
-                FPRINTF(global_client_socket, report_solr());
+            }
+            install_Solr(NULL, NULL);
+            configure_target_component(SOLR);
+            break;
+        case CliMsg_Solr:
+            if (!isComponentInstalled(SOLR)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(SOLR));
                 break;
-                
+            }
+            PRINTF(global_client_socket, report_solr());
+            break;
+
             /* =================== Zeppelin Commands ================== */
-            case CliMsg_Zeppelin_Stop:
-                Zeppelin_action(STOP);
+        case CliMsg_Zeppelin_Stop:
+            if (!isComponentInstalled(ZEPPELIN)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(ZEPPELIN));
                 break;
-            case CliMsg_Zeppelin_Start:
-                Zeppelin_action(START);
+            }
+            Zeppelin_action(STOP);
+            break;
+        case CliMsg_Zeppelin_Start:
+            if (!isComponentInstalled(ZEPPELIN)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(ZEPPELIN));
                 break;
-            case CliMsg_Zeppelin_Restart:
-                Zeppelin_action(RESTART);
+            }
+            Zeppelin_action(START);
+            break;
+        case CliMsg_Zeppelin_Restart:
+            if (!isComponentInstalled(ZEPPELIN)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(ZEPPELIN));
                 break;
-            case CliMsg_Zeppelin_Uninstall:
-                uninstall_Zeppelin();
+            }
+            Zeppelin_action(RESTART);
+            break;
+        case CliMsg_Zeppelin_Uninstall:
+            if (!isComponentInstalled(ZEPPELIN)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(ZEPPELIN));
                 break;
-            case CliMsg_Zeppelin_Install_Version:
-                install_Zeppelin(result[0],result[1]);
-                configure_target_component(ZEPPELIN);
+            }
+            uninstall_Zeppelin();
+            break;
+        case CliMsg_Zeppelin_Install_Version:
+            if (isComponentInstalled(ZEPPELIN)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(ZEPPELIN));
                 break;
-            case CliMsg_Zeppelin_Install:
-                install_Zeppelin(NULL, NULL);
-                configure_target_component(ZEPPELIN);
+            }
+            install_Zeppelin(result[0],result[1]);
+            configure_target_component(ZEPPELIN);
+            break;
+        case CliMsg_Zeppelin_Install:
+            if (isComponentInstalled(ZEPPELIN)){
+                PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(ZEPPELIN));
                 break;
-            case CliMsg_Zeppelin:
-                FPRINTF(global_client_socket, report_zeppelin());
+            }
+            install_Zeppelin(NULL, NULL);
+            configure_target_component(ZEPPELIN);
+            break;
+        case CliMsg_Zeppelin:
+            if (!isComponentInstalled(ZEPPELIN)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(ZEPPELIN));
                 break;
+            }
+            PRINTF(global_client_socket, report_zeppelin());
+            break;
 
             /* ================= Configuration Commands =============== */
         case CliMsg_Hdfs_Configure:
-             ValidationResult validationresult = validateHdfsConfigParam(result[0], result[1]);
+            if (!isComponentInstalled(HDFS)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(HDFS));
+                break;
+            }
+            ValidationResult validationresult = validateHdfsConfigParam(result[0], result[1]);
             if (!handleValidationResult(validationresult))
                 break;
             ConfigResult *hdfsResult= find_hdfs_config(result[0]);
             if (hdfsResult == NULL)
-                    FPRINTF(global_client_socket,"configuration parameter not supported yet");
+                FPRINTF(global_client_socket,"configuration parameter not supported yet");
             ConfigStatus hdfsStatus =  modify_hdfs_config(hdfsResult->canonical_name,hdfsResult->value,hdfsResult->config_file);
             handle_result(hdfsStatus, hdfsResult->canonical_name,result[1],hdfsResult->config_file);
             break;
         case CliMsg_HBase_Configure:
+            if (!isComponentInstalled(HBASE)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(HBASE));
+                break;
+            }
             ValidationResult validationHbase = validateHBaseConfigParam(result[0], result[1]);
             if (!handleValidationResult(validationHbase))
                 break;
             ConfigResult *hbaseResult= process_hbase_config(result[0],result[1]);
             if (hbaseResult == NULL)
-                    FPRINTF(global_client_socket,"configuration parameter not supported yet");
+                FPRINTF(global_client_socket,"configuration parameter not supported yet");
             ConfigStatus hbaseStatus =  update_hbase_config(hbaseResult->canonical_name, hbaseResult->value, hbaseResult->config_file);
             handle_result(hbaseStatus, hbaseResult->canonical_name, hbaseResult->value, hbaseResult->config_file);
             break;
         case CliMsg_Spark_Configure:
+            if (!isComponentInstalled(SPARK)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(SPARK));
+                break;
+            }
             ValidationResult validationSpark = validateSparkConfigParam(result[0], result[1]);
             if (!handleValidationResult(validationSpark))
                 break;
             ConfigResult *sparkResult= get_spark_config(result[0],result[1]);
             if (sparkResult == NULL)
-                    FPRINTF(global_client_socket,"configuration parameter not supported yet");
+                FPRINTF(global_client_socket,"configuration parameter not supported yet");
             ConfigStatus sparkStatus = update_spark_config(sparkResult->canonical_name, sparkResult->value, sparkResult->config_file);
             handle_result(sparkStatus, sparkResult->canonical_name, sparkResult->value, sparkResult->config_file);
             break;
         case CliMsg_Kafka_Configure:
+            if (!isComponentInstalled(KAFKA)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(KAFKA));
+                break;
+            }
             ValidationResult validationKafka = validateKafkaConfigParam(result[0], result[1]);
             if (!handleValidationResult(validationKafka))
                 break;
             ConfigResult *kafkaResult = validate_kafka_config_param(result[0],result[1]);
             if (kafkaResult == NULL)
-                    PRINTF(global_client_socket,"configuration parameter not supported yet");
+                PRINTF(global_client_socket,"configuration parameter not supported yet");
             ConfigStatus kafkaStatus = modify_kafka_config(kafkaResult->canonical_name,kafkaResult->value,kafkaResult->config_file);
             handle_result(kafkaStatus, kafkaResult->canonical_name,kafkaResult->value,kafkaResult->config_file);
             break;
         case CliMsg_Flink_Configure:
-              ValidationResult validationflink = validateFlinkConfigParam(result[0], result[1]);
+            if (!isComponentInstalled(FLINK)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(FLINK));
+                break;
+            }
+            ValidationResult validationflink = validateFlinkConfigParam(result[0], result[1]);
             if (!handleValidationResult(validationflink))
                 break;
             ConfigResult *flinkResult = set_flink_config(result[0],result[1]);
             if (flinkResult ==NULL)
-                    FPRINTF(global_client_socket,"configuration parameter not supported yet");
+                FPRINTF(global_client_socket,"configuration parameter not supported yet");
             ConfigStatus flinkStatus = update_flink_config(flinkResult->canonical_name,flinkResult->value, flinkResult->config_file);
             handle_result(flinkStatus, flinkResult->canonical_name,flinkResult->value, flinkResult->config_file);
             break;
         case CliMsg_ZooKeeper_Configure:
+            if (!isComponentInstalled(ZOOKEEPER)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(ZOOKEEPER));
+                break;
+            }
             ValidationResult validationZookeeper = validateZooKeeperConfigParam(result[0], result[1]);
             if (!handleValidationResult(validationZookeeper))
                 break;
             ConfigResult *zookeperResult = parse_zookeeper_param(result[0],result[1]);
             if (zookeperResult == NULL)
-                    FPRINTF(global_client_socket,"configuration parameter not supported yet");
+                FPRINTF(global_client_socket,"configuration parameter not supported yet");
             ConfigStatus zookeeperStatus = modify_zookeeper_config(zookeperResult->canonical_name, zookeperResult->value, zookeperResult->config_file);
             handle_result(zookeeperStatus, zookeperResult->canonical_name, zookeperResult->value, zookeperResult->config_file);
             break;
         case CliMsg_Storm_Configure:
+            if (!isComponentInstalled(STORM)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(STORM));
+                break;
+            }
             ValidationResult validationStorm = validateStormConfigParam(result[0], result[1]);
             if (!handleValidationResult(validationStorm))
                 break;
             ConfigResult *conf = validate_storm_config_param(result[0],result[1]);
             if (conf == NULL)
-                    FPRINTF(global_client_socket,"configuration parameter not supported yet");
+                FPRINTF(global_client_socket,"configuration parameter not supported yet");
             ConfigStatus stormStatus = modify_storm_config(conf->canonical_name, conf->value, conf->config_file);
             handle_result(stormStatus, conf->canonical_name, conf->value, conf->config_file);
             break;
         case CliMsg_Hive_Configure:
+            if (!isComponentInstalled(HIVE)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(HIVE));
+                break;
+            }
             ValidationResult validationHive = validateHiveConfigParam(result[0], result[1]);
             if (!handleValidationResult(validationHive))
                 break;
             ConfigResult *hiveConf = process_hive_parameter(result[0],result[1]);
             if (hiveConf == NULL)
-                    FPRINTF(global_client_socket,"configuration parameter not supported yet");
+                FPRINTF(global_client_socket,"configuration parameter not supported yet");
             ConfigStatus hiveStatus = modify_hive_config(hiveConf->canonical_name, hiveConf->value, hiveConf->config_file);
             handle_result(hiveStatus, hiveConf->canonical_name, hiveConf->value, hiveConf->config_file);
             break;
         case CliMsg_Pig_Configure:
+            if (!isComponentInstalled(PIG)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PIG));
+                break;
+            }
             ValidationResult validationPig = validatePigConfigParam(result[0], result[1]);
             if (!handleValidationResult(validationPig))
                 break;
-        ConfigResult *pigConf = validate_pig_config_param(result[0],result[1]);
-        if (pigConf == NULL)
-                    FPRINTF(global_client_socket,"configuration parameter not supported yet");
+            ConfigResult *pigConf = validate_pig_config_param(result[0],result[1]);
+            if (pigConf == NULL)
+                FPRINTF(global_client_socket,"configuration parameter not supported yet");
             ConfigStatus pigStatus = update_pig_config(pigConf->canonical_name, pigConf->value);
             handle_result(pigStatus, pigConf->canonical_name, pigConf->value,pigConf->config_file);
             break;
-      //  case CliMsg_Presto_Configure:
-        //    return modify_oozie_config(result[0],result[1]);
-        //case CliMsg_Atlas_Configure:
-          //  return modify_oozie_config(result[0],result[1]);
+            //  case CliMsg_Presto_Configure:
+            //    return modify_oozie_config(result[0],result[1]);
+            //case CliMsg_Atlas_Configure:
+            //  return modify_oozie_config(result[0],result[1]);
         case CliMsg_Ranger_Configure:
+            if (!isComponentInstalled(RANGER)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(RANGER));
+                break;
+            }
             ConfigResult *rangerConf = process_zeppelin_config_param(result[0],result[1]);
             if (rangerConf == NULL)
-                    FPRINTF(global_client_socket,"configuration parameter not supported yet");
+                FPRINTF(global_client_socket,"configuration parameter not supported yet");
             ConfigStatus rangerStatus =  set_ranger_config(rangerConf->canonical_name, rangerConf->value, rangerConf->config_file);
             handle_result(rangerStatus, rangerConf->canonical_name, rangerConf->value, rangerConf->config_file);
             break;
         case CliMsg_Livy_Configure:
+            if (!isComponentInstalled(LIVY)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(LIVY));
+                break;
+            }
             ValidationResult validationLivy = validateLivyConfigParam(result[0], result[1]);
             if (!handleValidationResult(validationLivy))
                 break;
             ConfigResult *livyConf = parse_livy_config_param(result[0],result[1]);
             if (livyConf == NULL)
-                    FPRINTF(global_client_socket,"configuration parameter not supported yet");
+                FPRINTF(global_client_socket,"configuration parameter not supported yet");
             ConfigStatus livyStatus = set_livy_config(livyConf->canonical_name, livyConf->value,livyConf->config_file);
             handle_result(livyStatus, livyConf->canonical_name, livyConf->value,livyConf->config_file);
             break;
-       // case CliMsg_Phoenix_Configure:
-         //   ConfigStatus phoenixStatus = update_phoenix_config(result[0],result[1]);
-           // handle_result(phoenixStatus);
-           // break;
+            // case CliMsg_Phoenix_Configure:
+            //   ConfigStatus phoenixStatus = update_phoenix_config(result[0],result[1]);
+            // handle_result(phoenixStatus);
+            // break;
         case CliMsg_Solr_Configure:
+            if (!isComponentInstalled(SOLR)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(SOLR));
+                break;
+            }
             ValidationResult validationSolr = validateSolrConfigParam(result[0], result[1]);
             if (!handleValidationResult(validationSolr))
                 break;
             ConfigResult *solrConf = validate_solr_parameter(result[0],result[1]);
             if (solrConf == NULL)
-                    FPRINTF(global_client_socket,"configuration parameter not supported yet");
+                FPRINTF(global_client_socket,"configuration parameter not supported yet");
             ConfigStatus solrStatus =  update_solr_config(solrConf->canonical_name, solrConf->value, solrConf->config_file);
             handle_result(solrStatus, solrConf->canonical_name, solrConf->value, solrConf->config_file);
             break;
         case CliMsg_Zeppelin_Configure:
+            if (!isComponentInstalled(ZEPPELIN)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(ZEPPELIN));
+                break;
+            }
             ValidationResult validationZeppelin = validateZeppelinConfigParam(result[0], result[1]);
             if (!handleValidationResult(validationZeppelin))
                 break;
             ConfigResult *zeppelinConf = process_zeppelin_config_param(result[0],result[1]);
             if (zeppelinConf == NULL)
-                    FPRINTF(global_client_socket,"configuration parameter not supported yet");
+                FPRINTF(global_client_socket,"configuration parameter not supported yet");
             ConfigStatus zeppStatus =  set_zeppelin_config(zeppelinConf->config_file , zeppelinConf->canonical_name, zeppelinConf->value);
             handle_result(zeppStatus, zeppelinConf->canonical_name, zeppelinConf->value,zeppelinConf->config_file);
             break;
         case CliMsg_Tez_Configure:
+            if (!isComponentInstalled(TEZ)){
+                FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(TEZ));
+                break;
+            }
             ValidationResult validationTez = validateTezConfigParam(result[0], result[1]);
             if (!handleValidationResult(validationTez))
                 break;
             ConfigResult *tezConf = parse_tez_config_param(result[0],result[1]);
             if (tezConf == NULL)
-                    FPRINTF(global_client_socket,"configuration parameter not supported yet");
+                FPRINTF(global_client_socket,"configuration parameter not supported yet");
             ConfigStatus tezStatus =   modify_tez_config(tezConf->canonical_name, tezConf->value, "tez-site.xml");
             handle_result(tezStatus, tezConf->canonical_name, tezConf->value, "tez-site.xml");
             break;
             /* =================== Error Handling ===================== */
-            default:
-                FPRINTF(global_client_socket, "Unknown action code: 0x%02X\n", (unsigned char)action_code);
-               // send_error(client_socket, "Invalid command");
-                break;
+        default:
+            FPRINTF(global_client_socket, "Unknown action code: 0x%02X\n", (unsigned char)action_code);
+            // send_error(client_socket, "Invalid command");
+            break;
         }
     }
 }

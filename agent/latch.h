@@ -18,12 +18,12 @@ extern int MyProcPid;  // Declaration (no storage allocated)
  */
 typedef struct Latch
 {
-	sig_atomic_t is_set;
-	sig_atomic_t maybe_sleeping;
-	bool		is_shared;
-	int			owner_pid;
+    sig_atomic_t is_set;
+    sig_atomic_t maybe_sleeping;
+    bool		is_shared;
+    int			owner_pid;
 #ifdef WIN32
-	HANDLE		event;
+    HANDLE		event;
 #endif
 } Latch;
 
@@ -51,19 +51,19 @@ typedef struct Latch
 #define WL_SOCKET_ACCEPT	WL_SOCKET_READABLE
 #endif
 #define WL_SOCKET_MASK		(WL_SOCKET_READABLE | \
-							 WL_SOCKET_WRITEABLE | \
-							 WL_SOCKET_CONNECTED | \
-							 WL_SOCKET_ACCEPT | \
-							 WL_SOCKET_CLOSED)
+                             WL_SOCKET_WRITEABLE | \
+                             WL_SOCKET_CONNECTED | \
+                             WL_SOCKET_ACCEPT | \
+                             WL_SOCKET_CLOSED)
 
 typedef struct WaitEvent
 {
-	int			pos;			/* position in the event data structure */
-	uint32		events;			/* triggered events */
-	int	fd;				/* socket fd associated with event */
-	void	   *user_data;		/* pointer provided in AddWaitEventToSet */
+    int			pos;			/* position in the event data structure */
+    uint32		events;			/* triggered events */
+    int	fd;				/* socket fd associated with event */
+    void	   *user_data;		/* pointer provided in AddWaitEventToSet */
 #ifdef WIN32
-	bool		reset;			/* Is reset of the event required? */
+    bool		reset;			/* Is reset of the event required? */
 #endif
 } WaitEvent;
 
@@ -75,10 +75,10 @@ extern WaitEventSet *CreateWaitEventSet(int nevents);
 extern void FreeWaitEventSet(WaitEventSet *set);
 extern void FreeWaitEventSetAfterFork(WaitEventSet *set);
 extern int	AddWaitEventToSet(WaitEventSet *set, uint32 events, int fd,
-							  Latch *latch, void *user_data);
+                              Latch *latch, void *user_data);
 
 extern int	WaitEventSetWait(WaitEventSet *set, long timeout,
-							 WaitEvent *occurred_events, int nevents);
+                             WaitEvent *occurred_events, int nevents);
 void
 ResetLatch(Latch *latch);
 void
