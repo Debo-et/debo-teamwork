@@ -21,8 +21,8 @@ void configure_target_component(Component target) {
         handle_result(status, "io.compression.codecs", "org.apache.hadoop.io.compress.GzipCodec,org.apache.hadoop.io.compress.DefaultCodec,org.apache.hadoop.io.compress.SnappyCodec", "hdfs-site.xml");
 
         //	 File system properties
-        status = modify_hdfs_config("fs.defaultFS", "hdfs:localhost:8020", "hdfs-site.xml");
-        handle_result(status, "fs.defaultFS", "hdfs:localhost:8020", "hdfs-site.xml");
+        status = modify_hdfs_config("fs.defaultFS", "hdfs://localhost:8020/", "core-site.xml");
+        handle_result(status, "fs.defaultFS", "hdfs://localhost:8020/", "core-site.xml");
         status = modify_hdfs_config("fs.trash.interval", "360", "hdfs-site.xml");
         handle_result(status, "fs.trash.interval", "360", "hdfs-site.xml");
 
@@ -3663,14 +3663,56 @@ void configure_target_component(Component target) {
 
         //	 Presto Configuration
     case PRESTO:
+        status = set_presto_config("coordinator", "true", "config.properties");
+        handle_result(status, "coordinator", "true", "config.properties");
+
+        status = set_presto_config("node-scheduler.include-coordinator", "true", "config.properties");
+        handle_result(status, "node-scheduler.include-coordinator", "true", "config.properties");
 
         status = set_presto_config("http-server.http.port", "8080", "config.properties");
         handle_result(status, "http-server.http.port", "8080", "config.properties");
+
         status = set_presto_config("query.max-memory", "8GB", "config.properties");
         handle_result(status, "query.max-memory", "8GB", "config.properties");
-        status = set_presto_config("discovery.uri", "http:localhost:8080", "config.properties");
-        handle_result(status, "discovery.uri", "http:localhost:8080", "config.properties");
 
+        status = set_presto_config("query.max-memory-per-node", "1GB", "config.properties");
+        handle_result(status, "query.max-memory-per-node", "1GB", "config.properties");
+
+        status = set_presto_config("query.max-total-memory-per-node", "2GB", "config.properties");
+        handle_result(status, "query.max-total-memory-per-node", "2GB", "config.properties");
+
+        status = set_presto_config("discovery-server.enabled", "true", "config.properties");
+        handle_result(status, "discovery-server.enabled", "true", "config.properties");
+
+        status = set_presto_config("discovery.uri", "http://localhost:8080", "config.properties");
+        handle_result(status, "discovery.uri", "http://localhost:8080", "config.properties");
+
+// Configure tpch.properties
+        status = set_presto_config("connector.name", "tpch", "tpch.properties");
+        handle_result(status, "connector.name", "tpch", "tpch.properties");
+
+        status = set_presto_config("tpch.splits-per-node", "4", "tpch.properties");
+        handle_result(status, "tpch.splits-per-node", "4", "tpch.properties");
+        
+        status = set_presto_config("node.environment", "production", "node.properties");
+        handle_result(status, "node.environment", "production", "node.properties");
+
+        status = set_presto_config("node.id", "ffffffff-ffff-ffff-ffff-ffffffffffff", "node.properties");
+        handle_result(status, "node.id", "ffffffff-ffff-ffff-ffff-ffffffffffff", "node.properties");
+        const char *jvm_options = "-server\n"
+                          "-Xmx4G\n"
+                          "-XX:+UseG1GC\n"
+                          "-XX:G1HeapRegionSize=32M\n"
+                          "-XX:+UseGCOverheadLimit\n"
+                          "-XX:+ExplicitGCInvokesConcurrent\n"
+                          "-XX:+HeapDumpOnOutOfMemoryError\n"
+                          "-XX:+ExitOnOutOfMemoryError\n";
+
+        status = set_presto_config("node.id", jvm_options, "jvm.config");
+        handle_result(status, "", jvm_options, "jvm.config");
+
+     //   status = set_presto_config("node.data-dir", data_dir, "node.properties");
+       // handle_result(status, "node.data-dir", data_dir, "node.properties");
         break;
 
         //	 Atlas Configuration
@@ -3707,36 +3749,36 @@ void configure_target_component(Component target) {
     case SOLR:
 
         //			 Update Solr configuration parameters (from XML translation)
-        status = update_solr_config("log_maxfilesize", "10", "solr_ambari_config.xml");
-        handle_result(status, "update_solr_config: log_maxfilesize", "10", "solr_ambari_config.xml");
-        status = update_solr_config("log_maxbackupindex", "9", "solr_ambari_config.xml");
-        handle_result(status, "update_solr_config: log_maxbackupindex", "9", "solr_ambari_config.xml");
-        status = update_solr_config("content", "", "solr_ambari_config.xml");
-        handle_result(status, "update_solr_config: content", "", "solr_ambari_config.xml");
+        status = update_solr_config("log_maxfilesize", "10", "solr.xml");
+        handle_result(status, "update_solr_config: log_maxfilesize", "10", "solr.xml");
+        status = update_solr_config("log_maxbackupindex", "9", "solr.xml");
+        handle_result(status, "update_solr_config: log_maxbackupindex", "9", "solr.xml");
+        status = update_solr_config("content", "", "solr.xml");
+        handle_result(status, "update_solr_config: content", "", "solr.xml");
 
         //			 Update Solr security configuration parameters (from XML translation)
-        status = update_solr_config("solr_ranger_audit_service_users", "{default_ranger_audit_users}", "solr_security_config.json");
-        handle_result(status, "update_solr_config: solr_ranger_audit_service_users", "{default_ranger_audit_users}", "solr_security_config.json");
-        status = update_solr_config("solr_role_ranger_admin", "ranger_admin_user", "solr_security_config.json");
-        handle_result(status, "update_solr_config: solr_role_ranger_admin", "ranger_admin_user", "solr_security_config.json");
-        status = update_solr_config("solr_role_ranger_audit", "ranger_audit_user", "solr_security_config.json");
-        handle_result(status, "update_solr_config: solr_role_ranger_audit", "ranger_audit_user", "solr_security_config.json");
-        status = update_solr_config("solr_role_atlas", "atlas_user", "solr_security_config.json");
-        handle_result(status, "update_solr_config: solr_role_atlas", "atlas_user", "solr_security_config.json");
-        status = update_solr_config("solr_role_logsearch", "logsearch_user", "solr_security_config.json");
-        handle_result(status, "update_solr_config: solr_role_logsearch", "logsearch_user", "solr_security_config.json");
-        status = update_solr_config("solr_role_logfeeder", "logfeeder_user", "solr_security_config.json");
-        handle_result(status, "update_solr_config: solr_role_logfeeder", "logfeeder_user", "solr_security_config.json");
-        status = update_solr_config("solr_role_dev", "dev", "solr_security_config.json");
-        handle_result(status, "update_solr_config: solr_role_dev", "dev", "solr_security_config.json");
-        status = update_solr_config("solr_security_manually_managed", "false", "solr_security_config.json");
-        handle_result(status, "update_solr_config: solr_security_manually_managed", "false", "solr_security_config.json");
-        status = update_solr_config("content", "", "solr_security_config.json");
-        handle_result(status, "update_solr_config: content", "", "solr_security_config.json");
+      //  status = update_solr_config("solr_ranger_audit_service_users", "{default_ranger_audit_users}", "solr_security_config.json");
+        //handle_result(status, "update_solr_config: solr_ranger_audit_service_users", "{default_ranger_audit_users}", "solr_security_config.json");
+       // status = update_solr_config("solr_role_ranger_admin", "ranger_admin_user", "solr_security_config.json");
+       // handle_result(status, "update_solr_config: solr_role_ranger_admin", "ranger_admin_user", "solr_security_config.json");
+        //status = update_solr_config("solr_role_ranger_audit", "ranger_audit_user", "solr_security_config.json");
+        //handle_result(status, "update_solr_config: solr_role_ranger_audit", "ranger_audit_user", "solr_security_config.json");
+        //status = update_solr_config("solr_role_atlas", "atlas_user", "solr_security_config.json");
+        //handle_result(status, "update_solr_config: solr_role_atlas", "atlas_user", "solr_security_config.json");
+        //status = update_solr_config("solr_role_logsearch", "logsearch_user", "solr_security_config.json");
+        //handle_result(status, "update_solr_config: solr_role_logsearch", "logsearch_user", "solr_security_config.json");
+        //status = update_solr_config("solr_role_logfeeder", "logfeeder_user", "solr_security_config.json");
+       // handle_result(status, "update_solr_config: solr_role_logfeeder", "logfeeder_user", "solr_security_config.json");
+        //status = update_solr_config("solr_role_dev", "dev", "solr_security_config.json");
+        //handle_result(status, "update_solr_config: solr_role_dev", "dev", "solr_security_config.json");
+       // status = update_solr_config("solr_security_manually_managed", "false", "solr_security_config.json");
+       // handle_result(status, "update_solr_config: solr_security_manually_managed", "false", "solr_security_config.json");
+       // status = update_solr_config("content", "", "solr_security_config.json");
+        //handle_result(status, "update_solr_config: content", "", "solr_security_config.json");
         //
         //			 Updates the Solr XML template configuration (external file reference)
-        status = update_solr_config("content", "", "solr_config.xml");
-        handle_result(status, "update_solr_config: content", "", "solr_config.xml");
+        status = update_solr_config("content", "", "solr.xml");
+        handle_result(status, "update_solr_config: content", "", "solr.xml");
 
         break;
 
@@ -4325,7 +4367,7 @@ void configure_target_component(Component target) {
         status = modify_zookeeper_config("clientPort", "2181", "zoo.cfg");
         handle_result(status, "modify_zookeeper_config: clientPort", "2181", "zoo.cfg");
 
-        status = modify_zookeeper_config("dataDir", "/hadoop/zookeeper", "zoo.cfg");
+        status = modify_zookeeper_config("dataDir", "/tmp/zookeeper", "zoo.cfg");
         handle_result(status, "modify_zookeeper_config: dataDir", "/hadoop/zookeeper", "zoo.cfg");
 
         status = modify_zookeeper_config("autopurge.snapRetainCount", "30", "zoo.cfg");

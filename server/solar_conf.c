@@ -2,6 +2,11 @@
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <libxml/xpath.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <libgen.h>
+#include <errno.h>
+#include <limits.h>
 
 #include "utiles.h"
 
@@ -148,8 +153,49 @@ ConfigResult* validate_solr_parameter(const char *param_name, const char *param_
  *   ConfigStatus indicating operation outcome
 
  */
-ConfigStatus
-update_solr_config(const char *param_name, const char *param_value, const char *config_file)
+
+// Helper function to create directories recursively
+static int mkdir_pm(const char *path, mode_t mode) {
+    if (!path || *path == '\0') return -1;
+    
+    char *copypath = strdup(path);
+    if (!copypath) return -1;
+    
+    size_t len = strlen(copypath);
+    // Remove trailing slash
+    if (len > 0 && copypath[len - 1] == '/') {
+        copypath[len - 1] = '\0';
+    }
+
+    char *p = copypath;
+    // Skip leading slash
+    if (*p == '/') p++;
+
+    char *sep = p;
+    while ((sep = strchr(sep, '/'))) {
+        *sep = '\0';
+        // Only create if path segment is non-empty
+        if (strlen(copypath) > 0) {
+            if (mkdir(copypath, mode) != 0 && errno != EEXIST) {
+                free(copypath);
+                return -1;
+            }
+        }
+        *sep = '/';
+        sep++;
+    }
+    
+    // Create final directory
+    if (mkdir(copypath, mode) != 0 && errno != EEXIST) {
+        free(copypath);
+        return -1;
+    }
+    
+    free(copypath);
+    return 0;
+}
+
+ConfigStatus update_solr_config(const char *param_name, const char *param_value, const char *config_file)
 {
     char *config_path = NULL;
     bool file_exists = false;
@@ -192,10 +238,29 @@ update_solr_config(const char *param_name, const char *param_value, const char *
         snprintf(config_path, PATH_MAX, "%s/server/solr/%s", base, config_file);
     }
 
+    /* Create parent directories if file doesn't exist */
+    if (!file_exists) {
+        char *dir_path = strdup(config_path);
+        if (!dir_path) {
+            free(config_path);
+            return FILE_READ_ERROR;
+        }
+        
+        char *dir = dirname(dir_path);
+        if (mkdir_pm(dir, 0755) != 0) {
+            free(dir_path);
+            free(config_path);
+            return SAVE_FAILED;
+        }
+        free(dir_path);
+    }
+
     if (strcmp(config_file, "solr-log4j.properties") == 0 ) {
         configure_hadoop_property(config_path, param_name, param_value);
+        free(config_path);
         return SUCCESS;
     }
+    
     /* XML Processing */
     xmlDocPtr doc = NULL;
     xmlNodePtr root = NULL;
@@ -225,7 +290,6 @@ update_solr_config(const char *param_name, const char *param_value, const char *
     root = xmlDocGetRootElement(doc);
     if (!root || xmlStrcmp(root->name, BAD_CAST expected_root) != 0) {
         status = XML_INVALID_ROOT;
-
         goto cleanup;
     }
 

@@ -152,6 +152,58 @@ static void handle_local_components(bool ALL, Component component, Action action
 static void handle_remote_components(bool ALL, Component component, Action action,
                                      char *version ,char *config_param, char *value);
 
+
+void validate_options(Action action, Component component, bool all, bool dependency) {
+    switch (action) {
+        case START:
+        case STOP:
+        case RESTART:
+        case REPORT:
+        case INSTALL:
+        case UNINSTALL:
+            if (all) {
+                if (component != NONE) {
+                    fprintf(stderr, "Error: Cannot combine --all with individual components\n");
+                    exit(EXIT_FAILURE);
+                }
+                if (dependency) {
+                    fprintf(stderr, "Error: Cannot use --all with a dependency\n");
+                    exit(EXIT_FAILURE);
+                }
+            } else {
+                if (component == NONE) {
+                    fprintf(stderr, "Error: Must specify a component when not using --all\n");
+                    exit(EXIT_FAILURE);
+                }
+             //   if (!dependency) {
+               //     fprintf(stderr, "Error: Must specify a dependency when using a component for this action\n");
+                 //   exit(EXIT_FAILURE);
+                //}
+            }
+            break;
+
+        case CONFIGURE:
+        case VERSION_SWITCH:
+            if (all) {
+                fprintf(stderr, "Error: Cannot use --all with this action\n");
+                exit(EXIT_FAILURE);
+            }
+            if (dependency) {
+                fprintf(stderr, "Error: Cannot use dependency with this action\n");
+                exit(EXIT_FAILURE);
+            }
+            if (component == NONE) {
+                fprintf(stderr, "Error: Must specify a component for this action\n");
+                exit(EXIT_FAILURE);
+            }
+            break;
+
+        default:
+         //   fprintf(stderr, "Error: Unsupported action type\n");
+           // exit(EXIT_FAILURE);
+    }
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -318,7 +370,7 @@ main(int argc, char *argv[])
             exit(EXIT_FAILURE);
         }
     }
-
+validate_options(action, component, all, dependency);
     // Validate connection options group
     if (port || host) {
         // Check all connection parameters are present
@@ -486,265 +538,13 @@ const char* get_env_variable(Component comp) {
 }
 
 
-void configure_dependency_for_component(Component target, Component dependency) {
-    ConfigStatus status;
-
-    switch(target) {
-    case HBASE:
-        switch(dependency) {
-        case HDFS:
-            status = modify_hdfs_config("dfs.datanode.handler.count", "30", "hdfs-site.xml");
-            handle_result(status, "dfs.datanode.handler.count", "30", "hdfs-site.xml");
-            status = modify_hdfs_config("dfs.replication", "3", "hdfs-site.xml");
-            handle_result(status, "dfs.replication", "3", "hdfs-site.xml");
-            status = modify_hdfs_config("dfs.socket.timeout", "180000", "hdfs-site.xml");
-            handle_result(status, "dfs.socket.timeout", "180000", "hdfs-site.xml");
-            break;
-
-        case ZOOKEEPER:
-            status = modify_zookeeper_config("maxClientCnxns", "200", "zoo.cfg");
-            handle_result(status, "maxClientCnxns", "200", "zoo.cfg");
-            status = modify_zookeeper_config("tickTime", "2000", "zoo.cfg");
-            handle_result(status, "tickTime", "2000", "zoo.cfg");
-            status = modify_zookeeper_config("initLimit", "10", "zoo.cfg");
-            handle_result(status, "initLimit", "10", "zoo.cfg");
-            break;
-        default: break;
-        }
-        break;
-
-    case KAFKA:
-        if (dependency == ZOOKEEPER) {
-            status = modify_zookeeper_config("maxSessionTimeout", "60000", "zoo.cfg");
-            handle_result(status, "maxSessionTimeout", "60000", "zoo.cfg");
-            status = modify_zookeeper_config("minSessionTimeout", "6000", "zoo.cfg");
-            handle_result(status, "minSessionTimeout", "6000", "zoo.cfg");
-            status = modify_zookeeper_config("jute.maxbuffer", "4194304", "zoo.cfg");
-            handle_result(status, "jute.maxbuffer", "4194304", "zoo.cfg");
-        }
-        break;
-
-    case HIVE:
-        switch(dependency) {
-        case HDFS:
-            status = modify_hdfs_config("dfs.blocksize", "268435456", "hdfs-site.xml");
-            handle_result(status, "dfs.blocksize", "268435456", "hdfs-site.xml");
-            status = modify_hdfs_config("dfs.client.read.shortcircuit", "true", "hdfs-site.xml");
-            handle_result(status, "dfs.client.read.shortcircuit", "true", "hdfs-site.xml");
-            status = modify_hdfs_config("yarn.scheduler.maximum-allocation-mb", "16384", "yarn-site.xml");
-            handle_result(status, "yarn.scheduler.maximum-allocation-mb", "16384", "yarn-site.xml");
-            status = modify_hdfs_config("yarn.nodemanager.resource.memory-mb", "16384", "yarn-site.xml");
-            handle_result(status, "yarn.nodemanager.resource.memory-mb", "16384", "yarn-site.xml");
-            break;
-
-        case TEZ:
-            status = modify_tez_config("tez.am.resource.memory.mb", "4096", "tez-site.xml");
-            handle_result(status, "tez.am.resource.memory.mb", "4096", "tez-site.xml");
-            status = modify_tez_config("tez.task.resource.memory.mb", "2048", "tez-site.xml");
-            handle_result(status, "tez.task.resource.memory.mb", "2048", "tez-site.xml");
-            break;
-        default: break;
-        }
-        break;
-
-    case PHOENIX:
-        if (dependency == HBASE) {
-            status = update_hbase_config("hbase.regionserver.wal.codec",
-                                         "org.apache.hadoop.hbase.regionserver.wal.IndexedWALEditCodec",
-                                         "hbase-site.xml");
-            handle_result(status, "hbase.regionserver.wal.codec",
-                          "org.apache.hadoop.hbase.regionserver.wal.IndexedWALEditCodec",
-                          "hbase-site.xml");
-            status = update_hbase_config("phoenix.schema.isNamespaceMappingEnabled",
-                                         "true",
-                                         "hbase-site.xml");
-            handle_result(status, "phoenix.schema.isNamespaceMappingEnabled", "true", "hbase-site.xml");
-        }
-        break;
-
-    case STORM:
-        if (dependency == ZOOKEEPER) {
-            status = modify_zookeeper_config("autopurge.snapRetainCount", "10", "zoo.cfg");
-            handle_result(status, "autopurge.snapRetainCount", "10", "zoo.cfg");
-            status = modify_zookeeper_config("autopurge.purgeInterval", "24", "zoo.cfg");
-            handle_result(status, "autopurge.purgeInterval", "24", "zoo.cfg");
-        }
-        break;
-
-    case SPARK:
-        switch(dependency) {
-        case HDFS:
-            status = modify_hdfs_config("dfs.datanode.max.transfer.threads", "4096", "hdfs-site.xml");
-            handle_result(status, "dfs.datanode.max.transfer.threads", "4096", "hdfs-site.xml");
-            status = modify_hdfs_config("dfs.client.read.shortcircuit", "true", "hdfs-site.xml");
-            handle_result(status, "dfs.client.read.shortcircuit", "true", "hdfs-site.xml");
-            status = modify_hdfs_config("yarn.scheduler.maximum-allocation-mb", "16384", "yarn-site.xml");
-            handle_result(status, "yarn.scheduler.maximum-allocation-mb", "16384", "yarn-site.xml");
-            status = modify_hdfs_config("yarn.nodemanager.resource.memory-mb", "16384", "yarn-site.xml");
-            handle_result(status, "yarn.nodemanager.resource.memory-mb", "16384", "yarn-site.xml");
-            break;
-        default: break;
-        }
-        break;
-
-    case TEZ:
-        switch(dependency) {
-        case HDFS:
-            status = modify_hdfs_config("dfs.replication", "2", "hdfs-site.xml");
-            handle_result(status, "dfs.replication", "2", "hdfs-site.xml");
-            status = modify_hdfs_config("dfs.blocksize", "268435456", "hdfs-site.xml");
-            handle_result(status, "dfs.blocksize", "268435456", "hdfs-site.xml");
-            status = modify_hdfs_config("yarn.nodemanager.resource.cpu-vcores", "8", "yarn-site.xml");
-            handle_result(status, "yarn.nodemanager.resource.cpu-vcores", "8", "yarn-site.xml");
-            status = modify_hdfs_config("yarn.scheduler.minimum-allocation-mb", "1024", "yarn-site.xml");
-            handle_result(status, "yarn.scheduler.minimum-allocation-mb", "1024", "yarn-site.xml");
-            break;
-        default: break;
-        }
-        break;
-
-    case LIVY:
-        if (dependency == SPARK) {
-            status = update_spark_config("spark.sql.shuffle.partitions", "100", "spark-defaults.conf");
-            handle_result(status, "spark.sql.shuffle.partitions", "100", "spark-defaults.conf");
-            status = update_spark_config("spark.driver.memory", "4g", "spark-defaults.conf");
-            handle_result(status, "spark.driver.memory", "4g", "spark-defaults.conf");
-        }
-        break;
-
-    case RANGER:
-        switch(dependency) {
-        case SOLR:
-            status = update_solr_config("solr.autoSoftCommit.maxTime", "1000", "solrconfig.xml");
-            handle_result(status, "solr.autoSoftCommit.maxTime", "1000", "solrconfig.xml");
-            status = update_solr_config("solr.autoCommit.maxTime", "15000", "solrconfig.xml");
-            handle_result(status, "solr.autoCommit.maxTime", "15000", "solrconfig.xml");
-            break;
-
-        case HDFS:
-            status = modify_hdfs_config("dfs.permissions.enabled", "true", "hdfs-site.xml");
-            handle_result(status, "dfs.permissions.enabled", "true", "hdfs-site.xml");
-            status = modify_hdfs_config("dfs.namenode.acls.enabled", "true", "hdfs-site.xml");
-            handle_result(status, "dfs.namenode.acls.enabled", "true", "hdfs-site.xml");
-            break;
-        default: break;
-        }
-        break;
-
-    case ATLAS:
-        switch(dependency) {
-        case HBASE:
-            status = update_hbase_config("hbase.regionserver.wal.codec",
-                                         "org.apache.hadoop.hbase.regionserver.wal.IndexedWALEditCodec",
-                                         "hbase-site.xml");
-            handle_result(status, "hbase.regionserver.wal.codec",
-                          "org.apache.hadoop.hbase.regionserver.wal.IndexedWALEditCodec",
-                          "hbase-site.xml");
-            status = update_hbase_config("hbase.regionserver.handler.count", "60", "hbase-site.xml");
-            handle_result(status, "hbase.regionserver.handler.count", "60", "hbase-site.xml");
-            break;
-
-        case KAFKA:
-            status = modify_kafka_config("delete.topic.enable", "true", "server.properties");
-            handle_result(status, "delete.topic.enable", "true", "server.properties");
-            status = modify_kafka_config("log.retention.hours", "8760", "server.properties");
-            handle_result(status, "log.retention.hours", "8760", "server.properties");
-            break;
-
-        case SOLR:
-            status = update_solr_config("solr.autoCommit.maxDocs", "10000", "solrconfig.xml");
-            handle_result(status, "solr.autoCommit.maxDocs", "10000", "solrconfig.xml");
-            status = update_solr_config("solr.autoCommit.maxTime", "15000", "solrconfig.xml");
-            handle_result(status, "solr.autoCommit.maxTime", "15000", "solrconfig.xml");
-            break;
-        default: break;
-        }
-        break;
-
-    case PIG:
-        switch(dependency) {
-        case HDFS:
-            status = modify_hdfs_config("dfs.blocksize", "268435456", "hdfs-site.xml");
-            handle_result(status, "dfs.blocksize", "268435456", "hdfs-site.xml");
-            status = modify_hdfs_config("dfs.replication", "2", "hdfs-site.xml");
-            handle_result(status, "dfs.replication", "2", "hdfs-site.xml");
-            status = modify_hdfs_config("mapreduce.reduce.memory.mb", "4096" , "yarn-site.xml");
-            handle_result(status, "mapreduce.reduce.memory.mb", "4096", "yarn-site.xml");
-            status = modify_hdfs_config("mapreduce.map.memory.mb", "2048", "yarn-site.xml");
-            handle_result(status, "mapreduce.map.memory.mb", "2048", "yarn-site.xml");
-            break;
-        default: break;
-        }
-        break;
-
-    case SOLR:
-        if (dependency == ZOOKEEPER) {
-            status = modify_zookeeper_config("maxClientCnxns", "100", "zoo.cfg");
-            handle_result(status, "maxClientCnxns", "100", "zoo.cfg");
-            status = modify_zookeeper_config("tickTime", "2000", "zoo.cfg");
-            handle_result(status, "tickTime", "2000", "zoo.cfg");
-        }
-        break;
-
-    case YARN:
-        if (dependency == HDFS) {
-            status = modify_hdfs_config("dfs.datanode.data.dir.perm", "750", "hdfs-site.xml");
-            handle_result(status, "dfs.datanode.data.dir.perm", "750", "hdfs-site.xml");
-            status = modify_hdfs_config("dfs.namenode.name.dir.perm", "700", "hdfs-site.xml");
-            handle_result(status, "dfs.namenode.name.dir.perm", "700", "hdfs-site.xml");
-        }
-        break;
-
-    case FLINK:
-        switch(dependency) {
-        case HDFS:
-            status = modify_hdfs_config("dfs.stream-buffer-size", "4096", "hdfs-site.xml");
-            handle_result(status, "dfs.stream-buffer-size", "4096", "hdfs-site.xml");
-            status = modify_hdfs_config("dfs.client-write-packet-size", "65536", "hdfs-site.xml");
-            handle_result(status, "dfs.client-write-packet-size", "65536", "hdfs-site.xml");
-            status = modify_hdfs_config("yarn.application.classpath",
-                                        "$HADOOP_CONF_DIR,$HADOOP_COMMON_HOME/*,$HADOOP_COMMON_HOME/lib/*,...",
-                                        "yarn-site.xml");
-            handle_result(status, "yarn.application.classpath",
-                          "$HADOOP_CONF_DIR,$HADOOP_COMMON_HOME/*,$HADOOP_COMMON_HOME/lib/*,...",
-                          "yarn-site.xml");
-            status = modify_hdfs_config("yarn.nodemanager.vmem-check-enabled", "false", "yarn-site.xml");
-            handle_result(status, "yarn.nodemanager.vmem-check-enabled", "false", "yarn-site.xml");
-            break;
-        default: break;
-        }
-        break;
-
-    case PRESTO:
-        switch(dependency) {
-        case HIVE:
-            status = modify_hive_config("hive.metastore.uri", "thrift://localhost:9083", "hive-site.xml");
-            handle_result(status, "hive.metastore.uri", "thrift://localhost:9083", "hive-site.xml");
-            status = modify_hive_config("hive.allow-drop-table", "true", "hive-site.xml");
-            handle_result(status, "hive.allow-drop-table", "true", "hive-site.xml");
-            break;
-
-        case HDFS:
-            status = modify_hdfs_config("dfs.client.use.datanode.hostname", "true", "hdfs-site.xml");
-            handle_result(status, "dfs.client.use.datanode.hostname", "true", "hdfs-site.xml");
-            status = modify_hdfs_config("dfs.datanode.use.datanode.hostname", "true", "hdfs-site.xml");
-            handle_result(status, "dfs.datanode.use.datanode.hostname", "true", "hdfs-site.xml");
-            break;
-        default: break;
-        }
-        break;
-    default: break;
-    }
-}
-
-
 
 static void install_component(Component comp, char *version) {
 
-    if (isComponentInstalled(comp)) {
-        printf("%s is already installed.\n", component_to_string(comp));
-        return;
-    }
+  //  if (isComponentInstalled(comp)) {
+    //    printf("%s is already installed.\n", component_to_string(comp));
+      //  return;
+    //}
 
     int dep_count;
 
@@ -759,7 +559,7 @@ static void install_component(Component comp, char *version) {
                      compStr, i+1, dep_count);
             printTextBlock(buffer, CYAN, YELLOW);
             install_component(deps[i], version);
-            configure_dependency_for_component(comp, deps[i]);
+            configure_target_component(comp);
         }
     }
     switch (comp) {
@@ -1271,13 +1071,25 @@ void report(Component comp) {
         printTextBlock(report_livy(), CYAN, YELLOW);
         printBorder("└", "┘", YELLOW);
         break;
+    case SOLR:
+        printTextBlock("SOLR status", BOLD GREEN, YELLOW);
+        printBorder("├", "┤", YELLOW);
+        printTextBlock(report_solr(), CYAN, YELLOW);
+        printBorder("└", "┘", YELLOW);
+        break;
+    case ZEPPELIN:
+        printTextBlock("LIVY status", BOLD GREEN, YELLOW);
+        printBorder("├", "┤", YELLOW);
+        printTextBlock(report_zeppelin(), CYAN, YELLOW);
+        printBorder("└", "┘", YELLOW);
+        break;
         /* Add cases for all components */
     default: fprintf(stderr, "Unknown component\n"); break;
     }
 }
 
 void perform(Component comp, Action action, char *version , char *config_param ,  char *value) {
-    if (!isComponentInstalled(comp)) {
+    if (!isComponentInstalled(comp) && (comp != PRESTO) && (comp != PHOENIX)) {
         fprintf(stderr, "%s is not installed.\n", component_to_string(comp));
         return;
     }
@@ -1590,13 +1402,13 @@ static int get_required_reads_for_install(Component comp) {
     if (strcasecmp(comp_str, "HBASE") == 0) return 133;
     if (strcasecmp(comp_str, "HIVE") == 0) return 566;
     if (strcasecmp(comp_str, "KAFKA") == 0) return 246;
-    if (strcasecmp(comp_str, "LIVY") == 0) return 37;
+    if (strcasecmp(comp_str, "LIVY") == 0) return 19;
     if (strcasecmp(comp_str, "STORM") == 0) return 4;
     if (strcasecmp(comp_str, "PIG") == 0) return 4;
     if (strcasecmp(comp_str, "PRESTO") == 0) return 4;
     if (strcasecmp(comp_str, "ATLAS") == 0) return 7;
     if (strcasecmp(comp_str, "RANGER") == 0) return 4;
-    if (strcasecmp(comp_str, "SOLR") == 0) return 14;
+    if (strcasecmp(comp_str, "SOLR") == 0) return 5;
     if (strcasecmp(comp_str, "SPARK") == 0) return 72;
     if (strcasecmp(comp_str, "TEZ") == 0) return 53;
     if (strcasecmp(comp_str, "ZEPPELIN") == 0) return 62;
@@ -1611,53 +1423,63 @@ static void handle_remote_components(bool ALL, Component component, Action actio
         fprintf(stderr, "Failed to connect to Debo\n");
 
     if (ALL) {
-        // Handle all components (skip NONE)
-        for (Component c = HDFS; c <= RANGER; c++) {
-            const char *comp_str = component_to_string(c);
-            if (!comp_str) continue; // Skip if component string is NULL
+    // Handle all components (skip NONE)
+    for (Component c = HDFS; c <= RANGER; c++) {
+        const char *comp_str = component_to_string(c);
+        if (!comp_str) continue; // Skip if component string is NULL
 
-            printBorder("┌", "┐", YELLOW);
-            printTextBlock(component_to_string(c), BOLD GREEN, YELLOW);
-            printBorder("├", "┤", YELLOW);
-            if (strcmp(action_to_string(action), "Installing...") == 0)
-                printTextBlock("Installing might take several minutes", BOLD GREEN, YELLOW);
-            printTextBlock(action_to_string(action), CYAN, YELLOW);
-            SendComponentActionCommand(c, action, version , config_param, value, conn);
-            if (action == INSTALL) {
-                if (start_stdout_capture() != 0) {
-                    exit(EXIT_FAILURE);
+        printBorder("┌", "┐", YELLOW);
+        printTextBlock(component_to_string(c), BOLD GREEN, YELLOW);
+        printBorder("├", "┤", YELLOW);
+        if (strcmp(action_to_string(action), "Installing...") == 0)
+            printTextBlock("Installing might take several minutes", BOLD GREEN, YELLOW);
+        printTextBlock(action_to_string(action), CYAN, YELLOW);
+        SendComponentActionCommand(c, action, version , config_param, value, conn);
+        
+        // Determine read strategy based on action type
+        int num_reads;
+        int check_early_exit = 0;  // Flag for install/version-switch early exit
+
+        if (action == INSTALL) {
+            num_reads = get_required_reads_for_install(c);
+            check_early_exit = 1;
+            if (start_stdout_capture(c) != 0) exit(EXIT_FAILURE);
+        } 
+        else if (action == VERSION_SWITCH) {
+            num_reads = get_required_reads_for_install(c) + 1;
+            check_early_exit = 1;
+            if (start_stdout_capture(c) != 0) exit(EXIT_FAILURE);
+        } 
+        else {
+            num_reads = 1;  // Single read for other actions
+        }
+
+        // Unified read handling for all actions
+        for (int i = 0; i < num_reads; i++) {
+            int dataResult;
+            reset_connection_buffers(conn);
+            do {
+                dataResult = ReadData(conn);
+                if (dataResult < 0) {
+                    fprintf(stderr, "Failed to read from socket\n");
+                    break;
                 }
-                // Component is installed - use loop reads
-                int num_reads = get_required_reads_for_install(c);
-                for (int i = 0; i < num_reads; i++) {
-                    int dataResult;
-                    reset_connection_buffers(conn);
-                    do {
-                        dataResult = ReadData(conn);
-                        if (dataResult < 0) {
-                            fprintf(stderr, "Failed to read from socket\n");
-                            break;
-                        }
-                    } while (dataResult <= 0);
-                    printTextBlock(conn->inBuffer + conn->inStart, BOLD GREEN, YELLOW);
-                    if (check_installed_message(conn->inBuffer + conn->inStart))
-                        break;
-                }
-            } else {
-                // Component not installed - single read
-                int dataResult;
-                reset_connection_buffers(conn);
-                do {
-                    dataResult = ReadData(conn);
-                    if (dataResult < 0) {
-                        fprintf(stderr, "Failed to read from socket\n");
-                        break;
-                    }
-                } while (dataResult <= 0);
-                printTextBlock(conn->inBuffer + conn->inStart, BOLD GREEN, YELLOW);
+            } while (dataResult <= 0);
+            
+            printTextBlock(conn->inBuffer + conn->inStart, BOLD GREEN, YELLOW);
+            
+            // Early exit check for install/version-switch
+            if (check_early_exit && check_installed_message(conn->inBuffer + conn->inStart)) {
+                break;
             }
+        }
+        
+        // Only stop capture if we started it
+        if (action == INSTALL || action == VERSION_SWITCH) {
             stop_stdout_capture();
         }
+    }
+
     } else {
         // Handle single component
         if (component == NONE) {
@@ -1681,8 +1503,8 @@ static void handle_remote_components(bool ALL, Component component, Action actio
         SendComponentActionCommand(component, action, version, config_param, value, conn);
         // Single read for non-INSTALL actions
         reset_connection_buffers(conn);
-        if (action == INSTALL && !dependency) {
-            if (start_stdout_capture() != 0) {
+        if ((action == INSTALL) || ((action == VERSION_SWITCH) && !dependency)) {
+            if (start_stdout_capture(component) != 0) {
                 exit(EXIT_FAILURE);
             }
             int num_reads = get_required_reads_for_install(component);
@@ -1753,5 +1575,5 @@ static void handle_remote_components(bool ALL, Component component, Action actio
 
         PutMsgEnd(conn);
         (void) Flush(conn);
-    }
+        }
 }

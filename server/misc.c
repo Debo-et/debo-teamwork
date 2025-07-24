@@ -72,7 +72,7 @@ secure_raw_read(Conn *conn, void *ptr, size_t len)
 
         case EPIPE:
         case ECONNRESET:
-            db_append_conn_error(conn, "server closed the connection unexpectedly\n"
+            fprintf(stderr, "server closed the connection unexpectedly\n"
                                  "\tThis probably means the server terminated abnormally\n"
                                  "\tbefore or while processing the request.");
             break;
@@ -83,7 +83,7 @@ secure_raw_read(Conn *conn, void *ptr, size_t len)
             break;
 
         default:
-            db_append_conn_error(conn, "could not receive data from server: %d",
+            fprintf(stderr, "could not receive data from server: %d",
                                  SOCK_STRERROR(result_errno,
                                                sebuf, sizeof(sebuf)));
             break;
@@ -729,11 +729,15 @@ ReadData(Conn *conn)
 {
     int			someread = 0;
     int			nread;
-
+    
+    if (conn == NULL) {
+        fprintf(stderr, "ReadData: invalid connection object (NULL)\n");
+        return -1; // Indicate failure
+    }
+    
     if (conn->sock == DBINVALID_SOCKET)
     {
-        db_append_conn_error(conn, "connection not open");
-        return -1;
+        fprintf(stderr, "connection not open\n");
     }
 
     /* Left-justify any data in the buffer to make room */
@@ -890,7 +894,7 @@ retry4:
      * means the connection has been closed.  Cope.
      */
 definitelyEOF:
-    db_append_conn_error(conn, "server closed the connection unexpectedly\n"
+    fprintf(stderr, "server closed the connection unexpectedly\n"
                          "\tThis probably means the server terminated abnormally\n"
                          "\tbefore or while processing the request.");
 
@@ -1143,7 +1147,7 @@ WaitTimed(int forRead, int forWrite, Conn *conn, pg_usec_time_t end_time)
 
     if (result == 0)
     {
-        db_append_conn_error(conn, "timeout expired");
+        fprintf(stderr, "timeout expired");
         return 1;
     }
 
@@ -1184,7 +1188,7 @@ SocketCheck(Conn *conn, int forRead, int forWrite, pg_usec_time_t end_time)
         return -1;
     if (conn->sock == DBINVALID_SOCKET)
     {
-        db_append_conn_error(conn, "invalid socket");
+        fprintf(stderr, "invalid socket");
         return -1;
     }
 
@@ -1197,9 +1201,9 @@ SocketCheck(Conn *conn, int forRead, int forWrite, pg_usec_time_t end_time)
     if (result < 0)
     {
         char		sebuf[DB_STRERROR_R_BUFLEN];
-
-        db_append_conn_error(conn, "%s() failed: %d", "select",
+        fprintf(stderr, "%s() failed: %d", "select",
                              SOCK_STRERROR(SOCK_ERRNO, sebuf, sizeof(sebuf)));
+      
     }
 
     return result;
@@ -1422,31 +1426,3 @@ db_append_error(ExpBuffer errorMessage, const char *fmt,...)
     appendExpBufferChar(errorMessage, '\n');
 }
 
-/*
- * Append a formatted string to the error message buffer of the given
- * connection, after translating it.  A newline is automatically appended; the
- * format should not end with a newline.
- */
-void
-db_append_conn_error(Conn *conn, const char *fmt,...)
-{
-    int			save_errno = errno;
-    bool		done;
-    va_list		args;
-
-    Assert(fmt[strlen(fmt) - 1] != '\n');
-
-    if (ExpBufferBroken(&conn->errorMessage))
-        return;					/* already failed */
-
-    /* Loop in case we have to retry after enlarging the buffer. */
-    do
-    {
-        errno = save_errno;
-        va_start(args, fmt);
-        done = appendExpBufferVA(&conn->errorMessage, libpq_gettext(fmt), args);
-        va_end(args);
-    } while (!done);
-
-    appendExpBufferChar(&conn->errorMessage, '\n');
-}

@@ -364,17 +364,7 @@ static pthread_t capture_thread;
 static bool capturing = false;
 static char *config_abs_path = NULL;
 
-static void* output_thread() {
-    // Get current working directory for absolute path
-    char cwd[PATH_MAX];
-    if (getcwd(cwd, sizeof(cwd))) {
-        config_abs_path = malloc(strlen(cwd) + strlen("/configuration.txt") + 1);
-        sprintf(config_abs_path, "%s/configuration.txt", cwd);
-    } else {
-        perror("getcwd() failed");
-        config_abs_path = strdup("configuration.txt");
-    }
-
+static void* output_thread(void *arg) {
     FILE *log_file = fopen(config_abs_path, "w");
     if (!log_file) {
         char error[512];
@@ -390,10 +380,7 @@ static void* output_thread() {
             break;
         }
 
-        // Write to original terminal
         write(saved_stdout, buffer, count);
-
-        // Write to log file
         if (log_file) {
             fwrite(buffer, 1, count, log_file);
             fflush(log_file);
@@ -405,22 +392,54 @@ static void* output_thread() {
     return NULL;
 }
 
-int start_stdout_capture(void) {
+int start_stdout_capture(Component comp) {
     if (capturing) {
         fprintf(stderr, "Error: stdout capture already active\n");
         return -1;
     }
 
+    const char *comp_str = component_to_string(comp);
+    char *filename = malloc(strlen(comp_str) + strlen("configuration.txt") + 1);
+    if (!filename) {
+        perror("malloc() failed");
+        return -1;
+    }
+    sprintf(filename, "%sconfiguration.txt", comp_str);
+
+    char cwd[PATH_MAX];
+    if (getcwd(cwd, sizeof(cwd))) {
+        config_abs_path = malloc(strlen(cwd) + strlen("/") + strlen(filename) + 1);
+        if (!config_abs_path) {
+            perror("malloc() failed");
+            free(filename);
+            return -1;
+        }
+        sprintf(config_abs_path, "%s/%s", cwd, filename);
+    } else {
+        perror("getcwd() failed");
+        config_abs_path = strdup(filename);
+        if (!config_abs_path) {
+            perror("strdup() failed");
+            free(filename);
+            return -1;
+        }
+    }
+    free(filename);
+
     fflush(stdout);
 
     if (pipe(pipefd) == -1) {
         perror("pipe() failed");
+        free(config_abs_path);
+        config_abs_path = NULL;
         return -1;
     }
 
     saved_stdout = dup(STDOUT_FILENO);
     if (saved_stdout == -1) {
         perror("dup() failed");
+        free(config_abs_path);
+        config_abs_path = NULL;
         close(pipefd[0]);
         close(pipefd[1]);
         return -1;
@@ -428,6 +447,8 @@ int start_stdout_capture(void) {
 
     if (dup2(pipefd[1], STDOUT_FILENO) == -1) {
         perror("dup2() failed");
+        free(config_abs_path);
+        config_abs_path = NULL;
         close(pipefd[0]);
         close(pipefd[1]);
         close(saved_stdout);
@@ -437,6 +458,8 @@ int start_stdout_capture(void) {
 
     if (pthread_create(&capture_thread, NULL, output_thread, NULL)) {
         perror("pthread_create() failed");
+        free(config_abs_path);
+        config_abs_path = NULL;
         dup2(saved_stdout, STDOUT_FILENO);
         close(saved_stdout);
         close(pipefd[0]);
@@ -458,9 +481,7 @@ int stop_stdout_capture(void) {
     close(pipefd[0]);
     pthread_join(capture_thread, NULL);
 
-    // Print absolute path if available
     if (config_abs_path) {
-        // Verify file was created
         if (access(config_abs_path, F_OK) == 0) {
             printf("Configuration data saved to: %s\n", config_abs_path);
         } else {
@@ -1456,12 +1477,12 @@ bool isComponentInstalled(Component comp) {
     case HIVE:      env_var = "HIVE_HOME";      base_dir = "hive";      break;
     case KAFKA:     env_var = "KAFKA_HOME";     base_dir = "kafka";     break;
     case LIVY:      env_var = "LIVY_HOME";      base_dir = "livy";      break;
-    case PHOENIX:   env_var = "PHOENIX_HOME";   base_dir = "phoenix";   break;
+    case PHOENIX:   env_var = "PHOENIX_HOME";   base_dir = "apache-phoenix"; break; // FIXED
     case STORM:     env_var = "STORM_HOME";     base_dir = "storm";     break;
     case HUE:       env_var = "HUE_HOME";       base_dir = "hue";       break;
     case PIG:       env_var = "PIG_HOME";       base_dir = "pig";       break;
     case OOZIE:     env_var = "OOZIE_HOME";     base_dir = "oozie";     break;
-    case PRESTO:    env_var = "PRESTO_HOME";    base_dir = "presto";    break;
+    case PRESTO:    env_var = "PRESTO_HOME";    base_dir = "presto-server"; break; // FIXED
     case ATLAS:     env_var = "ATLAS_HOME";     base_dir = "atlas";     break;
     case RANGER:    env_var = "RANGER_HOME";    base_dir = "ranger";    break;
     case SOLR:      env_var = "SOLR_HOME";      base_dir = "solr";      break;
@@ -1469,10 +1490,10 @@ bool isComponentInstalled(Component comp) {
     case TEZ:       env_var = "TEZ_HOME";       base_dir = "tez";       break;
     case ZEPPELIN:  env_var = "ZEPPELIN_HOME";  base_dir = "zeppelin";  break;
     case ZOOKEEPER: env_var = "ZOOKEEPER_HOME"; base_dir = "zookeeper"; break;
-    default:
-                    return false;
+    default:        return false;
     }
 
+    // Check environment variable path
     if (env_var) {
         char *env_path = getenv(env_var);
         if (env_path && directory_exists(env_path)) {
@@ -1480,9 +1501,10 @@ bool isComponentInstalled(Component comp) {
         }
     }
 
+    // Check standard installation paths
     int is_debian = (access("/etc/debian_version", F_OK) == 0);
     int is_redhat = (access("/etc/redhat-release", F_OK) == 0) ||
-        (access("/etc/system-release", F_OK) == 0);
+                    (access("/etc/system-release", F_OK) == 0);
 
     char standard_path[PATH_MAX];
     if (is_debian) {
@@ -1495,8 +1517,6 @@ bool isComponentInstalled(Component comp) {
 
     return directory_exists(standard_path);
 }
-
-
 
 
 

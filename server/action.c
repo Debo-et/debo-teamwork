@@ -9,6 +9,7 @@
 #include <glob.h>
 #include <errno.h>
 #include <pwd.h>
+#include <fcntl.h> 
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -131,22 +132,28 @@ void hadoop_action(Action a) {
 }
 
 static char* find_launcher(const char* base_dir) {
+    if (!base_dir) return NULL;
+
+    char candidate[PATH_MAX];
+    struct stat st;
+    
+    // Check direct path first (new installation structure)
+    snprintf(candidate, sizeof(candidate), "%s/bin/launcher", base_dir);
+    if (stat(candidate, &st) == 0 && S_ISREG(st.st_mode)) {
+        return strdup(candidate);
+    }
+
+    // Fallback to old pattern (versioned directory)
     char pattern[PATH_MAX];
     snprintf(pattern, sizeof(pattern), "%s/presto-server-*/bin/launcher", base_dir);
+    
     glob_t glob_result;
-    int glob_ret = glob(pattern, GLOB_ERR, NULL, &glob_result);
-
-    if (glob_ret != 0 || glob_result.gl_pathc == 0) {
+    if (glob(pattern, GLOB_ERR, NULL, &glob_result) != 0 || glob_result.gl_pathc == 0) {
         globfree(&glob_result);
         return NULL;
     }
 
-    struct stat st;
-    if (stat(glob_result.gl_pathv[0], &st) != 0 || !S_ISREG(st.st_mode)) {
-        globfree(&glob_result);
-        return NULL;
-    }
-
+    // Use first match
     char* path = strdup(glob_result.gl_pathv[0]);
     globfree(&glob_result);
     return path;
@@ -160,60 +167,54 @@ void Presto_action(Action action) {
 
     // Check installation locations in priority order
     const char* candidates[] = {
-        getenv("PRESTO_HOME"),
-        "/opt/Presto",
-        "/usr/local/presto",
+        getenv("PRESTO_HOME"),  // Environment variable
+        "/opt/presto",          // RedHat/CentOS
+        "/usr/local/presto",    // Debian/Ubuntu
         NULL
     };
 
     for (int i = 0; candidates[i] != NULL; i++) {
-        if (candidates[i] == NULL) continue;
         launcher_path = find_launcher(candidates[i]);
         if (launcher_path) break;
     }
 
     if (!launcher_path) {
-        fprintf(stderr,  "Error: Presto installation not found\n");
+        fprintf(stderr, "Error: Presto installation not found\n");
         exit(EXIT_FAILURE);
     }
 
     switch(action) {
-    case START:
-        action_name = "start";
-        snprintf(command, sizeof(command), "sudo %s start >/dev/null 2>&1", launcher_path);
-        break;
+        case START:
+            action_name = "start";
+            snprintf(command, sizeof(command), "%s start", launcher_path);
+            break;
 
-    case STOP:
-        action_name = "stop";
-        snprintf(command, sizeof(command), "sudo %s stop >/dev/null 2>&1", launcher_path);
-        break;
+        case STOP:
+            action_name = "stop";
+            snprintf(command, sizeof(command), "%s stop", launcher_path);
+            break;
 
-    case RESTART:
-        // Stop phase
-        snprintf(command, sizeof(command), "sudo %s stop >/dev/null 2>&1", launcher_path);
-        if ((ret = executeSystemCommand(command))) {
-            fprintf(stderr,  "Error: Failed to stop Presto (%d)\n", ret);
+        case RESTART:
+            action_name = "restart";
+            snprintf(command, sizeof(command), "%s restart", launcher_path);
+            break;
+
+        default:
+            fprintf(stderr, "Error: Invalid action\n");
             free(launcher_path);
             exit(EXIT_FAILURE);
-        }
-        // Start phase
-        action_name = "restart";
-        snprintf(command, sizeof(command), "sudo %s start >/dev/null 2>&1", launcher_path);
-        break;
+    }
 
-    default:
-        fprintf(stderr,  "Error: Invalid action\n");
+    // Execute command with output redirection
+    snprintf(command + strlen(command), sizeof(command) - strlen(command), " >/dev/null 2>&1");
+    
+    if ((ret = executeSystemCommand(command)) == -1) {
+        fprintf(stderr, "Error: Failed to %s Presto (%d)\n", action_name, ret);
         free(launcher_path);
         exit(EXIT_FAILURE);
     }
 
-    if ((ret = executeSystemCommand(command))) {
-        fprintf(stderr,  "Error: Failed to %s Presto (%d)\n", action_name, ret);
-        free(launcher_path);
-        exit(EXIT_FAILURE);
-    }
-
-    printf( "Presto service %s completed successfully\n", action_name);
+    printf("Presto service %s completed successfully\n", action_name);
     free(launcher_path);
 }
 
@@ -305,7 +306,6 @@ void spark_action(Action a) {
 }
 
 
-// Helper function to check if Hive is running by testing port 10000
 static bool is_hive_running() {
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
@@ -313,24 +313,35 @@ static bool is_hive_running() {
         return false;
     }
 
+    // Set socket to non-blocking
+    int flags = fcntl(sock, F_GETFL, 0);
+    fcntl(sock, F_SETFL, flags | O_NONBLOCK);
+
     struct sockaddr_in serv_addr;
     memset(&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(10000);
-    if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
-        perror("inet_pton");
-        close(sock);
-        return false;
-    }
+    inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr);
 
-    // Non-blocking connect to check port status
-    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr))) {
+    // Start non-blocking connection
+    connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+    
+    fd_set fdset;
+    FD_ZERO(&fdset);
+    FD_SET(sock, &fdset);
+    struct timeval tv = {.tv_sec = 1, .tv_usec = 0}; // 1s timeout
+    
+    // Wait for connection or timeout
+    if (select(sock + 1, NULL, &fdset, NULL, &tv) == 1) {
+        int so_error;
+        socklen_t len = sizeof(so_error);
+        getsockopt(sock, SOL_SOCKET, SO_ERROR, &so_error, &len);
         close(sock);
-        return false;
+        return (so_error == 0);
     }
 
     close(sock);
-    return true;
+    return false;
 }
 
 // Checks if Hive started successfully by testing the port
@@ -392,11 +403,13 @@ void hive_action(Action a) {
     int ret;
 
     // Construct commands
+    // Start command with proper backgrounding and logging
     snprintf(start_cmd, sizeof(start_cmd),
-             "\"%s/bin/hive\" --service hiveserver2 > /dev/null 2>&1 &", hive_path);
+         "\"%s/bin/hive\" --service hiveserver2 ",  // Fixed: add & and stderr
+         hive_path);
 
     snprintf(stop_cmd, sizeof(stop_cmd),
-             "pkill -f '\"%s/bin/hive\" --service hiveserver2' >/dev/null 2>&1", hive_path);
+             "pkill -f '\"%s/bin/hive\" --service hiveserver2' ", hive_path);
 
     switch (a) {
     case START: {

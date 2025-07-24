@@ -52,3 +52,4 @@ ValidationResult validateSparkConfigParam(const char *param_name, const char *va
 ValidationResult validateHBaseConfigParam(const char *param_name, const char *value);
 ValidationResult validatePigConfigParam(const char *param_name, const char *value);
 void configure_target_component(Component target);
+ValidationResult validatePrestoConfigParam(const char *param_name, const char *value);

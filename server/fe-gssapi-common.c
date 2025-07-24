@@ -119,7 +119,7 @@ pg_GSS_load_servicename(Conn *conn)
     host = PQhost(conn);
     if (!(host && host[0] != '\0'))
     {
-        db_append_conn_error(conn, "host name must be specified");
+        fprintf(stderr, "host name must be specified");
         return STATUS_ERROR;
     }
 
@@ -130,7 +130,7 @@ pg_GSS_load_servicename(Conn *conn)
     temp_gbuf.value = (char *) malloc(maxlen);
     if (!temp_gbuf.value)
     {
-        db_append_conn_error(conn, "out of memory");
+        fprintf(stderr, "out of memory");
         return STATUS_ERROR;
     }
     snprintf(temp_gbuf.value, maxlen, "%s@%s",

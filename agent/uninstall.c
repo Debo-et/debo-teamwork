@@ -997,12 +997,6 @@ void uninstall_Tez() {
         ".zshrc", ".cshrc"
     };
 
-    // Step 1: Stop running services
-    //PRINTF(global_client_socket,"Stopping Tez services...\n");
-    int result = executeSystemCommand("tez-daemon.sh stop historyserver 2>/dev/null");
-    if (result != 0) {
-        PRINTF(global_client_socket,"Command failed with return code %d\n", result);
-    }
 
     // Step 2: Identify installation locations
     char* install_paths[MAX_PATHS] = {0};

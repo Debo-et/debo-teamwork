@@ -66,10 +66,10 @@ char *report_hdfs() {
 
     // Check command exit status
     int status = pclose(fp);
-    if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
-        free(output);
-        return strdup("Hadoop is not started");
-    }
+    //if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+      //  free(output);
+       // return strdup("Hadoop is not started");
+    //}
 
     return output;
 }
@@ -81,14 +81,14 @@ static int dir_exists(const char *path) {
 }
 
 char *report_hbase() {
-    const char *hbase_home = getenv("hbase_HOME");
+    const char *hbase_home = getenv("HBASE_HOME");
     const char *hbase_dir = NULL;
 
-    // Check hbase_HOME environment variable
+    // Check HBASE_HOME environment variable
     if (hbase_home != NULL && dir_exists(hbase_home)) {
         hbase_dir = hbase_home;
     } else {
-        // Check Red Hat path
+        // Check common installation paths
         if (dir_exists("/opt/hbase")) {
             hbase_dir = "/opt/hbase";
         } else if (dir_exists("/usr/local/hbase")) {
@@ -98,11 +98,11 @@ char *report_hbase() {
         }
     }
 
-    // Construct the command to check HBase status
+    // Construct command using pipe instead of options
     char command[1024];
-    snprintf(command, sizeof(command), "%s/bin/hbase shell -c 'status'", hbase_dir);
+    snprintf(command, sizeof(command), 
+             "echo \"status\" | %s/bin/hbase shell 2>&1", hbase_dir);
 
-    // Execute the command and read output
     FILE *fp = popen(command, "r");
     if (!fp) {
         return strdup("Error executing hbase command");
@@ -110,7 +110,7 @@ char *report_hbase() {
 
     char buffer[4096];
     size_t output_size = 0;
-    char *output = malloc(1);  // Start with minimal allocation
+    char *output = malloc(1);
     if (!output) {
         pclose(fp);
         return strdup("Memory allocation error");
@@ -130,21 +130,14 @@ char *report_hbase() {
         output_size += len;
     }
 
-    // Check exit status
     int status = pclose(fp);
     if (WIFEXITED(status)) {
-        if (WEXITSTATUS(status) == 0) {
-            return output;
-        } else {
-            free(output);
-            return strdup("HBase is not started");
-        }
+        return output;  // Return output regardless of exit status
     } else {
         free(output);
         return strdup("Error checking HBase status");
     }
 }
-
 
 char *report_hive() {
     const char *hive_home = getenv("HIVE_HOME");
@@ -1082,9 +1075,9 @@ char *report_tez() {
 char *report_zeppelin() {
     struct stat st;
     const char *install_dir = NULL;
-    char *zeppelin_home = getenv("zeppelin_HOME");
+    char *zeppelin_home = getenv("ZEPPELIN_HOME");
 
-    // Check zeppelin_HOME environment variable
+    // Check ZEPPELIN_HOME environment variable (fixed case sensitivity)
     if (zeppelin_home != NULL) {
         if (stat(zeppelin_home, &st) == 0 && S_ISDIR(st.st_mode)) {
             install_dir = zeppelin_home;
@@ -1112,9 +1105,9 @@ char *report_zeppelin() {
 
     // Construct the status command
     char command[1024];
-    snprintf(command, sizeof(command), "%s/bin/zeppelin-daemon.sh status", install_dir);
+    snprintf(command, sizeof(command), "%s/bin/zeppelin-daemon.sh status 2>&1", install_dir);
 
-    // Execute the command
+    // Execute the command and capture output
     FILE *fp = popen(command, "r");
     if (!fp) {
         return strdup("Error checking Zeppelin status.");
@@ -1122,30 +1115,14 @@ char *report_zeppelin() {
 
     // Read the command output
     char output[4096] = {0};
-    size_t output_size = 0;
     char buffer[128];
-    while (fgets(buffer, sizeof(buffer), fp)) {
-        size_t len = strlen(buffer);
-        if (output_size + len < sizeof(output) - 1) {
-            strcat(output + output_size, buffer);
-            output_size += len;
-        } else {
-            break; // Truncate if output is too long
-        }
+    while (fgets(buffer, sizeof(buffer), fp) != NULL) {
+        strcat(output, buffer);
     }
 
-    // Get the exit status
-    int status = pclose(fp);
-    if (WIFEXITED(status)) {
-        int exit_code = WEXITSTATUS(status);
-        if (exit_code == 0) {
-            return strdup(output);
-        } else {
-            return strdup("Zeppelin is not started.");
-        }
-    } else {
-        return strdup("Error checking Zeppelin status.");
-    }
+    // Close pipe and return output regardless of exit status
+    pclose(fp);
+    return strdup(output);
 }
 
 

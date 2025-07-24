@@ -262,7 +262,7 @@ fillConn(Conn *conn, conninfoOption *connOptions)
                 *connmember = strdup(tmp);
                 if (*connmember == NULL)
                 {
-                    db_append_conn_error(conn, "out of memory");
+                    fprintf(stderr, "out of memory");
                     return false;
                 }
             }
@@ -402,7 +402,7 @@ ConnectOptions2(Conn *conn)
         if (more || i != conn->nconnhost)
         {
             conn->status = CONNECTION_BAD;
-            db_append_conn_error(conn, "could not match %d host names to %d hostaddr values",
+            fprintf(stderr, "could not match %d host names to %d hostaddr values",
                                  count_comma_separated_elems(conn->pghost), conn->nconnhost);
             return false;
         }
@@ -480,7 +480,7 @@ ConnectOptions2(Conn *conn)
         else if (more || i != conn->nconnhost)
         {
             conn->status = CONNECTION_BAD;
-            db_append_conn_error(conn, "could not match %d port numbers to %d hosts",
+            fprintf(stderr, "could not match %d port numbers to %d hosts",
                                  count_comma_separated_elems(conn->pgport), conn->nconnhost);
             return false;
         }
@@ -507,7 +507,7 @@ ConnectOptions2(Conn *conn)
                 int ret = snprintf(conn->pgpassfile, MAXPGPATH, "%s/%s",
                                    homedir, PGPASSFILE);
                 if (ret >= MAXPGPATH) {
-                    db_append_conn_error(conn, "size error");
+                    fprintf(stderr, "size error");
                 }
 
             }
@@ -525,7 +525,7 @@ ConnectOptions2(Conn *conn)
 
 oom_error:
     conn->status = CONNECTION_BAD;
-    db_append_conn_error(conn, "out of memory");
+    fprintf(stderr, "out of memory");
     return false;
 }
 
@@ -582,8 +582,7 @@ connectNoDelay(Conn *conn)
                    sizeof(on)) < 0)
     {
         char		sebuf[PG_STRERROR_R_BUFLEN];
-
-        db_append_conn_error(conn, "could not set socket to TCP no delay mode: %s",
+        fprintf(stderr, "could not set socket to TCP no delay mode: %s",
                              SOCK_STRERROR(SOCK_ERRNO, sebuf, sizeof(sebuf)));
         return 0;
     }
@@ -891,9 +890,9 @@ connectFailureMessage(Conn *conn, int errorno)
                     SOCK_STRERROR(errorno, sebuf, sizeof(sebuf)));
 
     if (conn->raddr.addr.ss_family == AF_UNIX)
-        db_append_conn_error(conn, "\tIs the server running locally and accepting connections on that socket?");
+        fprintf(stderr, "\tIs the server running locally and accepting connections on that socket?");
     else
-        db_append_conn_error(conn, "\tIs the server running on that host and accepting TCP/IP connections?");
+        fprintf(stderr, "\tIs the server running on that host and accepting TCP/IP connections?");
 }
 
 
@@ -1078,7 +1077,7 @@ connectPoll(Conn *conn)
 
             if (thisport < 1 || thisport > 65535)
             {
-                db_append_conn_error(conn, "invalid port number: \"%s\"", ch->port);
+                fprintf(stderr, "invalid port number: \"%s\"", ch->port);
                 continue;
             }
         }
@@ -1090,7 +1089,7 @@ connectPoll(Conn *conn)
             ret = pg_getaddrinfo_all(ch->host, portstr, &hint, &addrlist);
             if (ret || !addrlist)
             {
-                db_append_conn_error(conn, "could not translate host name \"%s\" to address: %s",
+                fprintf(stderr, "could not translate host name \"%s\" to address: %s",
                                      ch->host, gai_strerror(ret));
                 continue;
             }
@@ -1101,7 +1100,7 @@ connectPoll(Conn *conn)
             ret = pg_getaddrinfo_all(ch->hostaddr, portstr, &hint, &addrlist);
             if (ret || !addrlist)
             {
-                db_append_conn_error(conn, "could not parse network address \"%s\": %s",
+                fprintf(stderr, "could not parse network address \"%s\": %s",
                                      ch->hostaddr, gai_strerror(ret));
                 continue;
             }
@@ -1113,7 +1112,7 @@ connectPoll(Conn *conn)
             ret = pg_getaddrinfo_all(NULL, portstr, &hint, &addrlist);
             if (ret || !addrlist)
             {
-                db_append_conn_error(conn, "could not translate Unix-domain socket path \"%s\" to address: %s",
+                fprintf(stderr, "could not translate Unix-domain socket path \"%s\" to address: %s",
                                      portstr, gai_strerror(ret));
                 continue;
             }
@@ -1157,7 +1156,7 @@ connectPoll(Conn *conn)
             if (conn->sock == PGINVALID_SOCKET)
             {
                 int			errorno = SOCK_ERRNO;
-                db_append_conn_error(conn, "could not create socket: %s",
+                fprintf(stderr, "could not create socket: %s",
                                      SOCK_STRERROR(errorno, sebuf, sizeof(sebuf)));
                 continue;
             }
@@ -1187,7 +1186,7 @@ connectPoll(Conn *conn)
 #ifdef F_SETFD
             if (fcntl(conn->sock, F_SETFD, FD_CLOEXEC) == -1)
             {
-                db_append_conn_error(conn, "could not set socket to close-on-exec mode: %s",
+                fprintf(stderr, "could not set socket to close-on-exec mode: %s",
                                      SOCK_STRERROR(SOCK_ERRNO, sebuf, sizeof(sebuf)));
                 close(conn->sock);
                 conn->sock = PGINVALID_SOCKET;
@@ -1231,7 +1230,7 @@ connectPoll(Conn *conn)
             if (getsockopt(conn->sock, SOL_SOCKET, SO_ERROR,
                            (char *) &optval, &optlen) == -1)
             {
-                db_append_conn_error(conn, "could not get socket error status: %s",
+                fprintf(stderr, "could not get socket error status: %s",
                                      SOCK_STRERROR(SOCK_ERRNO, sebuf, sizeof(sebuf)));
                 close(conn->sock);
                 conn->sock = PGINVALID_SOCKET;
@@ -1250,7 +1249,7 @@ connectPoll(Conn *conn)
                             (struct sockaddr *) &conn->laddr.addr,
                             &conn->laddr.salen) < 0)
             {
-                db_append_conn_error(conn, "could not get client address from socket: %s",
+                fprintf(stderr, "could not get client address from socket: %s",
                                      SOCK_STRERROR(SOCK_ERRNO, sebuf, sizeof(sebuf)));
                 close(conn->sock);
                 conn->sock = PGINVALID_SOCKET;
@@ -1267,9 +1266,9 @@ connectPoll(Conn *conn)
                 if (getpeereid(conn->sock, &uid, &gid) != 0)
                 {
                     if (errno == ENOSYS)
-                        db_append_conn_error(conn, "requirepeer parameter is not supported on this platform");
+                        fprintf(stderr, "requirepeer parameter is not supported on this platform");
                     else
-                        db_append_conn_error(conn, "could not get peer credentials: %s",
+                        fprintf(stderr, "could not get peer credentials: %s",
                                              strerror_r(errno, sebuf, sizeof(sebuf)));
                     close(conn->sock);
                     conn->sock = PGINVALID_SOCKET;
@@ -1313,7 +1312,7 @@ connectPoll(Conn *conn)
                         {
                             if (errno == EINTR)
                                 continue;
-                            db_append_conn_error(conn, "select() failed: %s",
+                            fprintf(stderr, "select() failed: %s",
                                                  strerror(errno));
                             gss_done = true;
                         }
@@ -1325,7 +1324,7 @@ connectPoll(Conn *conn)
                     break;
 
                 default:
-                    db_append_conn_error(conn, "unexpected GSSAPI polling status: %d",
+                    fprintf(stderr, "unexpected GSSAPI polling status: %d",
                                          (int) gss_status);
                     gss_done = true;
                     break;
@@ -1437,7 +1436,7 @@ store_conn_addrinfo(Conn *conn, struct addrinfo *addrlist)
     conn->addr = calloc(conn->naddr, sizeof(AddrInfo));
     if (conn->addr == NULL)
     {
-        db_append_conn_error(conn, "out of memory");
+        fprintf(stderr, "out of memory");
         return 1;
     }
 
@@ -2677,7 +2676,7 @@ ParseIntParam(const char *value, int *result, Conn *conn,
     return true;
 
 error:
-    db_append_conn_error(conn, "invalid integer value \"%s\" for connection option \"%s\"",
+    fprintf(stderr, "invalid integer value \"%s\" for connection option \"%s\"",
                          value, context);
     return false;
 }

@@ -178,12 +178,12 @@ ValidationResult validatePrestoConfigParam(const char *param_name, const char *v
     return VALIDATION_OK;
 }
 
-ConfigStatus  set_presto_config(const char *param, const char *value, const char *config_file) {
+ConfigStatus set_presto_config(const char *param, const char *value, const char *config_file) {
     char *presto_home = getenv("PRESTO_HOME");
     char path[MAX_PATH_LEN];
     char *found_path = NULL;
 
-    // Check PRESTO_HOME/etc/config_file
+    // 1. Try PRESTO_HOME/etc/config_file first
     if (presto_home != NULL) {
         snprintf(path, MAX_PATH_LEN, "%s/etc/%s", presto_home, config_file);
         if (access(path, F_OK) == 0) {
@@ -191,16 +191,19 @@ ConfigStatus  set_presto_config(const char *param, const char *value, const char
         }
     }
 
-    // Check Bigtop default directories if not found yet
+    // 2. Search common installation directories
     if (!found_path) {
-        const char *bigtop_dirs[] = {
-            "/opt/presto/conf",
-            "usr/local/presto",
+        const char *search_dirs[] = {
+            "/etc/presto/conf",
             "/etc/presto",
-            "/usr/local/presto/etc"
+            "/usr/lib/presto/etc",
+            "/opt/presto/conf",
+            "/usr/local/presto/etc",
+            "/usr/local/presto/conf"
         };
-        for (size_t i = 0; i < sizeof(bigtop_dirs)/sizeof(bigtop_dirs[0]); i++) {
-            snprintf(path, MAX_PATH_LEN, "%s/%s", bigtop_dirs[i], config_file);
+        
+        for (size_t i = 0; i < sizeof(search_dirs)/sizeof(search_dirs[0]); i++) {
+            snprintf(path, MAX_PATH_LEN, "%s/%s", search_dirs[i], config_file);
             if (access(path, F_OK) == 0) {
                 found_path = strdup(path);
                 break;
@@ -208,117 +211,45 @@ ConfigStatus  set_presto_config(const char *param, const char *value, const char
         }
     }
 
-    // If not found, create in first possible directory
+    // 3. Create config file if not found
     if (!found_path) {
-        // Try PRESTO_HOME/etc first
-        if (presto_home != NULL) {
-            snprintf(path, MAX_PATH_LEN, "%s/etc", presto_home);
-            if (mkdir(path, 0755) != 0 && errno != EEXIST) {
-                fprintf(stderr, "Failed to create directory %s: %s\n", path, strerror(errno));
-            } else {
-                snprintf(path, MAX_PATH_LEN, "%s/etc/%s", presto_home, config_file);
-                FILE *fp = fopen(path, "w");
-                if (fp) {
-                    fclose(fp);
-                    found_path = strdup(path);
-                } else {
-                    fprintf(stderr, "Failed to create file %s: %s\n", path, strerror(errno));
-                }
+        const char *create_dirs[] = {
+            (presto_home ? presto_home : "/etc/presto"),
+            "/etc/presto/conf",
+            "/usr/lib/presto/etc",
+            "/opt/presto/conf"
+        };
+        
+        for (size_t i = 0; i < sizeof(create_dirs)/sizeof(create_dirs[0]); i++) {
+            char dir_path[MAX_PATH_LEN];
+            snprintf(dir_path, MAX_PATH_LEN, "%s/etc", create_dirs[i]);
+            
+            // Create directory if needed
+            if (mkdir(dir_path, 0755) != 0 && errno != EEXIST) {
+                continue;  // Try next location
             }
-        }
-
-        // If still not found, try Bigtop directories
-        if (!found_path) {
-            const char *bigtop_create_dirs[] = {
-                "/etc/presto/conf",
-                "/etc/presto",
-                "/usr/lib/presto/etc"
-            };
-            for (size_t i = 0; i < sizeof(bigtop_create_dirs)/sizeof(bigtop_create_dirs[0]); i++) {
-                if (mkdir(bigtop_create_dirs[i], 0755) != 0 && errno != EEXIST) {
-                    fprintf(stderr, "Failed to create directory %s: %s\n", bigtop_create_dirs[i], strerror(errno));
-                    continue;
-                }
-                snprintf(path, MAX_PATH_LEN, "%s/%s", bigtop_create_dirs[i], config_file);
-                FILE *fp = fopen(path, "w");
-                if (fp) {
-                    fclose(fp);
-                    found_path = strdup(path);
-                    break;
-                } else {
-                    fprintf(stderr, "Failed to create file %s: %s\n", path, strerror(errno));
-                }
+            
+            // Create config file path
+            snprintf(path, MAX_PATH_LEN, "%s/%s", dir_path, config_file);
+            
+            // Create empty file
+            FILE *fp = fopen(path, "w");
+            if (fp) {
+                fclose(fp);
+                found_path = strdup(path);
+                break;
             }
         }
     }
 
     if (!found_path) {
-        fprintf(stderr, "Failed to find or create config file\n");
+        fprintf(stderr, "Failed to find or create config file for %s\n", config_file);
         return FILE_NOT_FOUND;
     }
 
-    // Prepare temp file path
-    char temp_path[MAX_PATH_LEN + 4];
-    snprintf(temp_path, sizeof(temp_path), "%s.tmp", found_path);
-
-    FILE *src = fopen(found_path, "r");
-    FILE *dst = fopen(temp_path, "w");
-    if (!dst) {
-        fprintf(stderr, "Failed to create temp file %s: %s\n", temp_path, strerror(errno));
-        free(found_path);
-        return FILE_NOT_FOUND;
-    }
-
-    int found = 0;
-    if (src) {
-        char line[1024];
-        while (fgets(line, sizeof(line), src) != NULL) {
-            char *original_line = line;
-            char line_copy[1024];
-            strncpy(line_copy, line, sizeof(line_copy));
-            line_copy[sizeof(line_copy) - 1] = '\0'; // Ensure null-terminated
-
-            char *trimmed = trim(line_copy);
-            if (trimmed[0] == '#') {
-                fputs(original_line, dst);
-                continue;
-            }
-
-            char *equals = strchr(trimmed, '=');
-            if (!equals) {
-                fputs(original_line, dst);
-                continue;
-            }
-
-            *equals = '\0';
-            char *key = trim(trimmed);
-            if (strcmp(key, param) == 0) {
-                fprintf(dst, "%s=%s\n", param, value);
-                found = 1;
-            } else {
-                fputs(original_line, dst);
-            }
-        }
-        fclose(src);
-    }
-
-    if (!found) {
-        fprintf(dst, "%s=%s\n", param, value);
-    }
-
-    fclose(dst);
-
-    // Replace the original file with the temp file
-    if (rename(temp_path, found_path) != 0) {
-        fprintf(stderr, "Failed to replace file: %s\n", strerror(errno));
-        remove(temp_path);
-        free(found_path);
-        return -1;
-    }
-
+    // Delegate to configure_hadoop_property for actual configuration
+    ConfigStatus status = configure_hadoop_property(found_path, param, value);
+    
     free(found_path);
-    return SUCCESS;
+    return status;
 }
-
-
-

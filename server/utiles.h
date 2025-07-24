@@ -273,7 +273,7 @@ int update_config(const char *param, const char *value, const char *file_path);
 int create_xml_file(const char *directory_path, const char *xml_file_name);
 int create_properties_file(const char *directory_path, const char *properties_file_name);
 int create_conf_file(const char *directory_path, const char *conf_file_name);
-int start_stdout_capture(void);
+int start_stdout_capture(Component comp);
 int stop_stdout_capture(void);
 char* get_component_config_path(Component comp, const char* config_filename);
 bool isComponentInstalled(Component comp);

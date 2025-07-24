@@ -7,6 +7,8 @@
 #include <pwd.h>
 #include "utiles.h"
 #include <limits.h>
+#include <glob.h>
+
 
 #include "configuration.h"
 #include "utiles.h"
@@ -600,12 +602,15 @@ void install_Storm(char *version, char *location) {
     snprintf(sudo_cmd, sizeof(sudo_cmd), "%s", is_root ? "" : "sudo ");
 
 
-    // Create Storm data directory with proper permissions
-    printf( "Creating Storm data directory...\n");
+    // Create Storm data directory with proper permissions (FIXED)
+    printf("Creating Storm data directory...\n");
     char mkdir_cmd[512];
-    snprintf(mkdir_cmd, sizeof(mkdir_cmd), "%smkdir -p /var/lib/storm-data && %schown -R storm:storm /var/lib/storm-data >/dev/null 2>&1",
-             is_root ? "" : "sudo ",
-             is_root ? "" : "sudo ");
+    snprintf(mkdir_cmd, sizeof(mkdir_cmd), 
+         "%smkdir -p /var/lib/storm-data && %schown -R %s:%s /var/lib/storm-data >/dev/null 2>&1",  // FIXED
+         is_root ? "" : "sudo ",
+         is_root ? "" : "sudo ",
+         pwd->pw_name, pwd->pw_name);  // Use current user's credentials
+         
     if (!executeSystemCommand(mkdir_cmd)) {
         fprintf(stderr,   "Failed to create Storm data directory. Check permissions.\n");
         return;
@@ -629,9 +634,9 @@ void install_Ranger(char* version, char *location) {
         snprintf(filename, sizeof(filename), "apache-ranger-%s-src.tar.gz", version);
         snprintf(extracted_dir, sizeof(extracted_dir), "apache-ranger-%s-src", version);
     } else {
-        snprintf(filename, sizeof(filename), "apache-ranger-2.0.0.tar.gz ");
-        snprintf(extracted_dir, sizeof(extracted_dir), "apache-ranger-2.0.0");
-        snprintf(url, sizeof(url), "https://dlcdn.apache.org/ranger/2.0.0/apache-ranger-2.0.0.tar.gz ");
+        snprintf(filename, sizeof(filename), "apache-ranger-2.6.0.tar.gz ");
+        snprintf(extracted_dir, sizeof(extracted_dir), "apache-ranger-2.6.0");
+        snprintf(url, sizeof(url), "https://dlcdn.apache.org/ranger/2.6.0/apache-ranger-2.6.0.tar.gz ");
     }
 
     // Download the source archive
@@ -758,24 +763,45 @@ void install_Ranger(char* version, char *location) {
     }
 }
 
+
+
 void install_phoenix(char *version, char *location) {
+    // Set default version if not specified
+    if (!version) {
+        version = "5.2.0";
+        printf("Using default Phoenix version: %s\n", version);
+    }
 
     // Determine HBASE_HOME
     char *hbase_home = getenv("HBASE_HOME");
     struct stat buffer;
     if (hbase_home == NULL) {
-        if (stat("/usr/local/hbase", &buffer) == 0) {
-            hbase_home = "/usr/local/hbase";
-        } else if (stat("/opt/hbase", &buffer) == 0) {
-            hbase_home = "/opt/hbase";
-        } else {
-            fprintf(stderr,   "HBase installation not found. Set HBASE_HOME or install HBase.\n");
+        const char *paths[] = {"/usr/local/hbase", "/opt/hbase", "/usr/lib/hbase"};
+        size_t num_paths = sizeof(paths) / sizeof(paths[0]);
+        
+        for (size_t i = 0; i < num_paths; i++) {
+            if (stat(paths[i], &buffer) == 0 && S_ISDIR(buffer.st_mode)) {
+                hbase_home = (char *)paths[i];
+                break;
+            }
+        }
+        
+        if (!hbase_home) {
+            fprintf(stderr, "HBase installation not found. Set HBASE_HOME or install HBase.\n");
             exit(1);
         }
     }
 
+    // Verify HBase bin directory exists
+    char hbase_bin[PATH_MAX];
+    snprintf(hbase_bin, sizeof(hbase_bin), "%s/bin", hbase_home);
+    if (stat(hbase_bin, &buffer) != 0 || !S_ISDIR(buffer.st_mode)) {
+        fprintf(stderr, "HBase bin directory not found: %s\n", hbase_bin);
+        exit(1);
+    }
+
     // Get HBase version
-    char command[512];
+    char command[1024];
     snprintf(command, sizeof(command), "%s/bin/hbase version 2>&1", hbase_home);
     FILE *fp = popen(command, "r");
     if (!fp) {
@@ -783,132 +809,252 @@ void install_phoenix(char *version, char *location) {
         exit(1);
     }
 
-    char hbase_version[256] = "2.5"; // Default if parsing fails
+    char hbase_version[256] = "";
     char line[256];
     while (fgets(line, sizeof(line), fp) != NULL) {
-        if (strstr(line, "HBase ")) {
-            sscanf(line, "HBase %s", hbase_version);
-            // Truncate to major.minor (e.g., 2.5.0 -> 2.5)
-            char *second_dot = strrchr(hbase_version, '.');
-            if (second_dot) *second_dot = '\0';
+        char *hb_pos = strstr(line, "HBase ");
+        if (hb_pos) {
+            char *ver_start = hb_pos + 6;
+            char *ver_end = strchr(ver_start, '-');
+            if (!ver_end) ver_end = strchr(ver_start, ' ');
+            if (ver_end) *ver_end = '\0';
+            strncpy(hbase_version, ver_start, sizeof(hbase_version)-1);
+            hbase_version[sizeof(hbase_version)-1] = '\0';
             break;
         }
     }
     pclose(fp);
 
-    // Generate URL for Phoenix binary
-    char url[256], filename[256], dirname[256];
-    snprintf(url, sizeof(url), "https://downloads.apache.org/phoenix/phoenix-%s-HBase-%s/phoenix-%s-HBase-%s-bin.tar.gz",
-             version, hbase_version, version, hbase_version);
-    snprintf(filename, sizeof(filename), "phoenix-%s-HBase-%s-bin.tar.gz", version, hbase_version);
-    snprintf(dirname, sizeof(dirname), "phoenix-%s-HBase-%s-bin", version, hbase_version);
-
-    // Download the binary archive
-    size_t ret = snprintf(command, sizeof(command), "wget -q %s -O %s >/dev/null 2>&1", url, filename);
-    if (ret >= sizeof(command)) {
-        fprintf(stderr,   "size error\n");
+    if (!hbase_version[0]) {
+        fprintf(stderr, "Failed to detect HBase version\n");
         exit(1);
     }
+
+    // Determine HBase compatibility string
+    char hbase_compat[8];
+    if (strncmp(hbase_version, "2.", 2) == 0) {
+        // Handle new URL format for HBase 2.4+
+        char *dot = strchr(hbase_version, '.');
+        if (dot && isdigit(dot[1])) {
+            int minor_version = atoi(dot + 1);
+            if (minor_version >= 4) {
+                snprintf(hbase_compat, sizeof(hbase_compat), "2.%d", minor_version);
+            } else {
+                strncpy(hbase_compat, "2x", sizeof(hbase_compat));
+            }
+        } else {
+            strncpy(hbase_compat, "2x", sizeof(hbase_compat));
+        }
+    } else if (strncmp(hbase_version, "1.", 2) == 0) {
+        strncpy(hbase_compat, "1x", sizeof(hbase_compat));
+    } else {
+        fprintf(stderr, "Unsupported HBase version: %s\n", hbase_version);
+        exit(1);
+    }
+
+    // Generate URL for Phoenix binary
+    char url[512], filename[256], dirname[256];
+    snprintf(url, sizeof(url), 
+             "https://dlcdn.apache.org/phoenix/phoenix-%s/phoenix-hbase-%s-%s-bin.tar.gz",
+             version, 
+             hbase_compat,
+             version);
+             
+    snprintf(filename, sizeof(filename), "phoenix-%s-bin.tar.gz", version);
+    snprintf(dirname, sizeof(dirname), "phoenix-hbase-%s-%s-bin", 
+             hbase_compat, 
+             version);
+
+    // Download the binary archive
+    printf("Downloading Phoenix %s...\n", version);
+    snprintf(command, sizeof(command), "wget -q --show-progress '%s' -O %s", url, filename);
     if (!executeSystemCommand(command)) {
-        fprintf(stderr,   "Failed to download Phoenix. Check version or network.\n");
+        fprintf(stderr, "Failed to download Phoenix. Check version or network.\n");
+        unlink(filename);
         exit(1);
     }
 
     // Extract the archive
-    snprintf(command, sizeof(command), "tar -xvzf %s >/dev/null 2>&1", filename);
+    printf("Extracting archive...\n");
+    snprintf(command, sizeof(command), "tar -xzf %s", filename);
     if (!executeSystemCommand(command)) {
-        fprintf(stderr,   "Extraction failed. File may be corrupt.\n");
+        fprintf(stderr, "Extraction failed. File may be corrupt.\n");
+        unlink(filename);
         exit(1);
     }
 
     // Remove the downloaded archive
-    snprintf(command, sizeof(command), "rm -f %s >/dev/null 2>&1", filename);
-    executeSystemCommand(command);
+    unlink(filename);
 
-    // Determine installation directory based on OS
-    char* install_dir = NULL;
-    if (!location)
-    {
-        if (stat("/etc/debian_version", &buffer) == 0) {
-            install_dir =  "/usr/local/phoenix";
-        } else if (stat("/etc/redhat-release", &buffer) == 0) {
-            install_dir =  "/opt/phoenix";
-        } else {
-            fprintf(stderr,   "Unsupported OS. Exiting.\n");
+    // Verify extraction
+    if (stat(dirname, &buffer) != 0 || !S_ISDIR(buffer.st_mode)) {
+        fprintf(stderr, "Extracted directory not found: %s\n", dirname);
+        exit(1);
+    }
+
+    // Determine installation directory
+    char install_dir[PATH_MAX];
+    if (location) {
+        strncpy(install_dir, location, sizeof(install_dir)-1);
+        install_dir[sizeof(install_dir)-1] = '\0';
+    } else {
+        const char *default_dirs[] = {"/usr/local/phoenix", "/opt/phoenix"};
+        size_t num_dirs = sizeof(default_dirs) / sizeof(default_dirs[0]);
+        
+        for (size_t i = 0; i < num_dirs; i++) {
+            if (stat(default_dirs[i], &buffer) == 0) {
+                strncpy(install_dir, default_dirs[i], sizeof(install_dir)-1);
+                break;
+            }
+            if (i == num_dirs-1) {
+                strncpy(install_dir, default_dirs[0], sizeof(install_dir)-1);
+            }
+        }
+        install_dir[sizeof(install_dir)-1] = '\0';
+    }
+
+    // Create installation directory if needed
+    if (stat(install_dir, &buffer) != 0) {
+        printf("Creating installation directory: %s\n", install_dir);
+        snprintf(command, sizeof(command), "mkdir -p %s", install_dir);
+        if (!executeSystemCommand(command)) {
+            fprintf(stderr, "Failed to create directory: %s\n", install_dir);
             exit(1);
         }
     }
-    else
-        install_dir = location;
+
     // Move extracted directory to install path
-    snprintf(command, sizeof(command), "sudo mv %s %s >/dev/null 2>&1", dirname, install_dir);
+    printf("Installing to: %s\n", install_dir);
+    snprintf(command, sizeof(command), "mv %s/* %s", dirname, install_dir);
     if (!executeSystemCommand(command)) {
-        fprintf(stderr,   "Failed to move Phoenix to %s. Check permissions.\n", install_dir);
+        fprintf(stderr, "Failed to move Phoenix to %s. Check permissions.\n", install_dir);
         exit(1);
     }
+
+    // Remove temporary directory
+    rmdir(dirname);
 
     // Copy Phoenix server JAR to HBase's lib directory
-    char server_jar[256];
-    snprintf(server_jar, sizeof(server_jar), "phoenix-server-hbase-%s-%s.jar", hbase_version, version);
-    char source_jar[512], dest_jar[512];
-    snprintf(source_jar, sizeof(source_jar), "%s/%s", install_dir, server_jar);
-    snprintf(dest_jar, sizeof(dest_jar), "%s/lib/%s", hbase_home, server_jar);
-    size_t ret2 = snprintf(command, sizeof(command), "sudo cp %s %s >/dev/null 2>&1", source_jar, dest_jar);
-    if (ret2 >= sizeof(command)) {
-        fprintf(stderr,   "size error\n");
-        exit(1);
-    }
-    if (!executeSystemCommand(command)) {
-        fprintf(stderr,   "Failed to copy server JAR to HBase.\n");
-        exit(1);
-    }
-
-    // Configure Phoenix client JAR in hbase-env.sh
-    char client_jar[256];
-    snprintf(client_jar, sizeof(client_jar), "phoenix-client-hbase-%s-%s.jar", hbase_version, version);
-    char hbase_env_path[512];
-    snprintf(hbase_env_path, sizeof(hbase_env_path), "%s/conf/hbase-env.sh", hbase_home);
-    FILE *hbase_env = fopen(hbase_env_path, "a");
-    if (hbase_env) {
-        fprintf(hbase_env, "\nexport HBASE_CLASSPATH=$HBASE_CLASSPATH:%s/%s\n", install_dir, client_jar);
-        fclose(hbase_env);
+    char pattern[PATH_MAX];
+    snprintf(pattern, sizeof(pattern), "%s/phoenix-*-hbase-*-server.jar", install_dir);
+    
+    glob_t glob_result;
+    if (glob(pattern, 0, NULL, &glob_result) == 0) {
+        if (glob_result.gl_pathc > 0) {
+            char *source_jar = glob_result.gl_pathv[0];
+            char *jar_name = strrchr(source_jar, '/');
+            if (jar_name) jar_name++;
+            else jar_name = source_jar;
+            
+            char dest_jar[PATH_MAX];
+            snprintf(dest_jar, sizeof(dest_jar), "%s/lib/%s", hbase_home, jar_name);
+            
+            printf("Copying server JAR to HBase: %s\n", dest_jar);
+            snprintf(command, sizeof(command), "cp '%s' '%s'", source_jar, dest_jar);
+            if (!executeSystemCommand(command)) {
+                fprintf(stderr, "Failed to copy server JAR to HBase.\n");
+                globfree(&glob_result);
+                exit(1);
+            }
+        }
+        globfree(&glob_result);
     } else {
-        perror("Failed to update hbase-env.sh");
+        fprintf(stderr, "Phoenix server JAR not found in %s\n", install_dir);
         exit(1);
     }
 
-    // Adjust ownership of install_dir to current user
-    struct passwd *pwd = getpwuid(getuid());
-    if (!pwd) {
-        fprintf(stderr,   "Error: Could not determine current user\n");
-        return;
+    // Configure Phoenix in hbase-env.sh
+    char hbase_env_path[PATH_MAX];
+    snprintf(hbase_env_path, sizeof(hbase_env_path), "%s/conf/hbase-env.sh", hbase_home);
+    
+    char classpath_entry[1024];
+    snprintf(classpath_entry, sizeof(classpath_entry), "export HBASE_CLASSPATH=\"$HBASE_CLASSPATH:%s\"", install_dir);
+    
+    // Check if entry already exists
+    bool entry_exists = false;
+    FILE *hbase_env = fopen(hbase_env_path, "r");
+    if (hbase_env) {
+        char line[1024];
+        while (fgets(line, sizeof(line), hbase_env)) {
+            if (strstr(line, classpath_entry)) {
+                entry_exists = true;
+                break;
+            }
+        }
+        fclose(hbase_env);
     }
-    char chown_cmd[512];
-    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s >/dev/null 2>&1", pwd->pw_name, pwd->pw_name, install_dir);
-    if (!executeSystemCommand(chown_cmd)) {
-        fprintf(stderr,   "Error: Failed to set ownership of %s\n", install_dir);
-        return;
+
+    // Append if not exists
+    if (!entry_exists) {
+        printf("Updating hbase-env.sh...\n");
+        hbase_env = fopen(hbase_env_path, "a");
+        if (hbase_env) {
+            fprintf(hbase_env, "\n# Added by Phoenix installer\n%s\n", classpath_entry);
+            fclose(hbase_env);
+        } else {
+            perror("Failed to update hbase-env.sh");
+            exit(1);
+        }
     }
 
     // Update .bashrc with PHOENIX_HOME
-    char bashrc_path[256];
     char *home = getenv("HOME");
     if (!home) {
-        fprintf(stderr,   "Home directory not found.\n");
+        fprintf(stderr, "Home directory not found.\n");
         exit(1);
     }
+    
+    char bashrc_path[PATH_MAX];
     snprintf(bashrc_path, sizeof(bashrc_path), "%s/.bashrc", home);
-    FILE *bashrc = fopen(bashrc_path, "a");
+    
+    char bashrc_entry[256];
+    snprintf(bashrc_entry, sizeof(bashrc_entry), "export PHOENIX_HOME=%s", install_dir);
+    
+    // Check if entry already exists
+    entry_exists = false;
+    FILE *bashrc = fopen(bashrc_path, "r");
     if (bashrc) {
-        fprintf(bashrc, "\nexport PHOENIX_HOME=%s\n", install_dir);
+        char line[1024];
+        while (fgets(line, sizeof(line), bashrc)) {
+            if (strstr(line, bashrc_entry)) {
+                entry_exists = true;
+                break;
+            }
+        }
         fclose(bashrc);
-    } else {
-        perror("Failed to update .bashrc");
+    }
+
+    // Append if not exists
+    if (!entry_exists) {
+        printf("Updating .bashrc...\n");
+        bashrc = fopen(bashrc_path, "a");
+        if (bashrc) {
+            fprintf(bashrc, "\n# Added by Phoenix installer\n%s\n", bashrc_entry);
+            fclose(bashrc);
+        } else {
+            perror("Failed to update .bashrc");
+            exit(1);
+        }
+    }
+
+    // Set ownership
+    struct passwd *pwd = getpwuid(getuid());
+    if (!pwd) {
+        fprintf(stderr, "Error: Could not determine current user\n");
+        exit(1);
+    }
+    
+    snprintf(command, sizeof(command), "chown -R %s:%s %s", pwd->pw_name, pwd->pw_name, install_dir);
+    if (!executeSystemCommand(command)) {
+        fprintf(stderr, "Error: Failed to set ownership of %s\n", install_dir);
         exit(1);
     }
 
-    sourceBashrc();
-    printf( "Apache Phoenix %s installed. Server JAR copied to HBase and client configured.\n", version);
+    printf("\nSuccessfully installed Apache Phoenix %s\n", version);
+    printf("Installation directory: %s\n", install_dir);
+    printf("HBase version detected: %s\n", hbase_version);
+    printf("Compatibility version used: %s\n", hbase_compat);
+    printf("Please restart HBase to apply changes\n");
 }
 
 void install_Solr(char* version, char *location) {
@@ -1803,93 +1949,96 @@ void install_Presto(char* version, char *location) {
     char url[512];
     char command[1024];
     char* install_dir = NULL;
+    const char* actual_version = version ? version : "0.282";
 
     // Construct download URL
-    if(version)
-        snprintf(url, sizeof(url),
-                 "https://repo1.maven.org/maven2/com/facebook/presto/presto-server/%s/presto-server-%s.tar.gz",
-                 version, version);
-    else
-        snprintf(url, sizeof(url),
-                 "https://repo1.maven.org/maven2/com/facebook/presto/presto-server/0.282/presto-server-0.282.tar.gz");
+    snprintf(url, sizeof(url),
+             "https://repo1.maven.org/maven2/com/facebook/presto/presto-server/%s/presto-server-%s.tar.gz",
+             actual_version, actual_version);
 
     // Download the archive
     snprintf(command, sizeof(command), "wget -q %s >/dev/null 2>&1", url);
     if (!executeSystemCommand(command)) {
-        fprintf(stderr,   "Failed to download Presto version %s\n", version);
+        fprintf(stderr, "Failed to download Presto version %s\n", actual_version);
         exit(EXIT_FAILURE);
     }
 
-
-    // Extract the archive
-    if (version)
-        snprintf(command, sizeof(command), "tar -xvzf presto-server-%s.tar.gz > /dev/null", version);
-    else
-        snprintf(command, sizeof(command), "tar -xvzf presto-server-0.282.tar.gz >/dev/null 2>&1");
-
-    if (!executeSystemCommand(command)) {
-        fprintf(stderr,   "taring  faild\n");
-        return;
-    }
-
-    // Remove downloaded archive after extraction
-    // printf( "Removing archive...\n");
-    if (version)
-        snprintf(command, sizeof(command), "sudo rm -f presto-server-%s.tar.gz >/dev/null 2>&1", version);
-    else
-        snprintf(command, sizeof(command), "sudo rm -f presto-server-0.282.tar.gz >/dev/null 2>&1");
-    if (!executeSystemCommand(command)) {
-        fprintf(stderr,   "Failed to remove archive.\n");
-    }
-
-    // Determine OS family
-    if (!location)
-    {
+    // Determine OS family if location not specified
+    if (!location) {
         if (access("/etc/debian_version", F_OK) == 0) {
             install_dir = "/usr/local/presto";
         } else if (access("/etc/redhat-release", F_OK) == 0) {
             install_dir = "/opt/presto";
         } else {
-            fprintf(stderr,   "Unsupported Linux distribution\n");
+            fprintf(stderr, "Unsupported Linux distribution\n");
             exit(EXIT_FAILURE);
         }
-    }
-    else
+    } else {
         install_dir = location;
+    }
+
     // Create installation directory
     snprintf(command, sizeof(command), "sudo mkdir -p %s >/dev/null 2>&1", install_dir);
-    // Adjust ownership of install_dir to current user
+    if (!executeSystemCommand(command)) {
+        fprintf(stderr, "Failed to create directory %s\n", install_dir);
+        exit(EXIT_FAILURE);
+    }
+
+    // Set ownership
     struct passwd *pwd = getpwuid(getuid());
     if (!pwd) {
-        fprintf(stderr,   "Error: Could not determine current user\n");
-        return;
+        fprintf(stderr, "Error: Could not determine current user\n");
+        exit(EXIT_FAILURE);
     }
-    char chown_cmd[512];
-    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s >/dev/null 2>&1", pwd->pw_name, pwd->pw_name, install_dir);
-    if (!executeSystemCommand(chown_cmd)) {
-        fprintf(stderr,   "Error: Failed to set ownership of %s\n", install_dir);
-        return;
-    }
-
-
+    snprintf(command, sizeof(command), "sudo chown -R %s:%s %s >/dev/null 2>&1", 
+             pwd->pw_name, pwd->pw_name, install_dir);
     if (!executeSystemCommand(command)) {
-        fprintf(stderr,   "making directory  faild\n");
-        return;
+        fprintf(stderr, "Error: Failed to set ownership of %s\n", install_dir);
+        exit(EXIT_FAILURE);
     }
-    // Move extracted files
-    if (version)
-        snprintf(command, sizeof(command), "sudo mv presto-server-%s %s >/dev/null 2>&1", version, install_dir);
-    else
-        snprintf(command, sizeof(command), "sudo mv presto-server-0.282 %s >/dev/null 2>&1", install_dir);
 
+    // Extract directly to installation directory
+    snprintf(command, sizeof(command), 
+             "tar -xvzf presto-server-%s.tar.gz --strip-components=1 -C %s >/dev/null 2>&1", 
+             actual_version, install_dir);
     if (!executeSystemCommand(command)) {
-        fprintf(stderr,   "making directory  faild\n");
-        return;
+        fprintf(stderr, "Extraction failed\n");
+        exit(EXIT_FAILURE);
     }
+
+    // Remove downloaded archive
+    snprintf(command, sizeof(command), "sudo rm -f presto-server-%s.tar.gz >/dev/null 2>&1", actual_version);
+    executeSystemCommand(command);  // Continue even if removal fails
+
+    // Create configuration directories
+    char config_dir[512];
+    snprintf(config_dir, sizeof(config_dir), "%s/etc", install_dir);
+    
+    char dir_cmd[1024];
+    snprintf(dir_cmd, sizeof(dir_cmd), "mkdir -p %s/{catalog,data}", config_dir);
+    if (!executeSystemCommand(dir_cmd)) {
+        fprintf(stderr, "Failed to create config directories\n");
+    }
+
+    // Create configuration files
+    char node_props[512], jvm_config[512], presto_config[512], catalog_tpch[512];
+    
+    snprintf(node_props, sizeof(node_props), "%s/node.properties", config_dir);
+    create_properties_file(node_props, "node.properties");
+    
+    snprintf(jvm_config, sizeof(jvm_config), "%s/jvm.config", config_dir);
+    create_properties_file(jvm_config, "jvm.config");
+    
+    snprintf(presto_config, sizeof(presto_config), "%s/config.properties", config_dir);
+    create_properties_file(presto_config, "config.properties");
+    
+    snprintf(catalog_tpch, sizeof(catalog_tpch), "%s/catalog/tpch.properties", config_dir);
+    create_properties_file(catalog_tpch, "tpch.properties");
+
     // Set environment variables
     char* home = getenv("HOME");
     if (!home) {
-        fprintf(stderr,   "Could not determine home directory\n");
+        fprintf(stderr, "Could not determine home directory\n");
         exit(EXIT_FAILURE);
     }
 
@@ -1898,25 +2047,18 @@ void install_Presto(char* version, char *location) {
 
     FILE* bashrc = fopen(bashrc_path, "a");
     if (bashrc) {
-        fprintf(bashrc, "\nexport PRESTO_HOME=%s\n", install_dir);
-        fprintf(bashrc, "export PATH=$PATH:$PRESTO_HOME/bin\n");
+        fprintf(bashrc, "\n# Presto configuration\nexport PRESTO_HOME=%s\nexport PATH=$PATH:$PRESTO_HOME/bin\n", 
+                install_dir);
         fclose(bashrc);
     }
 
     // Update current session
     if (sourceBashrc() != 0) {
-        fprintf(stderr,   "bashing failed.\n");
-        return;
+        fprintf(stderr, "Failed to source .bashrc\n");
     }
 
-
-    if (!executeSystemCommand("rm -f presto-server-*.tar.gz >/dev/null 2>&1")) {
-        fprintf(stderr,   "moving failed %s\n", version);
-        exit(EXIT_FAILURE);
-    }
-    //printf( "Presto  successfully installed to %s\n", install_dir);
+    printf("Presto %s successfully installed to %s\n", actual_version, install_dir);
 }
-
 
 void install_hive(char* version, char *location) {
     char url[512];
@@ -2432,8 +2574,8 @@ void install_Livy(char* version, char *location) {
     char candidate_path[PATH_MAX];
     snprintf(candidate_path, sizeof(candidate_path), "%s/conf", install_dir);
 
-    if (create_conf_file(candidate_path, "livy.conf") !=0)
-        fprintf(stderr,   "Failed to create XML file\n");
+  //  if (create_conf_file(candidate_path, "livy.conf") !=0)
+    //    fprintf(stderr,   "Failed to create XML file\n");
 
     printf( "Livy  installed successfully to %s/livy\n", install_dir);
 }

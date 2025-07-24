@@ -127,22 +127,28 @@ void hadoop_action(Action a) {
 }
 
 static char* find_launcher(const char* base_dir) {
+    if (!base_dir) return NULL;
+
+    char candidate[PATH_MAX];
+    struct stat st;
+    
+    // Check direct path first (new installation structure)
+    snprintf(candidate, sizeof(candidate), "%s/bin/launcher", base_dir);
+    if (stat(candidate, &st) == 0 && S_ISREG(st.st_mode)) {
+        return strdup(candidate);
+    }
+
+    // Fallback to old pattern (versioned directory)
     char pattern[PATH_MAX];
     snprintf(pattern, sizeof(pattern), "%s/presto-server-*/bin/launcher", base_dir);
+    
     glob_t glob_result;
-    int glob_ret = glob(pattern, GLOB_ERR, NULL, &glob_result);
-
-    if (glob_ret != 0 || glob_result.gl_pathc == 0) {
+    if (glob(pattern, GLOB_ERR, NULL, &glob_result) != 0 || glob_result.gl_pathc == 0) {
         globfree(&glob_result);
         return NULL;
     }
 
-    struct stat st;
-    if (stat(glob_result.gl_pathv[0], &st) != 0 || !S_ISREG(st.st_mode)) {
-        globfree(&glob_result);
-        return NULL;
-    }
-
+    // Use first match
     char* path = strdup(glob_result.gl_pathv[0]);
     globfree(&glob_result);
     return path;
@@ -156,55 +162,49 @@ void Presto_action(Action action) {
 
     // Check installation locations in priority order
     const char* candidates[] = {
-        getenv("PRESTO_HOME"),
-        "/opt/Presto",
-        "/usr/local/Presto",
+        getenv("PRESTO_HOME"),  // Environment variable
+        "/opt/presto",          // RedHat/CentOS
+        "/usr/local/presto",    // Debian/Ubuntu
         NULL
     };
 
     for (int i = 0; candidates[i] != NULL; i++) {
-        if (candidates[i] == NULL) continue;
         launcher_path = find_launcher(candidates[i]);
         if (launcher_path) break;
     }
 
     if (!launcher_path) {
-        FPRINTF(global_client_socket,  "Error: Presto installation not found\n");
+        FPRINTF(global_client_socket, "Error: Presto installation not found\n");
         exit(EXIT_FAILURE);
     }
 
     switch(action) {
-    case START:
-        action_name = "start";
-        snprintf(command, sizeof(command), "sudo %s start", launcher_path);
-        break;
+        case START:
+            action_name = "start";
+            snprintf(command, sizeof(command), "%s start", launcher_path);
+            break;
 
-    case STOP:
-        action_name = "stop";
-        snprintf(command, sizeof(command), "sudo %s stop", launcher_path);
-        break;
+        case STOP:
+            action_name = "stop";
+            snprintf(command, sizeof(command), "%s stop", launcher_path);
+            break;
 
-    case RESTART:
-        // Stop phase
-        snprintf(command, sizeof(command), "sudo %s stop", launcher_path);
-        if ((ret = executeSystemCommand(command))) {
-            FPRINTF(global_client_socket,  "Error: Failed to stop Presto (%d)\n", ret);
+        case RESTART:
+            action_name = "restart";
+            snprintf(command, sizeof(command), "%s restart", launcher_path);
+            break;
+
+        default:
+            FPRINTF(global_client_socket, "Error: Invalid action\n");
             free(launcher_path);
             exit(EXIT_FAILURE);
-        }
-        // Start phase
-        action_name = "restart";
-        snprintf(command, sizeof(command), "sudo %s start", launcher_path);
-        break;
-
-    default:
-        FPRINTF(global_client_socket,  "Error: Invalid action\n");
-        free(launcher_path);
-        exit(EXIT_FAILURE);
     }
 
-    if ((ret = executeSystemCommand(command))) {
-        FPRINTF(global_client_socket,  "Error: Failed to %s Presto (%d)\n", action_name, ret);
+    // Execute command with output redirection
+    snprintf(command + strlen(command), sizeof(command) - strlen(command), " >/dev/null 2>&1");
+    
+    if ((ret = executeSystemCommand(command)) != 0) {
+        FPRINTF(global_client_socket, "Error: Failed to %s Presto (%d)\n", action_name, ret);
         free(launcher_path);
         exit(EXIT_FAILURE);
     }
@@ -346,7 +346,7 @@ void hive_action(Action a) {
 
     // Construct commands with proper shell escaping
     snprintf(start_cmd, sizeof(start_cmd),
-             "\"%s/bin/hive\" --service hiveserver2 > /dev/null 2>&1 &", hive_path);
+             "\"%s/bin/hive\" --service hiveserver2 > /dev/null ", hive_path);
 
     snprintf(stop_cmd, sizeof(stop_cmd),
              "pkill -f '\"%s/bin/hive\" --service hiveserver2'", hive_path);

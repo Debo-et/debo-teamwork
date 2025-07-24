@@ -831,6 +831,37 @@ void PERROR(ClientSocket *client_sock, const char *s) {
     free(buffer);
 }
 
+
+int SEND_STRING(ClientSocket *client_sock, const char *str) {
+    if (!str) {
+        // Handle NULL pointer case
+        buffer_intermediary_function(client_sock, "");
+        return 0;
+    }
+
+    // Calculate length automatically for null-terminated strings
+    size_t length = strlen(str);
+    
+    // Special case: empty string
+    if (length == 0) {
+        buffer_intermediary_function(client_sock, "");
+        return 0;
+    }
+
+    // Create buffer and copy content
+    char *buffer = malloc(length + 1);
+    if (!buffer) {
+        return -1;  // Allocation failure
+    }
+
+    strcpy(buffer, str);  // Safe since we know exact length
+    buffer_intermediary_function(client_sock, buffer);
+    free(buffer);
+    
+    return length;  // Return number of characters sent
+}
+
+
 static bool directory_exists(const char *path) {
     struct stat info;
     if (stat(path, &info) != 0) {

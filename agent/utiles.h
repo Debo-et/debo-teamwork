@@ -97,19 +97,19 @@ typedef enum {
 typedef enum {
     CORE_SITE,
     HDFS_SITE,
-    YARN_SITE
-        // Extend with other file types as necessary
+	YARN_SITE
+    // Extend with other file types as necessary
 } ConfigFileType;
 
 typedef enum {NO_ACTION, START, STOP, RESTART, INSTALL, UPGRADE,
-    UNINSTALL, CONFIGURE} Action;
+UNINSTALL, CONFIGURE} Action;
 
 typedef struct PromptInterruptContext
 {
-    /* To avoid including <setjmp.h> here, jmpbuf is declared "void *" */
-    void       *jmpbuf;                     /* existing longjmp buffer */
-    volatile sig_atomic_t *enabled; /* flag that enables longjmp-on-interrupt */
-    bool            canceled;               /* indicates whether cancellation occurred */
+        /* To avoid including <setjmp.h> here, jmpbuf is declared "void *" */
+        void       *jmpbuf;                     /* existing longjmp buffer */
+        volatile sig_atomic_t *enabled; /* flag that enables longjmp-on-interrupt */
+        bool            canceled;               /* indicates whether cancellation occurred */
 } PromptInterruptContext;
 
 typedef struct {
@@ -164,14 +164,12 @@ char *simple_prompt(const char *prompt, bool echo);
 void execute_and_print(const char *command);
 char * apache_strdup(const char *in);
 bool is_version_format(const char *version);
-void printBorder(const char *start, const char *end, const char *color);
-void printTextBlock(const char *text, const char *textColor, const char *borderColor);
 const char * component_to_string(Component comp);
 const char * action_to_string(Action action);
 char* execute_remote_script(const char* script, const char* username, const char* host, const char* password);
-int execute_remote_command(const char* host,
-                           const char* username, const char* password,
-                           const char* cmd);
+int execute_remote_command(const char* host, 
+                   const char* username, const char* password,
+                   const char* cmd);
 //Component* get_dependencies(Component comp);
 Component string_to_component(const char* name);
 
@@ -183,6 +181,7 @@ void buffer_intermediary_function(ClientSocket *client_sock, char *buf);
 void PERROR(ClientSocket *client_sock, const char *s);
 int PRINTF(ClientSocket *client_sock, const char *format, ...);
 int FPRINTF(ClientSocket *client_sock, const char *format, ...);
+int SEND_STRING(ClientSocket *client_sock, const char *str);
 void handle_result(ConfigStatus status, const char *config_param, const char *config_value, const char *config_file);
 bool handleValidationResult(ValidationResult result);
 bool isPositiveInteger(const char *value);
