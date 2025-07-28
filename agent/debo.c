@@ -467,7 +467,7 @@ static void handle_command(ClientSocket *client_socket) {
         }
 
         char **result = split_string(param_buffer.data);
-        printf(" the  data %s", param_buffer.data);
+        //printf(" the  data %s", param_buffer.data);
         // printf(" first second data %s", result[0]);
         //printf(" first second data %s", result[1]);
 

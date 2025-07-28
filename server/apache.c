@@ -217,7 +217,7 @@ main(int argc, char *argv[])
         {"start", no_argument, NULL, 'T'},
         {"stop", no_argument, NULL, 'O'},
         {"restart", no_argument, NULL, 'R'},
-        {"verswitch", no_argument, NULL, 'U'},
+        {"verswitch", required_argument, NULL, 'U'},
         {"uninstall", no_argument, NULL, 'u'},
         {"configure", required_argument, NULL, 'c'},
         {"hdfs", no_argument, NULL, 'h'},
@@ -241,7 +241,7 @@ main(int argc, char *argv[])
         {"value", required_argument, NULL, 'v'},
         {"solr", no_argument, NULL, 'X'},
         {"zeppelin", no_argument, NULL, 'Z'},
-        {"dependency", no_argument, NULL, 'd'},
+        {"with-dependency", no_argument, NULL, 'd'},
         {NULL, 0, NULL, 0}
     };
     Component component = NONE;
@@ -335,6 +335,7 @@ main(int argc, char *argv[])
             break;
         case 'U':
             action = VERSION_SWITCH;
+            version = apache_strdup(optarg);
             break;
         case 'u':
             action = UNINSTALL;
@@ -1395,6 +1396,7 @@ print_inBuffer(const Conn *conn)
     printf("\n");
 }
 
+
 // Helper function to get required reads for INSTALL based on component
 static int get_required_reads_for_install(Component comp) {
     const char *comp_str = component_to_string(comp);
@@ -1416,6 +1418,78 @@ static int get_required_reads_for_install(Component comp) {
     if (strcasecmp(comp_str, "FLINK") == 0) return 147;
     return 1; // Default for unknown components
 }
+
+// Helper function to perform required reads
+static void do_read(Conn *conn, int num_reads, Component comp, Action action) {
+    bool break_on_success = (action == INSTALL);
+    for (int i = 0; i < num_reads; i++) {
+        reset_connection_buffers(conn);
+        int dataResult;
+        do {
+            dataResult = ReadData(conn);
+            if (dataResult < 0) {
+                fprintf(stderr, "Failed to read from socket for %s\n", component_to_string(comp));
+                return;
+            }
+        } while (dataResult <= 0);
+        
+        printTextBlock(conn->inBuffer + conn->inStart, BOLD GREEN, YELLOW);
+        
+        if (break_on_success && check_installed_message(conn->inBuffer + conn->inStart)) {
+            break;
+        }
+    }
+}
+
+// Helper function to handle dependency operations
+static void process_dependencies(Component component, Action action, Conn *conn, bool include_dependencies) {
+    if (!include_dependencies) return;
+    
+    int dep_count = 0;
+    Component* dependencies = get_dependencies(component, &dep_count);
+    
+    if (dep_count > 0) {
+        printTextBlock("Processing dependencies...", BOLD CYAN, YELLOW);
+    }
+    
+    for (int i = 0; i < dep_count; i++) {
+        Component dep = dependencies[i];
+        const char* dep_name = component_to_string(dep);
+        
+        // Print dependency header
+        char dep_header[128];
+        snprintf(dep_header, sizeof(dep_header), "Dependency: %s", dep_name);
+        printBorder("├", "┤", YELLOW);
+        printTextBlock(dep_header, CYAN, YELLOW);
+        printTextBlock(action_to_string(action), CYAN, YELLOW);
+        
+        // Send command and handle reads based on action
+        SendComponentActionCommand(dep, action, NULL, NULL, NULL, conn);
+        
+        if (action == INSTALL) {
+            if (start_stdout_capture(dep) != 0) {
+                fprintf(stderr, "Failed to capture stdout for %s\n", dep_name);
+                continue;
+            }
+            do_read(conn, get_required_reads_for_install(dep), dep, action);
+            stop_stdout_capture();
+        } else if (action == VERSION_SWITCH) {
+            // Special handling for version switch in dependencies
+            SendComponentActionCommand(dep, UNINSTALL, NULL, NULL, NULL, conn);
+            do_read(conn, 1, dep, UNINSTALL);
+            
+            SendComponentActionCommand(dep, INSTALL, NULL, NULL, NULL, conn);
+            do_read(conn, get_required_reads_for_install(dep), dep, INSTALL);
+        } else {
+            // START/STOP/RESTART/REPORT/UNINSTALL
+            do_read(conn, 1, dep, action);
+        }
+    }
+}
+
+
+
+
 static void handle_remote_components(bool ALL, Component component, Action action,
                                      char *version , char *config_param , char *value) {
     Conn* conn = connect_to_debo(host, port);
@@ -1479,101 +1553,88 @@ static void handle_remote_components(bool ALL, Component component, Action actio
             stop_stdout_capture();
         }
     }
+// Fixed component handling code
+} else {
+    if (component == NONE) {
+        fprintf(stderr, "Component must be specified when ALL=false\n");
+        return;
+    }
 
-    } else {
-        // Handle single component
-        if (component == NONE) {
-            fprintf(stderr, "Component must be specified when ALL=false\n");
-            return;
+    const char* comp_name = component_to_string(component);
+    int dep_count = 0;
+
+    // Print main component header
+    printBorder("┌", "┐", YELLOW);
+    printTextBlock(comp_name, BOLD GREEN, YELLOW);
+    printBorder("├", "┤", YELLOW);
+    
+    if (action == INSTALL) {
+        printTextBlock("Installation might take several minutes", BOLD GREEN, YELLOW);
+    }
+    
+    printTextBlock(action_to_string(action), CYAN, YELLOW);
+
+    // Handle VERSION_SWITCH first (special case)
+    if (action == VERSION_SWITCH) {
+        // Process dependencies for version switch
+        process_dependencies(component, VERSION_SWITCH, conn, dependency);
+        
+        // Handle main component version switch
+        SendComponentActionCommand(component, UNINSTALL, NULL, NULL, NULL, conn);
+        do_read(conn, 1, component, UNINSTALL);
+        
+        SendComponentActionCommand(component, INSTALL, version, config_param, value, conn);
+        if (start_stdout_capture(component) != 0) {
+            fprintf(stderr, "Failed to capture stdout for %s\n", comp_name);
+            exit(EXIT_FAILURE);
         }
-        int dep_count = 0;
-
-        // Get dependencies if applicable
-        if (dependency && (action == INSTALL) && (action == UNINSTALL)) {
-            (void) get_dependencies(component, &dep_count);
-        }
-
-
-        printBorder("┌", "┐", YELLOW);
-        printTextBlock(component_to_string(component), BOLD GREEN, YELLOW);
-        printBorder("├", "┤", YELLOW);
-        if (strcmp(action_to_string(action), "Installing...") == 0)
-            printTextBlock("Installing might take several minutes", BOLD GREEN, YELLOW);
-        printTextBlock(action_to_string(action), CYAN, YELLOW);
+        do_read(conn, get_required_reads_for_install(component) + 1, component, INSTALL);
+        stop_stdout_capture();
+    } 
+    // Handle all other actions
+    else {
+        // Process dependencies first (if specified)
+        process_dependencies(component, action, conn, dependency);
+        
+        // Now handle the main component
         SendComponentActionCommand(component, action, version, config_param, value, conn);
-        // Single read for non-INSTALL actions
-        reset_connection_buffers(conn);
-        if ((action == INSTALL) || ((action == VERSION_SWITCH) && !dependency)) {
-            if (start_stdout_capture(component) != 0) {
-                exit(EXIT_FAILURE);
-            }
-            int num_reads = get_required_reads_for_install(component);
-            for (int i = 0; i < num_reads; i++) {
-                int dataResult;
-                reset_connection_buffers(conn);
-                do {
-                    dataResult = ReadData(conn);
-                    if (dataResult < 0) {
-                        fprintf(stderr, "Failed to read from socket\n");
-                        break;
-                    }
-                } while (dataResult <= 0);
-                printTextBlock(conn->inBuffer + conn->inStart, BOLD GREEN, YELLOW);
-                if (check_installed_message(conn->inBuffer + conn->inStart))
-                    break;
-            }
-            stop_stdout_capture();
-        } else if (!dependency){
-            int dataResult;
-            do {
-                dataResult = ReadData(conn);
-                if (dataResult < 0) {
-                    fprintf(stderr, "Failed to read from socket\n");
-                    break;
+        
+        switch (action) {
+            case INSTALL:
+                if (start_stdout_capture(component) != 0) {
+                    fprintf(stderr, "Failed to capture stdout for %s\n", comp_name);
+                    exit(EXIT_FAILURE);
                 }
-            } while (dataResult <= 0);
-            printTextBlock(conn->inBuffer + conn->inStart, BOLD GREEN, YELLOW);
+                do_read(conn, get_required_reads_for_install(component), component, INSTALL);
+                stop_stdout_capture();
+                break;
+                
+            case START:
+            case STOP:
+            case RESTART:
+            case REPORT:
+            case UNINSTALL:
+                // Single read for these actions
+                do_read(conn, 1, component, action);
+                break;
+                
+            default:
+                // Handle other actions with single read
+                do_read(conn, 1, component, action);
+                break;
         }
-        else
-        {
-            // Calculate total iterations = (sum of reads for all dependencies) + (dependency count)
-            int dep_count = 0;
-            Component* dependencies = get_dependencies(component, &dep_count);
-            int total_iterations = dep_count;  // Start with count of dependencies
+    }
 
-            // Sum required reads for each dependency
-            for (int i = 0; i < dep_count; i++) {
-                total_iterations += get_required_reads_for_install(dependencies[i]);
-            }
+    // Send finish message
+    if (PutMsgStart(CliMsg_Finish, conn) < 0) {
+        fprintf(stderr, "Failed to send finish message\n");
+        return;
+    }
 
-            // Execute reading loop for total_iterations
-            int has_error = 0;
-            for (int i = 0; i < total_iterations && !has_error; i++) {
-                int dataResult;
-                reset_connection_buffers(conn);
-                do {
-                    dataResult = ReadData(conn);
-                    if (dataResult < 0) {
-                        fprintf(stderr, "Failed to read from socket\n");
-                        has_error = 1;
-                        break;
-                    }
-                } while (dataResult <= 0);
-
-                if (!has_error) {
-                    printTextBlock(conn->inBuffer + conn->inStart, BOLD GREEN, YELLOW);
-
-                }
-            }
-        }
-
-
-        if (PutMsgStart(CliMsg_Finish, conn) < 0) {
-            fprintf(stderr, "Failed to send finish message\n");
-            return;
-        }
-
-        PutMsgEnd(conn);
-        (void) Flush(conn);
-        }
+    PutMsgEnd(conn);
+    (void)Flush(conn);
+    
+    printBorder("└", "┘", YELLOW);
+    printf("\n");
+}
 }

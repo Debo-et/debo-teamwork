@@ -1113,32 +1113,7 @@ void SendComponentActionCommand(Component component, Action action,
         fprintf(stderr, "Invalid connection object\n");
         return;
     }
-    int dep_count;
 
-    if (action == VERSION_SWITCH) // Only for INSTALL action
-    {
-        SendComponentActionCommand(component, UNINSTALL, NULL, NULL, NULL, conn);
-        SendComponentActionCommand(component, INSTALL, version, NULL, NULL, conn);
-        //   configure_dependency_for_remote_component(component, deps[i], conn);
-    }
-
-    if (dependency && (action == INSTALL || action == UNINSTALL)) // Only for INSTALL action
-    {
-        Component *deps = get_dependencies(component, &dep_count);
-        //  printTextBlock("Installing dependency ...\n", CYAN, YELLOW);
-        for (int i = 0; i < dep_count; i++) {
-            //  char buffer[256];
-            // const char* compStr = component_to_string(deps[i]);
-            //   snprintf(buffer, sizeof(buffer),
-            //     "Installing dependency ...\n");
-            //printTextBlock("Installing dependency ...\n", CYAN, YELLOW);
-
-            // Send dependency command
-            SendComponentActionCommand(deps[i], action, NULL, NULL, NULL, conn);
-            //   configure_dependency_for_remote_component(component, deps[i], conn);
-
-        }
-    }
     // Convert enums to protocol codes
     unsigned char comp_code = get_protocol_code(component, action, version);
 

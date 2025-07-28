@@ -612,143 +612,163 @@ void install_Ranger(char* version, char *location) {
     char url[512];
     char filename[256];
     char extracted_dir[256];
-    char command[1024];
+    char command[2048];  // Increased buffer size
     char* install_dir = NULL;
+    const char* home = getenv("HOME");
+    if (!home) {
+        FPRINTF(global_client_socket, "HOME environment variable not set.\n");
+        exit(EXIT_FAILURE);
+    }
 
     // Generate URL and filenames for source distribution
-    if (version) {
-        snprintf(url, sizeof(url), "https://dlcdn.apache.org/ranger/%s/apache-ranger-%s-src.tar.gz", version, version);
-        snprintf(filename, sizeof(filename), "apache-ranger-%s-src.tar.gz", version);
-        snprintf(extracted_dir, sizeof(extracted_dir), "apache-ranger-%s-src", version);
-    } else {
-        snprintf(filename, sizeof(filename), "apache-ranger-2.6.0.tar.gz ");
-        snprintf(extracted_dir, sizeof(extracted_dir), "apache-ranger-2.6.0");
-        snprintf(url, sizeof(url), "https://dlcdn.apache.org/ranger/2.6.0/apache-ranger-2.6.0.tar.gz ");
-    }
+    const char* ranger_version = version ? version : "2.6.0";
+    snprintf(url, sizeof(url), "https://dlcdn.apache.org/ranger/%s/apache-ranger-%s-src.tar.gz", 
+             ranger_version, ranger_version);
+    snprintf(filename, sizeof(filename), "apache-ranger-%s-src.tar.gz", ranger_version);
+    snprintf(extracted_dir, sizeof(extracted_dir), "apache-ranger-%s-src", ranger_version);
 
     // Download the source archive
     snprintf(command, sizeof(command), "wget -O %s %s", filename, url);
     if (!executeSystemCommand(command)) {
-        FPRINTF(global_client_socket,  "Failed to download Ranger source archive.\n");
+        FPRINTF(global_client_socket, "Failed to download Ranger source archive.\n");
         exit(EXIT_FAILURE);
     }
 
     // Extract the source archive
     snprintf(command, sizeof(command), "tar -xvzf %s", filename);
     if (!executeSystemCommand(command)) {
-        FPRINTF(global_client_socket,  "Failed to extract the source archive.\n");
+        FPRINTF(global_client_socket, "Failed to extract the source archive.\n");
         exit(EXIT_FAILURE);
     }
 
-    // Build Apache Ranger with Maven
-    snprintf(command, sizeof(command), "cd %s && mvn clean compile package install assembly:assembly -DskipTests", extracted_dir);
+    // Fix 1: Clean potentially corrupted JARs
+    snprintf(command, sizeof(command), "rm -rf %s/.m2/repository/javax/activation", home);
+    executeSystemCommand(command);  // Non-critical
+
+    // Fix 2: Upgrade assembly plugin in pom.xml
+    char pom_path[512];
+    snprintf(pom_path, sizeof(pom_path), "%s/pom.xml", extracted_dir);
+    snprintf(command, sizeof(command),
+        "sed -i.bak "
+        "'s/<maven-assembly-plugin.version>2.6<\\/maven-assembly-plugin.version>/"
+        "<maven-assembly-plugin.version>3.6.0<\\/maven-assembly-plugin.version>/g' "
+        "%s",
+        pom_path
+    );
     if (!executeSystemCommand(command)) {
-        FPRINTF(global_client_socket,  "Failed to build Ranger.\n");
+        FPRINTF(global_client_socket, "Warning: Failed to update assembly plugin version\n");
+    }
+
+    // Fix 3: Build with retry mechanism
+    snprintf(command, sizeof(command),
+        "cd %s && "
+        "export MAVEN_OPTS=\"-Xmx4096m -XX:MaxPermSize=1024m\" && "
+        "mvn clean compile package install assembly:assembly "
+        "-DskipTests -Denunciate.skip=true -Dmaven-assembly-plugin.version=3.6.0 || "
+        "{ "
+        "  echo 'First build failed, retrying failed module...' && "
+        "  mvn -rf :ranger-distro assembly:assembly -DskipTests; "
+        "}",
+        extracted_dir
+    );
+    if (!executeSystemCommand(command)) {
+        FPRINTF(global_client_socket, "Failed to build Ranger after retries.\n");
         exit(EXIT_FAILURE);
     }
 
     // Locate the built binary archive
     char built_filename[512];
-    if (version) {
-        snprintf(built_filename, sizeof(built_filename), "%s/target/apache-ranger-%s-bin.tar.gz", extracted_dir, version);
-    } else {
-        snprintf(built_filename, sizeof(built_filename), "%s/target/apache-ranger-2.6.0-bin.tar.gz", extracted_dir);
-    }
+    snprintf(built_filename, sizeof(built_filename), 
+             "%s/target/apache-ranger-%s-bin.tar.gz", 
+             extracted_dir, ranger_version);
 
     // Check if the built archive exists
     if (access(built_filename, F_OK) != 0) {
-        FPRINTF(global_client_socket,  "Built Ranger archive not found.\n");
+        FPRINTF(global_client_socket, "Built Ranger archive not found at: %s\n", built_filename);
         exit(EXIT_FAILURE);
     }
 
     // Extract the built binary archive
     snprintf(command, sizeof(command), "tar -xvzf %s", built_filename);
     if (!executeSystemCommand(command)) {
-        FPRINTF(global_client_socket,  "Failed to extract the built Ranger archive.\n");
+        FPRINTF(global_client_socket, "Failed to extract built Ranger archive.\n");
         exit(EXIT_FAILURE);
     }
 
-    // Determine the extracted directory name of the built binary
+    // Determine extracted directory name
     char built_extracted_dir[256];
-    if (version) {
-        snprintf(built_extracted_dir, sizeof(built_extracted_dir), "apache-ranger-%s", version);
-    } else {
-        snprintf(built_extracted_dir, sizeof(built_extracted_dir), "apache-ranger-2.6.0");
-    }
+    snprintf(built_extracted_dir, sizeof(built_extracted_dir), "apache-ranger-%s", ranger_version);
 
-    // Remove downloaded source archive and extracted source directory
-    snprintf(command, sizeof(command), "sudo rm -f %s", filename);
-    if (!executeSystemCommand(command)) {
-        FPRINTF(global_client_socket,  "Failed to remove source archive.\n");
-    }
+    // Cleanup source artifacts
+    snprintf(command, sizeof(command), "rm -f %s", filename);
+    executeSystemCommand(command);  // Non-critical
 
-    snprintf(command, sizeof(command), "sudo rm -rf %s", extracted_dir);
-    if (!executeSystemCommand(command)) {
-        FPRINTF(global_client_socket,  "Failed to remove extracted source directory.\n");
-    }
+    snprintf(command, sizeof(command), "rm -rf %s", extracted_dir);
+    executeSystemCommand(command);  // Non-critical
 
-    // Determine installation directory based on OS
+    // Determine installation directory
     if (!location) {
         if (access("/etc/debian_version", F_OK) == 0) {
             install_dir = "/usr/local/ranger";
         } else if (access("/etc/redhat-release", F_OK) == 0 || access("/etc/system-release", F_OK) == 0) {
             install_dir = "/opt/ranger";
         } else {
-            FPRINTF(global_client_socket,  "Unsupported Linux distribution.\n");
+            FPRINTF(global_client_socket, "Unsupported Linux distribution.\n");
             exit(EXIT_FAILURE);
         }
     } else {
         install_dir = location;
     }
 
-    // Move the built extracted directory to the installation path
+    // Create installation directory if missing
+    snprintf(command, sizeof(command), "sudo mkdir -p %s", install_dir);
+    if (!executeSystemCommand(command)) {
+        FPRINTF(global_client_socket, "Failed to create directory: %s\n", install_dir);
+        exit(EXIT_FAILURE);
+    }
+
+    // Move built distribution to install location
     snprintf(command, sizeof(command), "sudo mv %s %s", built_extracted_dir, install_dir);
     if (!executeSystemCommand(command)) {
-        FPRINTF(global_client_socket,  "Failed to move directory to %s. Check permissions.\n", install_dir);
+        FPRINTF(global_client_socket, "Failed to move to %s. Check permissions.\n", install_dir);
         exit(EXIT_FAILURE);
     }
 
-    // Adjust ownership of install_dir to current user
+    // Set ownership
     struct passwd *pwd = getpwuid(getuid());
     if (!pwd) {
-        FPRINTF(global_client_socket,  "Error: Could not determine current user\n");
+        FPRINTF(global_client_socket, "Could not determine current user\n");
         return;
     }
-    char chown_cmd[512];
-    snprintf(chown_cmd, sizeof(chown_cmd), "sudo chown -R %s:%s %s", pwd->pw_name, pwd->pw_name, install_dir);
-    if (!executeSystemCommand(chown_cmd)) {
-        FPRINTF(global_client_socket,  "Error: Failed to set ownership of %s\n", install_dir);
+    snprintf(command, sizeof(command), "sudo chown -R %s:%s %s", 
+             pwd->pw_name, pwd->pw_name, install_dir);
+    if (!executeSystemCommand(command)) {
+        FPRINTF(global_client_socket, "Failed to set ownership of %s\n", install_dir);
         return;
     }
 
-    // Update .bashrc with RANGER_HOME and PATH
-    const char* home = getenv("HOME");
-    if (!home) {
-        FPRINTF(global_client_socket,  "HOME environment variable not set.\n");
-        exit(EXIT_FAILURE);
-    }
-
+    // Update environment
     char bashrc_path[256];
     snprintf(bashrc_path, sizeof(bashrc_path), "%s/.bashrc", home);
     FILE* bashrc = fopen(bashrc_path, "a");
     if (!bashrc) {
-        PERROR(global_client_socket,"Failed to open .bashrc");
+        PERROR(global_client_socket, "Failed to open .bashrc");
         exit(EXIT_FAILURE);
     }
 
-    fprintf(bashrc, "\n# Apache Ranger environment variables\n");
+    fprintf(bashrc, "\n# Apache Ranger environment\n");
     fprintf(bashrc, "export RANGER_HOME=%s\n", install_dir);
     fprintf(bashrc, "export PATH=\"$PATH:$RANGER_HOME/bin\"\n");
     fclose(bashrc);
 
-    // Inform user to source the .bashrc or restart the shell
-    PRINTF(global_client_socket, "Installation completed successfully.\n");
-
+    // Finalize installation
+    PRINTF(global_client_socket, "Ranger %s installed successfully at %s\n", ranger_version, install_dir);
+    
     if (sourceBashrc() != 0) {
-        FPRINTF(global_client_socket,  "Sourcing .bashrc failed.\n");
-        return;
+        FPRINTF(global_client_socket, "Warning: Sourcing .bashrc failed\n");
     }
 }
+
 
 void install_phoenix(char *version, char *location) {
     // Set default version if not specified
