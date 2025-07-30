@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025 Surafel Temesgen
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include "utiles.h"
 #include "configuration.h"
 #include "protocol.h"
@@ -24,8 +40,8 @@ void configure_target_component(Component target) {
         handle_result(status, "io.compression.codecs", "org.apache.hadoop.io.compress.GzipCodec,org.apache.hadoop.io.compress.DefaultCodec,org.apache.hadoop.io.compress.SnappyCodec", "hdfs-site.xml");
 
         //	 File system properties
-        status = modify_hdfs_config("fs.defaultFS", "hdfs://localhost:8020/", "core-site.xml");
-        handle_result(status, "fs.defaultFS", "hdfs://localhost:8020/", "core-site.xml");
+        status = modify_hdfs_config("fs.defaultFS", "hdfs://localhost:9000", "core-site.xml");
+        handle_result(status, "fs.defaultFS", "hdfs://localhost:9000", "core-site.xml");
         status = modify_hdfs_config("fs.trash.interval", "360", "hdfs-site.xml");
         handle_result(status, "fs.trash.interval", "360", "hdfs-site.xml");
 
@@ -382,8 +398,6 @@ void configure_target_component(Component target) {
         handle_result(status, "dfs.federation.router.secret.manager.class", "org.apache.hadoop.hdfs.server.federation.router.security.token.ZKDelegationTokenSecretManagerImpl", "hdfs-rbf-site.xml");
 
         //			 NameNode Configuration
-        status = modify_hdfs_config("dfs.namenode.name.dir", "/hadoop/hdfs/namenode", "hdfs-site.xml");
-        handle_result(status, "dfs.namenode.name.dir", "/hadoop/hdfs/namenode", "hdfs-site.xml");
         status = modify_hdfs_config("dfs.support.append", "true", "hdfs-site.xml");
         handle_result(status, "dfs.support.append", "true", "hdfs-site.xml");
         status = modify_hdfs_config("dfs.webhdfs.enabled", "true", "hdfs-site.xml");
@@ -422,8 +436,6 @@ void configure_target_component(Component target) {
         handle_result(status, "dfs.namenode.stale.datanode.interval", "30000", "hdfs-site.xml");
 
         //			 DataNode Configuration
-        status = modify_hdfs_config("dfs.datanode.data.dir", "/hadoop/hdfs/data", "hdfs-site.xml");
-        handle_result(status, "dfs.datanode.data.dir", "/hadoop/hdfs/data", "hdfs-site.xml");
         status = modify_hdfs_config("dfs.datanode.failed.volumes.tolerated", "0", "hdfs-site.xml");
         handle_result(status, "dfs.datanode.failed.volumes.tolerated", "0", "hdfs-site.xml");
         status = modify_hdfs_config("dfs.datanode.address", "0.0.0.0:50010", "hdfs-site.xml");

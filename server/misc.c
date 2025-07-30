@@ -1,3 +1,20 @@
+/*
+ * Copyright 2025 Surafel Temesgen
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 #include <signal.h>
 #include <time.h>
 
@@ -75,6 +92,7 @@ secure_raw_read(Conn *conn, void *ptr, size_t len)
             fprintf(stderr, "server closed the connection unexpectedly\n"
                                  "\tThis probably means the server terminated abnormally\n"
                                  "\tbefore or while processing the request.");
+            exit(EXIT_FAILURE);
             break;
 
         case 0:
@@ -86,6 +104,7 @@ secure_raw_read(Conn *conn, void *ptr, size_t len)
             fprintf(stderr, "could not receive data from server: %d",
                                  SOCK_STRERROR(result_errno,
                                                sebuf, sizeof(sebuf)));
+            exit(EXIT_FAILURE);
             break;
         }
     }
@@ -732,12 +751,13 @@ ReadData(Conn *conn)
     
     if (conn == NULL) {
         fprintf(stderr, "ReadData: invalid connection object (NULL)\n");
-        return -1; // Indicate failure
+        exit(EXIT_FAILURE);
     }
     
     if (conn->sock == DBINVALID_SOCKET)
     {
         fprintf(stderr, "connection not open\n");
+        exit(EXIT_FAILURE);
     }
 
     /* Left-justify any data in the buffer to make room */
@@ -897,6 +917,7 @@ definitelyEOF:
     fprintf(stderr, "server closed the connection unexpectedly\n"
                          "\tThis probably means the server terminated abnormally\n"
                          "\tbefore or while processing the request.");
+                         exit(EXIT_FAILURE);
 
     /* Come here if lower-level code already set a suitable errorMessage */
 definitelyFailed:
@@ -1148,7 +1169,7 @@ WaitTimed(int forRead, int forWrite, Conn *conn, pg_usec_time_t end_time)
     if (result == 0)
     {
         fprintf(stderr, "timeout expired");
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     return 0;
@@ -1189,7 +1210,7 @@ SocketCheck(Conn *conn, int forRead, int forWrite, pg_usec_time_t end_time)
     if (conn->sock == DBINVALID_SOCKET)
     {
         fprintf(stderr, "invalid socket");
-        return -1;
+        exit(EXIT_FAILURE);
     }
 
 
@@ -1203,6 +1224,7 @@ SocketCheck(Conn *conn, int forRead, int forWrite, pg_usec_time_t end_time)
         char		sebuf[DB_STRERROR_R_BUFLEN];
         fprintf(stderr, "%s() failed: %d", "select",
                              SOCK_STRERROR(SOCK_ERRNO, sebuf, sizeof(sebuf)));
+        exit(EXIT_FAILURE);
       
     }
 
@@ -1425,4 +1447,3 @@ db_append_error(ExpBuffer errorMessage, const char *fmt,...)
 
     appendExpBufferChar(errorMessage, '\n');
 }
-

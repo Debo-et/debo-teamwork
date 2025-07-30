@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025 Surafel Temesgen
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include "utiles.h"
 #include "configuration.h"
 #include "protocol.h"
@@ -21,8 +37,8 @@ void configure_target_component(Component target) {
         handle_result(status, "io.compression.codecs", "org.apache.hadoop.io.compress.GzipCodec,org.apache.hadoop.io.compress.DefaultCodec,org.apache.hadoop.io.compress.SnappyCodec", "hdfs-site.xml");
 
         //	 File system properties
-        status = modify_hdfs_config("fs.defaultFS", "hdfs://localhost:8020/", "core-site.xml");
-        handle_result(status, "fs.defaultFS", "hdfs://localhost:8020/", "core-site.xml");
+        status = modify_hdfs_config("fs.defaultFS", "hdfs://localhost:9000", "core-site.xml");
+        handle_result(status, "fs.defaultFS", "hdfs://localhost:9000", "core-site.xml");
         status = modify_hdfs_config("fs.trash.interval", "360", "hdfs-site.xml");
         handle_result(status, "fs.trash.interval", "360", "hdfs-site.xml");
 
@@ -113,8 +129,8 @@ void configure_target_component(Component target) {
         //	 Daily Rolling File Appender (DRFA)
         status = modify_hdfs_config("log4j.appender.DRFA", "org.apache.log4j.DailyRollingFileAppender", "log4j.properties");
         handle_result(status, "log4j.appender.DRFA", "org.apache.log4j.DailyRollingFileAppender", "log4j.properties");
-        status = modify_hdfs_config("log4j.appender.DRFA.File", "${hadoop.log.dir}/${hadoop.log.file}", "log4j.properties");
-        handle_result(status, "log4j.appender.DRFA.File", "${hadoop.log.dir}/${hadoop.log.file}", "log4j.properties");
+//        status = modify_hdfs_config("log4j.appender.DRFA.File", "${hadoop.log.dir}/${hadoop.log.file}", "log4j.properties");
+//        handle_result(status, "log4j.appender.DRFA.File", "${hadoop.log.dir}/${hadoop.log.file}", "log4j.properties");
         status = modify_hdfs_config("log4j.appender.DRFA.DatePattern", ".yyyy-MM-dd", "log4j.properties");
         handle_result(status, "log4j.appender.DRFA.DatePattern", ".yyyy-MM-dd", "log4j.properties");
         status = modify_hdfs_config("log4j.appender.DRFA.layout", "org.apache.log4j.PatternLayout", "log4j.properties");
@@ -135,24 +151,24 @@ void configure_target_component(Component target) {
         //	 TaskLog Appender (TLA)
         status = modify_hdfs_config("log4j.appender.TLA", "org.apache.hadoop.mapred.TaskLogAppender", "log4j.properties");
         handle_result(status, "log4j.appender.TLA", "org.apache.hadoop.mapred.TaskLogAppender", "log4j.properties");
-        status = modify_hdfs_config("log4j.appender.TLA.taskId", "${hadoop.tasklog.taskid}", "log4j.properties");
-        handle_result(status, "log4j.appender.TLA.taskId", "${hadoop.tasklog.taskid}", "log4j.properties");
-        status = modify_hdfs_config("log4j.appender.TLA.isCleanup", "${hadoop.tasklog.iscleanup}", "log4j.properties");
-        handle_result(status, "log4j.appender.TLA.isCleanup", "${hadoop.tasklog.iscleanup}", "log4j.properties");
-        status = modify_hdfs_config("log4j.appender.TLA.totalLogFileSize", "${hadoop.tasklog.totalLogFileSize}", "log4j.properties");
-        handle_result(status, "log4j.appender.TLA.totalLogFileSize", "${hadoop.tasklog.totalLogFileSize}", "log4j.properties");
+//        status = modify_hdfs_config("log4j.appender.TLA.taskId", "${hadoop.tasklog.taskid}", "log4j.properties");
+//        handle_result(status, "log4j.appender.TLA.taskId", "${hadoop.tasklog.taskid}", "log4j.properties");
+//        status = modify_hdfs_config("log4j.appender.TLA.isCleanup", "${hadoop.tasklog.iscleanup}", "log4j.properties");
+//        handle_result(status, "log4j.appender.TLA.isCleanup", "${hadoop.tasklog.iscleanup}", "log4j.properties");
+//        status = modify_hdfs_config("log4j.appender.TLA.totalLogFileSize", "${hadoop.tasklog.totalLogFileSize}", "log4j.properties");
+//        handle_result(status, "log4j.appender.TLA.totalLogFileSize", "${hadoop.tasklog.totalLogFileSize}", "log4j.properties");
         status = modify_hdfs_config("log4j.appender.TLA.layout", "org.apache.log4j.PatternLayout", "log4j.properties");
         handle_result(status, "log4j.appender.TLA.layout", "org.apache.log4j.PatternLayout", "log4j.properties");
         status = modify_hdfs_config("log4j.appender.TLA.layout.ConversionPattern", "%d{ISO8601} %p %c: %m%n", "log4j.properties");
         handle_result(status, "log4j.appender.TLA.layout.ConversionPattern", "%d{ISO8601} %p %c: %m%n", "log4j.properties");
 
         //	 Security Audit Appender (DRFAS/RFAS)
-        status = modify_hdfs_config("log4j.category.SecurityLogger", "${hadoop.security.logger}", "log4j.properties");
-        handle_result(status, "log4j.category.SecurityLogger", "${hadoop.security.logger}", "log4j.properties");
+//        status = modify_hdfs_config("log4j.category.SecurityLogger", "${hadoop.security.logger}", "log4j.properties");
+//        handle_result(status, "log4j.category.SecurityLogger", "${hadoop.security.logger}", "log4j.properties");
         status = modify_hdfs_config("log4j.appender.DRFAS", "org.apache.log4j.DailyRollingFileAppender", "log4j.properties");
         handle_result(status, "log4j.appender.DRFAS", "org.apache.log4j.DailyRollingFileAppender", "log4j.properties");
-        status = modify_hdfs_config("log4j.appender.DRFAS.File", "${hadoop.log.dir}/${hadoop.security.log.file}", "log4j.properties");
-        handle_result(status, "log4j.appender.DRFAS.File", "${hadoop.log.dir}/${hadoop.security.log.file}", "log4j.properties");
+//        status = modify_hdfs_config("log4j.appender.DRFAS.File", "${hadoop.log.dir}/${hadoop.security.log.file}", "log4j.properties");
+//        handle_result(status, "log4j.appender.DRFAS.File", "${hadoop.log.dir}/${hadoop.security.log.file}", "log4j.properties");
         status = modify_hdfs_config("log4j.appender.DRFAS.layout", "org.apache.log4j.PatternLayout", "log4j.properties");
         handle_result(status, "log4j.appender.DRFAS.layout", "org.apache.log4j.PatternLayout", "log4j.properties");
         status = modify_hdfs_config("log4j.appender.DRFAS.layout.ConversionPattern", "%d{ISO8601} %p %c: %m%n", "log4j.properties");
@@ -163,26 +179,26 @@ void configure_target_component(Component target) {
         //	 Rolling File Appender (RFA)
         status = modify_hdfs_config("log4j.appender.RFA", "org.apache.log4j.RollingFileAppender", "log4j.properties");
         handle_result(status, "log4j.appender.RFA", "org.apache.log4j.RollingFileAppender", "log4j.properties");
-        status = modify_hdfs_config("log4j.appender.RFA.File", "${hadoop.log.dir}/${hadoop.log.file}", "log4j.properties");
-        handle_result(status, "log4j.appender.RFA.File", "${hadoop.log.dir}/${hadoop.log.file}", "log4j.properties");
-        status = modify_hdfs_config("log4j.appender.RFA.MaxFileSize", "${hadoop.security.log.maxfilesize}", "log4j.properties");
-        handle_result(status, "log4j.appender.RFA.MaxFileSize", "${hadoop.security.log.maxfilesize}", "log4j.properties");
-        status = modify_hdfs_config("log4j.appender.RFA.MaxBackupIndex", "${hadoop.security.log.maxbackupindex}", "log4j.properties");
-        handle_result(status, "log4j.appender.RFA.MaxBackupIndex", "${hadoop.security.log.maxbackupindex}", "log4j.properties");
+//        status = modify_hdfs_config("log4j.appender.RFA.File", "${hadoop.log.dir}/${hadoop.log.file}", "log4j.properties");
+//        handle_result(status, "log4j.appender.RFA.File", "${hadoop.log.dir}/${hadoop.log.file}", "log4j.properties");
+//        status = modify_hdfs_config("log4j.appender.RFA.MaxFileSize", "${hadoop.security.log.maxfilesize}", "log4j.properties");
+//        handle_result(status, "log4j.appender.RFA.MaxFileSize", "${hadoop.security.log.maxfilesize}", "log4j.properties");
+//        status = modify_hdfs_config("log4j.appender.RFA.MaxBackupIndex", "${hadoop.security.log.maxbackupindex}", "log4j.properties");
+//        handle_result(status, "log4j.appender.RFA.MaxBackupIndex", "${hadoop.security.log.maxbackupindex}", "log4j.properties");
         status = modify_hdfs_config("log4j.appender.RFA.layout", "org.apache.log4j.PatternLayout", "log4j.properties");
         handle_result(status, "log4j.appender.RFA.layout", "org.apache.log4j.PatternLayout", "log4j.properties");
         status = modify_hdfs_config("log4j.appender.RFA.layout.ConversionPattern", "%d{ISO8601} %-5p %c{2} (%F:%M(%L)) - %m%n", "log4j.properties");
         handle_result(status, "log4j.appender.RFA.layout.ConversionPattern", "%d{ISO8601} %-5p %c{2} (%F:%M(%L)) - %m%n", "log4j.properties");
 
         //	 HDFS Audit Logging
-        status = modify_hdfs_config("log4j.logger.org.apache.hadoop.hdfs.server.namenode.FSNamesystem.audit", "${hdfs.audit.logger}", "log4j.properties");
-        handle_result(status, "log4j.logger.org.apache.hadoop.hdfs.server.namenode.FSNamesystem.audit", "${hdfs.audit.logger}", "log4j.properties");
+//        status = modify_hdfs_config("log4j.logger.org.apache.hadoop.hdfs.server.namenode.FSNamesystem.audit", "${hdfs.audit.logger}", "log4j.properties");
+//        handle_result(status, "log4j.logger.org.apache.hadoop.hdfs.server.namenode.FSNamesystem.audit", "${hdfs.audit.logger}", "log4j.properties");
         status = modify_hdfs_config("log4j.additivity.org.apache.hadoop.hdfs.server.namenode.FSNamesystem.audit", "false", "log4j.properties");
         handle_result(status, "log4j.additivity.org.apache.hadoop.hdfs.server.namenode.FSNamesystem.audit", "false", "log4j.properties");
         status = modify_hdfs_config("log4j.appender.DRFAAUDIT", "org.apache.log4j.DailyRollingFileAppender", "log4j.properties");
         handle_result(status, "log4j.appender.DRFAAUDIT", "org.apache.log4j.DailyRollingFileAppender", "log4j.properties");
-        status = modify_hdfs_config("log4j.appender.DRFAAUDIT.File", "${hadoop.log.dir}/hdfs-audit.log", "log4j.properties");
-        handle_result(status, "log4j.appender.DRFAAUDIT.File", "${hadoop.log.dir}/hdfs-audit.log", "log4j.properties");
+//        status = modify_hdfs_config("log4j.appender.DRFAAUDIT.File", "${hadoop.log.dir}/hdfs-audit.log", "log4j.properties");
+//        handle_result(status, "log4j.appender.DRFAAUDIT.File", "${hadoop.log.dir}/hdfs-audit.log", "log4j.properties");
         status = modify_hdfs_config("log4j.appender.DRFAAUDIT.layout", "org.apache.log4j.PatternLayout", "log4j.properties");
         handle_result(status, "log4j.appender.DRFAAUDIT.layout", "org.apache.log4j.PatternLayout", "log4j.properties");
         status = modify_hdfs_config("log4j.appender.DRFAAUDIT.layout.ConversionPattern", "%d{ISO8601} %p %c{2}: %m%n", "log4j.properties");
@@ -191,14 +207,14 @@ void configure_target_component(Component target) {
         handle_result(status, "log4j.appender.DRFAAUDIT.DatePattern", ".yyyy-MM-dd", "log4j.properties");
 
         //	 MapReduce Audit Logging
-        status = modify_hdfs_config("log4j.logger.org.apache.hadoop.mapred.AuditLogger", "${mapred.audit.logger}", "log4j.properties");
-        handle_result(status, "log4j.logger.org.apache.hadoop.mapred.AuditLogger", "${mapred.audit.logger}", "log4j.properties");
+//        status = modify_hdfs_config("log4j.logger.org.apache.hadoop.mapred.AuditLogger", "${mapred.audit.logger}", "log4j.properties");
+//        handle_result(status, "log4j.logger.org.apache.hadoop.mapred.AuditLogger", "${mapred.audit.logger}", "log4j.properties");
         status = modify_hdfs_config("log4j.additivity.org.apache.hadoop.mapred.AuditLogger", "false", "log4j.properties");
         handle_result(status, "log4j.additivity.org.apache.hadoop.mapred.AuditLogger", "false", "log4j.properties");
         status = modify_hdfs_config("log4j.appender.MRAUDIT", "org.apache.log4j.DailyRollingFileAppender", "log4j.properties");
         handle_result(status, "log4j.appender.MRAUDIT", "org.apache.log4j.DailyRollingFileAppender", "log4j.properties");
-        status = modify_hdfs_config("log4j.appender.MRAUDIT.File", "${hadoop.log.dir}/mapred-audit.log", "log4j.properties");
-        handle_result(status, "log4j.appender.MRAUDIT.File", "${hadoop.log.dir}/mapred-audit.log", "log4j.properties");
+//        status = modify_hdfs_config("log4j.appender.MRAUDIT.File", "${hadoop.log.dir}/mapred-audit.log", "log4j.properties");
+//        handle_result(status, "log4j.appender.MRAUDIT.File", "${hadoop.log.dir}/mapred-audit.log", "log4j.properties");
         status = modify_hdfs_config("log4j.appender.MRAUDIT.layout", "org.apache.log4j.PatternLayout", "log4j.properties");
         handle_result(status, "log4j.appender.MRAUDIT.layout", "org.apache.log4j.PatternLayout", "log4j.properties");
         status = modify_hdfs_config("log4j.appender.MRAUDIT.layout.ConversionPattern", "%d{ISO8601} %p %c{2}: %m%n", "log4j.properties");
@@ -207,8 +223,8 @@ void configure_target_component(Component target) {
         handle_result(status, "log4j.appender.MRAUDIT.DatePattern", ".yyyy-MM-dd", "log4j.properties");
 
         //	 Custom Logging Levels
-        status = modify_hdfs_config("log4j.logger.org.apache.hadoop.metrics2", "${hadoop.metrics.log.level}", "log4j.properties");
-        handle_result(status, "log4j.logger.org.apache.hadoop.metrics2", "${hadoop.metrics.log.level}", "log4j.properties");
+//        status = modify_hdfs_config("log4j.logger.org.apache.hadoop.metrics2", "${hadoop.metrics.log.level}", "log4j.properties");
+//        handle_result(status, "log4j.logger.org.apache.hadoop.metrics2", "${hadoop.metrics.log.level}", "log4j.properties");
         status = modify_hdfs_config("log4j.logger.org.jets3t.service.impl.rest.httpclient.RestS3Service", "ERROR", "log4j.properties");
         handle_result(status, "log4j.logger.org.jets3t.service.impl.rest.httpclient.RestS3Service", "ERROR", "log4j.properties");
 
@@ -379,16 +395,14 @@ void configure_target_component(Component target) {
         handle_result(status, "dfs.federation.router.secret.manager.class", "org.apache.hadoop.hdfs.server.federation.router.security.token.ZKDelegationTokenSecretManagerImpl", "hdfs-rbf-site.xml");
 
         //			 NameNode Configuration
-        status = modify_hdfs_config("dfs.namenode.name.dir", "/hadoop/hdfs/namenode", "hdfs-site.xml");
-        handle_result(status, "dfs.namenode.name.dir", "/hadoop/hdfs/namenode", "hdfs-site.xml");
         status = modify_hdfs_config("dfs.support.append", "true", "hdfs-site.xml");
         handle_result(status, "dfs.support.append", "true", "hdfs-site.xml");
         status = modify_hdfs_config("dfs.webhdfs.enabled", "true", "hdfs-site.xml");
         handle_result(status, "dfs.webhdfs.enabled", "true", "hdfs-site.xml");
-        status = modify_hdfs_config("dfs.namenode.checkpoint.dir", "/hadoop/hdfs/namesecondary", "hdfs-site.xml");
-        handle_result(status, "dfs.namenode.checkpoint.dir", "/hadoop/hdfs/namesecondary", "hdfs-site.xml");
-        status = modify_hdfs_config("dfs.namenode.checkpoint.edits.dir", "${dfs.namenode.checkpoint.dir}", "hdfs-site.xml");
-        handle_result(status, "dfs.namenode.checkpoint.edits.dir", "${dfs.namenode.checkpoint.dir}", "hdfs-site.xml");
+   //     status = modify_hdfs_config("dfs.namenode.checkpoint.dir", "/hadoop/hdfs/namesecondary", "hdfs-site.xml");
+     //   handle_result(status, "dfs.namenode.checkpoint.dir", "/hadoop/hdfs/namesecondary", "hdfs-site.xml");
+//        status = modify_hdfs_config("dfs.namenode.checkpoint.edits.dir", "${dfs.namenode.checkpoint.dir}", "hdfs-site.xml");
+//        handle_result(status, "dfs.namenode.checkpoint.edits.dir", "${dfs.namenode.checkpoint.dir}", "hdfs-site.xml");
         status = modify_hdfs_config("dfs.namenode.checkpoint.period", "21600", "hdfs-site.xml");
         handle_result(status, "dfs.namenode.checkpoint.period", "21600", "hdfs-site.xml");
         status = modify_hdfs_config("dfs.namenode.checkpoint.txns", "1000000", "hdfs-site.xml");
@@ -399,14 +413,14 @@ void configure_target_component(Component target) {
         handle_result(status, "dfs.namenode.http-address", "localhost:50070", "hdfs-site.xml");
         status = modify_hdfs_config("dfs.namenode.https-address", "localhost:50470", "hdfs-site.xml");
         handle_result(status, "dfs.namenode.https-address", "localhost:50470", "hdfs-site.xml");
-        status = modify_hdfs_config("dfs.namenode.rpc-address", "localhost:8020", "hdfs-site.xml");
-        handle_result(status, "dfs.namenode.rpc-address", "localhost:8020", "hdfs-site.xml");
-        status = modify_hdfs_config("dfs.namenode.secondary.http-address", "localhost:50090", "hdfs-site.xml");
-        handle_result(status, "dfs.namenode.secondary.http-address", "localhost:50090", "hdfs-site.xml");
+    //    status = modify_hdfs_config("dfs.namenode.rpc-address", "0.0.0.0:8020", "hdfs-site.xml");
+      //  handle_result(status, "dfs.namenode.rpc-address", "0.0.0.0:8020", "hdfs-site.xml");
+      //  status = modify_hdfs_config("dfs.namenode.secondary.http-address", "localhost:50090", "hdfs-site.xml");
+        //handle_result(status, "dfs.namenode.secondary.http-address", "localhost:50090", "hdfs-site.xml");
         status = modify_hdfs_config("dfs.namenode.safemode.threshold-pct", "0.999", "hdfs-site.xml");
         handle_result(status, "dfs.namenode.safemode.threshold-pct", "0.999", "hdfs-site.xml");
-        status = modify_hdfs_config("dfs.namenode.name.dir.restore", "true", "hdfs-site.xml");
-        handle_result(status, "dfs.namenode.name.dir.restore", "true", "hdfs-site.xml");
+      //  status = modify_hdfs_config("dfs.namenode.name.dir.restore", "true", "hdfs-site.xml");
+       // handle_result(status, "dfs.namenode.name.dir.restore", "true", "hdfs-site.xml");
         status = modify_hdfs_config("dfs.namenode.accesstime.precision", "0", "hdfs-site.xml");
         handle_result(status, "dfs.namenode.accesstime.precision", "0", "hdfs-site.xml");
         status = modify_hdfs_config("dfs.namenode.avoid.read.stale.datanode", "true", "hdfs-site.xml");
@@ -419,8 +433,8 @@ void configure_target_component(Component target) {
         handle_result(status, "dfs.namenode.stale.datanode.interval", "30000", "hdfs-site.xml");
 
         //			 DataNode Configuration
-        status = modify_hdfs_config("dfs.datanode.data.dir", "/hadoop/hdfs/data", "hdfs-site.xml");
-        handle_result(status, "dfs.datanode.data.dir", "/hadoop/hdfs/data", "hdfs-site.xml");
+      //  status = modify_hdfs_config("dfs.datanode.data.dir", "/hadoop/hdfs/data", "hdfs-site.xml");
+       // handle_result(status, "dfs.datanode.data.dir", "/hadoop/hdfs/data", "hdfs-site.xml");
         status = modify_hdfs_config("dfs.datanode.failed.volumes.tolerated", "0", "hdfs-site.xml");
         handle_result(status, "dfs.datanode.failed.volumes.tolerated", "0", "hdfs-site.xml");
         status = modify_hdfs_config("dfs.datanode.address", "0.0.0.0:50010", "hdfs-site.xml");
@@ -477,12 +491,12 @@ void configure_target_component(Component target) {
         handle_result(status, "dfs.journalnode.edits.dir", "/grid/0/hdfs/journal", "hdfs-site.xml");
 
         //			 Short-Circuit Local Reads
-        status = modify_hdfs_config("dfs.client.read.shortcircuit", "true", "hdfs-site.xml");
-        handle_result(status, "dfs.client.read.shortcircuit", "true", "hdfs-site.xml");
-        status = modify_hdfs_config("dfs.domain.socket.path", "/var/lib/hadoop-hdfs/dn_socket", "hdfs-site.xml");
-        handle_result(status, "dfs.domain.socket.path", "/var/lib/hadoop-hdfs/dn_socket", "hdfs-site.xml");
-        status = modify_hdfs_config("dfs.client.read.shortcircuit.streams.cache.size", "4096", "hdfs-site.xml");
-        handle_result(status, "dfs.client.read.shortcircuit.streams.cache.size", "4096", "hdfs-site.xml");
+      //  status = modify_hdfs_config("dfs.client.read.shortcircuit", "true", "hdfs-site.xml");
+       // handle_result(status, "dfs.client.read.shortcircuit", "true", "hdfs-site.xml");
+     //   status = modify_hdfs_config("dfs.domain.socket.path", "/var/lib/hadoop-hdfs/dn_socket", "hdfs-site.xml");
+      //  handle_result(status, "dfs.domain.socket.path", "/var/lib/hadoop-hdfs/dn_socket", "hdfs-site.xml");
+       // status = modify_hdfs_config("dfs.client.read.shortcircuit.streams.cache.size", "4096", "hdfs-site.xml");
+        //handle_result(status, "dfs.client.read.shortcircuit.streams.cache.size", "4096", "hdfs-site.xml");
 
         //			 Host Management
         status = modify_hdfs_config("dfs.hosts.exclude", "/etc/hadoop/conf/dfs.exclude", "hdfs-site.xml");
@@ -519,8 +533,8 @@ void configure_target_component(Component target) {
         //			 Additional Audit Settings
         status = modify_hdfs_config("xasecure.audit.provider.summary.enabled", "false", "ranger-hdfs-audit.xml");
         handle_result(status, "xasecure.audit.provider.summary.enabled", "false", "ranger-hdfs-audit.xml");
-        status = modify_hdfs_config("ranger.plugin.hdfs.ambari.cluster.name", "{{cluster_name}}", "ranger-hdfs-audit.xml");
-        handle_result(status, "ranger.plugin.hdfs.ambari.cluster.name", "{{cluster_name}}", "ranger-hdfs-audit.xml");
+////        status = modify_hdfs_config("ranger.plugin.hdfs.ambari.cluster.name", "{{cluster_name}}", "ranger-hdfs-audit.xml");
+////        handle_result(status, "ranger.plugin.hdfs.ambari.cluster.name", "{{cluster_name}}", "ranger-hdfs-audit.xml");
         //			 Basic Plugin Configuration
         status = modify_hdfs_config("policy_user", "ambari-qa", "ranger-hdfs-plugin.properties");
         handle_result(status, "policy_user", "ambari-qa", "ranger-hdfs-plugin.properties");
@@ -552,34 +566,34 @@ void configure_target_component(Component target) {
         handle_result(status, "xasecure.policymgr.clientssl.keystore", "", "ranger-hdfs-policymgr-ssl.xml");
         status = modify_hdfs_config("xasecure.policymgr.clientssl.keystore.password", "", "ranger-hdfs-policymgr-ssl.xml");
         handle_result(status, "xasecure.policymgr.clientssl.keystore.password", "", "ranger-hdfs-policymgr-ssl.xml");
-        status = modify_hdfs_config("xasecure.policymgr.clientssl.keystore.credential.file", "jceks:file{{credential_file}}", "ranger-hdfs-policymgr-ssl.xml");
-        handle_result(status, "xasecure.policymgr.clientssl.keystore.credential.file", "jceks:file{{credential_file}}", "ranger-hdfs-policymgr-ssl.xml");
+//        status = modify_hdfs_config("xasecure.policymgr.clientssl.keystore.credential.file", "jceks:file{{credential_file}}", "ranger-hdfs-policymgr-ssl.xml");
+//        handle_result(status, "xasecure.policymgr.clientssl.keystore.credential.file", "jceks:file{{credential_file}}", "ranger-hdfs-policymgr-ssl.xml");
 
         //			 SSL Truststore Configuration
         status = modify_hdfs_config("xasecure.policymgr.clientssl.truststore", "", "ranger-hdfs-policymgr-ssl.xml");
         handle_result(status, "xasecure.policymgr.clientssl.truststore", "", "ranger-hdfs-policymgr-ssl.xml");
         status = modify_hdfs_config("xasecure.policymgr.clientssl.truststore.password", "changeit", "ranger-hdfs-policymgr-ssl.xml");
         handle_result(status, "xasecure.policymgr.clientssl.truststore.password", "changeit", "ranger-hdfs-policymgr-ssl.xml");
-        status = modify_hdfs_config("xasecure.policymgr.clientssl.truststore.credential.file", "jceks:file{{credential_file}}", "ranger-hdfs-policymgr-ssl.xml");
-        handle_result(status, "xasecure.policymgr.clientssl.truststore.credential.file", "jceks:file{{credential_file}}", "ranger-hdfs-policymgr-ssl.xml");
+//        status = modify_hdfs_config("xasecure.policymgr.clientssl.truststore.credential.file", "jceks:file{{credential_file}}", "ranger-hdfs-policymgr-ssl.xml");
+//        handle_result(status, "xasecure.policymgr.clientssl.truststore.credential.file", "jceks:file{{credential_file}}", "ranger-hdfs-policymgr-ssl.xml");
 
         //			 Ranger Service Configuration
-        status = modify_hdfs_config("ranger.plugin.hdfs.service.name", "{{repo_name}}", "ranger-hdfs-security.xml");
-        handle_result(status, "ranger.plugin.hdfs.service.name", "{{repo_name}}", "ranger-hdfs-security.xml");
+//        status = modify_hdfs_config("ranger.plugin.hdfs.service.name", "{{repo_name}}", "ranger-hdfs-security.xml");
+//        handle_result(status, "ranger.plugin.hdfs.service.name", "{{repo_name}}", "ranger-hdfs-security.xml");
 
         //			 Policy Source Configuration
         status = modify_hdfs_config("ranger.plugin.hdfs.policy.source.impl", "org.apache.ranger.admin.client.RangerAdminRESTClient", "ranger-hdfs-security.xml");
         handle_result(status, "ranger.plugin.hdfs.policy.source.impl", "org.apache.ranger.admin.client.RangerAdminRESTClient", "ranger-hdfs-security.xml");
-        status = modify_hdfs_config("ranger.plugin.hdfs.policy.rest.url", "{{policymgr_mgr_url}}", "ranger-hdfs-security.xml");
-        handle_result(status, "ranger.plugin.hdfs.policy.rest.url", "{{policymgr_mgr_url}}", "ranger-hdfs-security.xml");
+//        status = modify_hdfs_config("ranger.plugin.hdfs.policy.rest.url", "{{policymgr_mgr_url}}", "ranger-hdfs-security.xml");
+//        handle_result(status, "ranger.plugin.hdfs.policy.rest.url", "{{policymgr_mgr_url}}", "ranger-hdfs-security.xml");
         status = modify_hdfs_config("ranger.plugin.hdfs.policy.rest.ssl.config.file", "/etc/hadoop/conf/ranger-policymgr-ssl.xml", "ranger-hdfs-security.xml");
         handle_result(status, "ranger.plugin.hdfs.policy.rest.ssl.config.file", "/etc/hadoop/conf/ranger-policymgr-ssl.xml", "ranger-hdfs-security.xml");
 
         //			 Policy Polling and Caching
         status = modify_hdfs_config("ranger.plugin.hdfs.policy.pollIntervalMs", "30000", "ranger-hdfs-security.xml");
         handle_result(status, "ranger.plugin.hdfs.policy.pollIntervalMs", "30000", "ranger-hdfs-security.xml");
-        status = modify_hdfs_config("ranger.plugin.hdfs.policy.cache.dir", "/etc/ranger/{{repo_name}}/policycache", "ranger-hdfs-security.xml");
-        handle_result(status, "ranger.plugin.hdfs.policy.cache.dir", "/etc/ranger/{{repo_name}}/policycache", "ranger-hdfs-security.xml");
+//        status = modify_hdfs_config("ranger.plugin.hdfs.policy.cache.dir", "/etc/ranger/{{repo_name}}/policycache", "ranger-hdfs-security.xml");
+//        handle_result(status, "ranger.plugin.hdfs.policy.cache.dir", "/etc/ranger/{{repo_name}}/policycache", "ranger-hdfs-security.xml");
 
         //			 Authorization Fallback
         status = modify_hdfs_config("xasecure.add-hadoop-authorization", "true", "ranger-hdfs-security.xml");
@@ -682,8 +696,8 @@ void configure_target_component(Component target) {
         handle_result(status, "mapreduce.admin.map.child.java.opts", "-server -XX:NewRatio=8 -Djava.net.preferIPv4Stack=true -Dhadoop.metrics.log.level=WARN", "mapred-site.xml");
         status = modify_hdfs_config("mapreduce.admin.reduce.child.java.opts", "-server -XX:NewRatio=8 -Djava.net.preferIPv4Stack=true -Dhadoop.metrics.log.level=WARN", "mapred-site.xml");
         handle_result(status, "mapreduce.admin.reduce.child.java.opts", "-server -XX:NewRatio=8 -Djava.net.preferIPv4Stack=true -Dhadoop.metrics.log.level=WARN", "mapred-site.xml");
-        status = modify_hdfs_config("mapreduce.application.classpath", "{{hadoop_conf_dir}},{{hadoop_home}}/*,{{hadoop_home}}/lib/*,{{hadoop_hdfs_home}}/*,{{hadoop_hdfs_home}}/lib/*,{{hadoop_yarn_home}}/*,{{hadoop_yarn_home}}/lib/*,{{hadoop_mapred_home}}/*,{{hadoop_mapred_home}}/lib/*", "mapred-site.xml");
-        handle_result(status, "mapreduce.application.classpath", "{{hadoop_conf_dir}},{{hadoop_home}}/*,{{hadoop_home}}/lib/*,{{hadoop_hdfs_home}}/*,{{hadoop_hdfs_home}}/lib/*,{{hadoop_yarn_home}}/*,{{hadoop_yarn_home}}/lib/*,{{hadoop_mapred_home}}/*,{{hadoop_mapred_home}}/lib/*", "mapred-site.xml");
+//        status = modify_hdfs_config("mapreduce.application.classpath", "{{hadoop_conf_dir}},{{hadoop_home}}/*,{{hadoop_home}}/lib/*,{{hadoop_hdfs_home}}/*,{{hadoop_hdfs_home}}/lib/*,{{hadoop_yarn_home}}/*,{{hadoop_yarn_home}}/lib/*,{{hadoop_mapred_home}}/*,{{hadoop_mapred_home}}/lib/*", "mapred-site.xml");
+//        handle_result(status, "mapreduce.application.classpath", "{{hadoop_conf_dir}},{{hadoop_home}}/*,{{hadoop_home}}/lib/*,{{hadoop_hdfs_home}}/*,{{hadoop_hdfs_home}}/lib/*,{{hadoop_yarn_home}}/*,{{hadoop_yarn_home}}/lib/*,{{hadoop_mapred_home}}/*,{{hadoop_mapred_home}}/lib/*", "mapred-site.xml");
         status = modify_hdfs_config("mapreduce.am.max-attempts", "2", "mapred-site.xml");
         handle_result(status, "mapreduce.am.max-attempts", "2", "mapred-site.xml");
         status = modify_hdfs_config("mapreduce.map.java.opts", "-Xmx410m", "mapred-site.xml");
@@ -694,8 +708,8 @@ void configure_target_component(Component target) {
         handle_result(status, "mapreduce.map.log.level", "INFO", "mapred-site.xml");
         status = modify_hdfs_config("mapreduce.reduce.log.level", "INFO", "mapred-site.xml");
         handle_result(status, "mapreduce.reduce.log.level", "INFO", "mapred-site.xml");
-        status = modify_hdfs_config("mapreduce.admin.user.env", "LD_LIBRARY_PATH={{hadoop_home}}/lib/native", "mapred-site.xml");
-        handle_result(status, "mapreduce.admin.user.env", "LD_LIBRARY_PATH={{hadoop_home}}/lib/native", "mapred-site.xml");
+//        status = modify_hdfs_config("mapreduce.admin.user.env", "LD_LIBRARY_PATH={{hadoop_home}}/lib/native", "mapred-site.xml");
+//        handle_result(status, "mapreduce.admin.user.env", "LD_LIBRARY_PATH={{hadoop_home}}/lib/native", "mapred-site.xml");
         status = modify_hdfs_config("mapreduce.output.fileoutputformat.compress", "false", "mapred-site.xml");
         handle_result(status, "mapreduce.output.fileoutputformat.compress", "false", "mapred-site.xml");
         status = modify_hdfs_config("mapreduce.jobhistory.http.policy", "HTTP_ONLY", "mapred-site.xml");
@@ -727,16 +741,16 @@ void configure_target_component(Component target) {
         handle_result(status, "yarn.nodemanager.address", "0.0.0.0:45454", "yarn-site.xml");
         status = modify_hdfs_config("yarn.nodemanager.resource.memory-mb", "5120", "yarn-site.xml");
         handle_result(status, "yarn.nodemanager.resource.memory-mb", "5120", "yarn-site.xml");
-        status = modify_hdfs_config("yarn.application.classpath", "{{hadoop_conf_dir}},{{hadoop_home}}/*,{{hadoop_home}}/lib/*,{{hadoop_hdfs_home}}/*,{{hadoop_hdfs_home}}/lib/*,{{hadoop_yarn_home}}/*,{{hadoop_yarn_home}}/lib/*", "yarn-site.xml");
-        handle_result(status, "yarn.application.classpath", "{{hadoop_conf_dir}},{{hadoop_home}}/*,{{hadoop_home}}/lib/*,{{hadoop_hdfs_home}}/*,{{hadoop_hdfs_home}}/lib/*,{{hadoop_yarn_home}}/*,{{hadoop_yarn_home}}/lib/*", "yarn-site.xml");
+//        status = modify_hdfs_config("yarn.application.classpath", "{{hadoop_conf_dir}},{{hadoop_home}}/*,{{hadoop_home}}/lib/*,{{hadoop_hdfs_home}}/*,{{hadoop_hdfs_home}}/lib/*,{{hadoop_yarn_home}}/*,{{hadoop_yarn_home}}/lib/*", "yarn-site.xml");
+//        handle_result(status, "yarn.application.classpath", "{{hadoop_conf_dir}},{{hadoop_home}}/*,{{hadoop_home}}/lib/*,{{hadoop_hdfs_home}}/*,{{hadoop_hdfs_home}}/lib/*,{{hadoop_yarn_home}}/*,{{hadoop_yarn_home}}/lib/*", "yarn-site.xml");
         status = modify_hdfs_config("yarn.nodemanager.vmem-pmem-ratio", "2.1", "yarn-site.xml");
         handle_result(status, "yarn.nodemanager.vmem-pmem-ratio", "2.1", "yarn-site.xml");
         status = modify_hdfs_config("yarn.nodemanager.container-executor.class", "org.apache.hadoop.yarn.server.nodemanager.DefaultContainerExecutor", "yarn-site.xml");
         handle_result(status, "yarn.nodemanager.container-executor.class", "org.apache.hadoop.yarn.server.nodemanager.DefaultContainerExecutor", "yarn-site.xml");
         status = modify_hdfs_config("yarn.nodemanager.linux-container-executor.group", "hadoop", "yarn-site.xml");
         handle_result(status, "yarn.nodemanager.linux-container-executor.group", "hadoop", "yarn-site.xml");
-        status = modify_hdfs_config("yarn.nodemanager.aux-services", "mapreduce_shuffle,{{timeline_collector}}", "yarn-site.xml");
-        handle_result(status, "yarn.nodemanager.aux-services", "mapreduce_shuffle,{{timeline_collector}}", "yarn-site.xml");
+//     //   status = modify_hdfs_config("yarn.nodemanager.aux-services", "mapreduce_shuffle,{{timeline_collector}}", "yarn-site.xml");
+//       // handle_result(status, "yarn.nodemanager.aux-services", "mapreduce_shuffle,{{timeline_collector}}", "yarn-site.xml");
         status = modify_hdfs_config("yarn.nodemanager.aux-services.mapreduce_shuffle.class", "org.apache.hadoop.mapred.ShuffleHandler", "yarn-site.xml");
         handle_result(status, "yarn.nodemanager.aux-services.mapreduce_shuffle.class", "org.apache.hadoop.mapred.ShuffleHandler", "yarn-site.xml");
         status = modify_hdfs_config("yarn.nodemanager.log-dirs", "/hadoop/yarn/log", "yarn-site.xml");
@@ -763,8 +777,8 @@ void configure_target_component(Component target) {
         handle_result(status, "yarn.nodemanager.delete.debug-delay-sec", "0", "yarn-site.xml");
         status = modify_hdfs_config("yarn.log-aggregation.retain-seconds", "2592000", "yarn-site.xml");
         handle_result(status, "yarn.log-aggregation.retain-seconds", "2592000", "yarn-site.xml");
-        status = modify_hdfs_config("yarn.nodemanager.admin-env", "MALLOC_ARENA_MAX=$MALLOC_ARENA_MAX", "yarn-site.xml");
-        handle_result(status, "yarn.nodemanager.admin-env", "MALLOC_ARENA_MAX=$MALLOC_ARENA_MAX", "yarn-site.xml");
+////        status = modify_hdfs_config("yarn.nodemanager.admin-env", "MALLOC_ARENA_MAX=$MALLOC_ARENA_MAX", "yarn-site.xml");
+////        handle_result(status, "yarn.nodemanager.admin-env", "MALLOC_ARENA_MAX=$MALLOC_ARENA_MAX", "yarn-site.xml");
         status = modify_hdfs_config("yarn.nodemanager.disk-health-checker.min-healthy-disks", "0.25", "yarn-site.xml");
         handle_result(status, "yarn.nodemanager.disk-health-checker.min-healthy-disks", "0.25", "yarn-site.xml");
         status = modify_hdfs_config("yarn.resourcemanager.am.max-attempts", "2", "yarn-site.xml");
@@ -815,8 +829,8 @@ void configure_target_component(Component target) {
         handle_result(status, "hadoop.registry.dns.domain-name", "EXAMPLE.COM", "yarn-site.xml");
         status = modify_hdfs_config("yarn.nodemanager.recovery.enabled", "true", "yarn-site.xml");
         handle_result(status, "yarn.nodemanager.recovery.enabled", "true", "yarn-site.xml");
-        status = modify_hdfs_config("yarn.nodemanager.recovery.dir", "{{yarn_log_dir_prefix}}/nodemanager/recovery-state", "yarn-site.xml");
-        handle_result(status, "yarn.nodemanager.recovery.dir", "{{yarn_log_dir_prefix}}/nodemanager/recovery-state", "yarn-site.xml");
+//        status = modify_hdfs_config("yarn.nodemanager.recovery.dir", "{{yarn_log_dir_prefix}}/nodemanager/recovery-state", "yarn-site.xml");
+//        handle_result(status, "yarn.nodemanager.recovery.dir", "{{yarn_log_dir_prefix}}/nodemanager/recovery-state", "yarn-site.xml");
         status = modify_hdfs_config("yarn.client.nodemanager-connect.retry-interval-ms", "10000", "yarn-site.xml");
         handle_result(status, "yarn.client.nodemanager-connect.retry-interval-ms", "10000", "yarn-site.xml");
         status = modify_hdfs_config("yarn.client.nodemanager-connect.max-wait-ms", "60000", "yarn-site.xml");
@@ -845,8 +859,8 @@ void configure_target_component(Component target) {
         handle_result(status, "yarn.resourcemanager.zk-num-retries", "1000", "yarn-site.xml");
         status = modify_hdfs_config("yarn.resourcemanager.zk-timeout-ms", "10000", "yarn-site.xml");
         handle_result(status, "yarn.resourcemanager.zk-timeout-ms", "10000", "yarn-site.xml");
-        status = modify_hdfs_config("yarn.resourcemanager.state-store.max-completed-applications", "${yarn.resourcemanager.max-completed-applications}", "yarn-site.xml");
-        handle_result(status, "yarn.resourcemanager.state-store.max-completed-applications", "${yarn.resourcemanager.max-completed-applications}", "yarn-site.xml");
+//        status = modify_hdfs_config("yarn.resourcemanager.state-store.max-completed-applications", "${yarn.resourcemanager.max-completed-applications}", "yarn-site.xml");
+//        handle_result(status, "yarn.resourcemanager.state-store.max-completed-applications", "${yarn.resourcemanager.max-completed-applications}", "yarn-site.xml");
         status = modify_hdfs_config("yarn.resourcemanager.fs.state-store.retry-policy-spec", "2000, 500", "yarn-site.xml");
         handle_result(status, "yarn.resourcemanager.fs.state-store.retry-policy-spec", "2000, 500", "yarn-site.xml");
         status = modify_hdfs_config("yarn.resourcemanager.fs.state-store.uri", " ", "yarn-site.xml");
@@ -895,10 +909,10 @@ void configure_target_component(Component target) {
         handle_result(status, "yarn.timeline-service.client.retry-interval-ms", "1000", "yarn-site.xml");
         status = modify_hdfs_config("yarn.timeline-service.state-store-class", "org.apache.hadoop.yarn.server.timeline.recovery.LeveldbTimelineStateStore", "yarn-site.xml");
         handle_result(status, "yarn.timeline-service.state-store-class", "org.apache.hadoop.yarn.server.timeline.recovery.LeveldbTimelineStateStore", "yarn-site.xml");
-        status = modify_hdfs_config("yarn.timeline-service.leveldb-state-store.path", "/hadoop/yarn/timeline", "yarn-site.xml");
-        handle_result(status, "yarn.timeline-service.leveldb-state-store.path", "/hadoop/yarn/timeline", "yarn-site.xml");
-        status = modify_hdfs_config("yarn.timeline-service.leveldb-timeline-store.path", "/hadoop/yarn/timeline", "yarn-site.xml");
-        handle_result(status, "yarn.timeline-service.leveldb-timeline-store.path", "/hadoop/yarn/timeline", "yarn-site.xml");
+//        status = modify_hdfs_config("yarn.timeline-service.leveldb-state-store.path", "/hadoop/yarn/timeline", "yarn-site.xml");
+//        handle_result(status, "yarn.timeline-service.leveldb-state-store.path", "/hadoop/yarn/timeline", "yarn-site.xml");
+//        status = modify_hdfs_config("yarn.timeline-service.leveldb-timeline-store.path", "/hadoop/yarn/timeline", "yarn-site.xml");
+//        handle_result(status, "yarn.timeline-service.leveldb-timeline-store.path", "/hadoop/yarn/timeline", "yarn-site.xml");
         status = modify_hdfs_config("yarn.timeline-service.leveldb-timeline-store.read-cache-size", "104857600", "yarn-site.xml");
         handle_result(status, "yarn.timeline-service.leveldb-timeline-store.read-cache-size", "104857600", "yarn-site.xml");
         status = modify_hdfs_config("yarn.timeline-service.leveldb-timeline-store.start-time-read-cache-size", "10000", "yarn-site.xml");
@@ -917,8 +931,8 @@ void configure_target_component(Component target) {
         handle_result(status, "yarn.nodemanager.bind-host", "0.0.0.0", "yarn-site.xml");
         status = modify_hdfs_config("yarn.timeline-service.bind-host", "0.0.0.0", "yarn-site.xml");
         handle_result(status, "yarn.timeline-service.bind-host", "0.0.0.0", "yarn-site.xml");
-        status = modify_hdfs_config("yarn.node-labels.fs-store.root-dir", "/system/yarn/node-labels", "yarn-site.xml");
-        handle_result(status, "yarn.node-labels.fs-store.root-dir", "/system/yarn/node-labels", "yarn-site.xml");
+//        status = modify_hdfs_config("yarn.node-labels.fs-store.root-dir", "/system/yarn/node-labels", "yarn-site.xml");
+//        handle_result(status, "yarn.node-labels.fs-store.root-dir", "/system/yarn/node-labels", "yarn-site.xml");
         status = modify_hdfs_config("yarn.scheduler.minimum-allocation-vcores", "1", "yarn-site.xml");
         handle_result(status, "yarn.scheduler.minimum-allocation-vcores", "1", "yarn-site.xml");
         status = modify_hdfs_config("yarn.scheduler.maximum-allocation-vcores", "8", "yarn-site.xml");
@@ -1005,10 +1019,10 @@ void configure_target_component(Component target) {
         handle_result(status, "yarn.timeline-service.reader.webapp.https.address", "localhost:8199", "yarn-site.xml");
         status = modify_hdfs_config("yarn.timeline-service.hbase-schema.prefix", "prod.", "yarn-site.xml");
         handle_result(status, "yarn.timeline-service.hbase-schema.prefix", "prod.", "yarn-site.xml");
-        status = modify_hdfs_config("yarn.timeline-service.hbase.configuration.file", "file:{{yarn_hbase_conf_dir}}/hbase-site.xml", "yarn-site.xml");
-        handle_result(status, "yarn.timeline-service.hbase.configuration.file", "file:{{yarn_hbase_conf_dir}}/hbase-site.xml", "yarn-site.xml");
-        status = modify_hdfs_config("yarn.timeline-service.hbase.coprocessor.jar.hdfs.location", "{{yarn_timeline_jar_location}}", "yarn-site.xml");
-        handle_result(status, "yarn.timeline-service.hbase.coprocessor.jar.hdfs.location", "{{yarn_timeline_jar_location}}", "yarn-site.xml");
+//        status = modify_hdfs_config("yarn.timeline-service.hbase.configuration.file", "file:{{yarn_hbase_conf_dir}}/hbase-site.xml", "yarn-site.xml");
+//        handle_result(status, "yarn.timeline-service.hbase.configuration.file", "file:{{yarn_hbase_conf_dir}}/hbase-site.xml", "yarn-site.xml");
+//        status = modify_hdfs_config("yarn.timeline-service.hbase.coprocessor.jar.hdfs.location", "{{yarn_timeline_jar_location}}", "yarn-site.xml");
+//        handle_result(status, "yarn.timeline-service.hbase.coprocessor.jar.hdfs.location", "{{yarn_timeline_jar_location}}", "yarn-site.xml");
         status = modify_hdfs_config("yarn.resourcemanager.monitor.capacity.preemption.intra-queue-preemption.enabled", "true", "yarn-site.xml");
         handle_result(status, "yarn.resourcemanager.monitor.capacity.preemption.intra-queue-preemption.enabled", "true", "yarn-site.xml");
         status = modify_hdfs_config("yarn.scheduler.capacity.ordering-policy.priority-utilization.underutilized-preemption.enabled", "true", "yarn-site.xml");
@@ -1021,8 +1035,8 @@ void configure_target_component(Component target) {
         handle_result(status, "yarn.timeline-service.generic-application-history.save-non-am-container-meta-info", "false", "yarn-site.xml");
         status = modify_hdfs_config("hadoop.registry.dns.bind-address", "0.0.0.0", "yarn-site.xml");
         handle_result(status, "hadoop.registry.dns.bind-address", "0.0.0.0", "yarn-site.xml");
-        status = modify_hdfs_config("hadoop.http.cross-origin.allowed-origins", "{{cross_origins}}", "yarn-site.xml");
-        handle_result(status, "hadoop.http.cross-origin.allowed-origins", "{{cross_origins}}", "yarn-site.xml");
+//        status = modify_hdfs_config("hadoop.http.cross-origin.allowed-origins", "{{cross_origins}}", "yarn-site.xml");
+//        handle_result(status, "hadoop.http.cross-origin.allowed-origins", "{{cross_origins}}", "yarn-site.xml");
         status = modify_hdfs_config("yarn.nodemanager.resourcemanager.connect.wait.secs", "1800", "yarn-site.xml");
         handle_result(status, "yarn.nodemanager.resourcemanager.connect.wait.secs", "1800", "yarn-site.xml");
         //			 Set yarn-log4j configuration parameters
@@ -1032,46 +1046,46 @@ void configure_target_component(Component target) {
         handle_result(status, "yarn_rm_summary_log_number_of_backup_files", "20", "yarnservice-log4j.properties");
         status = modify_hdfs_config("yarn.log.dir", ".", "yarnservice-log4j.properties");
         handle_result(status, "yarn.log.dir", ".", "yarnservice-log4j.properties");
-        status = modify_hdfs_config("hadoop.mapreduce.jobsummary.logger", "${hadoop.root.logger}", "yarnservice-log4j.properties");
-        handle_result(status, "hadoop.mapreduce.jobsummary.logger", "${hadoop.root.logger}", "yarnservice-log4j.properties");
+//        status = modify_hdfs_config("hadoop.mapreduce.jobsummary.logger", "${hadoop.root.logger}", "yarnservice-log4j.properties");
+//        handle_result(status, "hadoop.mapreduce.jobsummary.logger", "${hadoop.root.logger}", "yarnservice-log4j.properties");
         status = modify_hdfs_config("hadoop.mapreduce.jobsummary.log.file", "hadoop-mapreduce.jobsummary.log", "yarnservice-log4j.properties");
         handle_result(status, "hadoop.mapreduce.jobsummary.log.file", "hadoop-mapreduce.jobsummary.log", "yarnservice-log4j.properties");
         status = modify_hdfs_config("yarn.server.resourcemanager.appsummary.log.file", "hadoop-mapreduce.jobsummary.log", "yarnservice-log4j.properties");
         handle_result(status, "yarn.server.resourcemanager.appsummary.log.file", "hadoop-mapreduce.jobsummary.log", "yarnservice-log4j.properties");
-        status = modify_hdfs_config("yarn.server.resourcemanager.appsummary.logger", "${hadoop.root.logger}", "yarnservice-log4j.properties");
-        handle_result(status, "yarn.server.resourcemanager.appsummary.logger", "${hadoop.root.logger}", "yarnservice-log4j.properties");
-        status = modify_hdfs_config("log4j.appender.RMSUMMARY.File", "${yarn.log.dir}/${yarn.server.resourcemanager.appsummary.log.file}", "yarnservice-log4j.properties");
-        handle_result(status, "log4j.appender.RMSUMMARY.File", "${yarn.log.dir}/${yarn.server.resourcemanager.appsummary.log.file}", "yarnservice-log4j.properties");
-        status = modify_hdfs_config("log4j.appender.RMSUMMARY.MaxFileSize", "{{yarn_rm_summary_log_max_backup_size}}MB", "yarnservice-log4j.properties");
-        handle_result(status, "log4j.appender.RMSUMMARY.MaxFileSize", "{{yarn_rm_summary_log_max_backup_size}}MB", "yarnservice-log4j.properties");
-        status = modify_hdfs_config("log4j.appender.RMSUMMARY.MaxBackupIndex", "{{yarn_rm_summary_log_number_of_backup_files}}", "yarnservice-log4j.properties");
-        handle_result(status, "log4j.appender.RMSUMMARY.MaxBackupIndex", "{{yarn_rm_summary_log_number_of_backup_files}}", "yarnservice-log4j.properties");
+//        status = modify_hdfs_config("yarn.server.resourcemanager.appsummary.logger", "${hadoop.root.logger}", "yarnservice-log4j.properties");
+//        handle_result(status, "yarn.server.resourcemanager.appsummary.logger", "${hadoop.root.logger}", "yarnservice-log4j.properties");
+//        status = modify_hdfs_config("log4j.appender.RMSUMMARY.File", "${yarn.log.dir}/${yarn.server.resourcemanager.appsummary.log.file}", "yarnservice-log4j.properties");
+//        handle_result(status, "log4j.appender.RMSUMMARY.File", "${yarn.log.dir}/${yarn.server.resourcemanager.appsummary.log.file}", "yarnservice-log4j.properties");
+//        status = modify_hdfs_config("log4j.appender.RMSUMMARY.MaxFileSize", "{{yarn_rm_summary_log_max_backup_size}}MB", "yarnservice-log4j.properties");
+//        handle_result(status, "log4j.appender.RMSUMMARY.MaxFileSize", "{{yarn_rm_summary_log_max_backup_size}}MB", "yarnservice-log4j.properties");
+//        status = modify_hdfs_config("log4j.appender.RMSUMMARY.MaxBackupIndex", "{{yarn_rm_summary_log_number_of_backup_files}}", "yarnservice-log4j.properties");
+//        handle_result(status, "log4j.appender.RMSUMMARY.MaxBackupIndex", "{{yarn_rm_summary_log_number_of_backup_files}}", "yarnservice-log4j.properties");
         status = modify_hdfs_config("log4j.appender.RMSUMMARY.layout.ConversionPattern", "%d{ISO8601} %p %c{2}: %m%n", "yarnservice-log4j.properties");
         handle_result(status, "log4j.appender.RMSUMMARY.layout.ConversionPattern", "%d{ISO8601} %p %c{2}: %m%n", "yarnservice-log4j.properties");
         status = modify_hdfs_config("log4j.appender.JSA.layout.ConversionPattern", "%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n", "yarnservice-log4j.properties");
         handle_result(status, "log4j.appender.JSA.layout.ConversionPattern", "%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n", "yarnservice-log4j.properties");
-        status = modify_hdfs_config("log4j.logger.org.apache.hadoop.yarn.server.resourcemanager.RMAppManager$ApplicationSummary", "${yarn.server.resourcemanager.appsummary.logger}", "yarnservice-log4j.properties");
-        handle_result(status, "log4j.logger.org.apache.hadoop.yarn.server.resourcemanager.RMAppManager$ApplicationSummary", "${yarn.server.resourcemanager.appsummary.logger}", "yarnservice-log4j.properties");
-        status = modify_hdfs_config("log4j.additivity.org.apache.hadoop.yarn.server.resourcemanager.RMAppManager$ApplicationSummary", "false", "yarnservice-log4j.properties");
-        handle_result(status, "log4j.additivity.org.apache.hadoop.yarn.server.resourcemanager.RMAppManager$ApplicationSummary", "false", "yarnservice-log4j.properties");
-        status = modify_hdfs_config("rm.audit.logger", "${hadoop.root.logger}", "yarnservice-log4j.properties");
-        handle_result(status, "rm.audit.logger", "${hadoop.root.logger}", "yarnservice-log4j.properties");
-        status = modify_hdfs_config("log4j.logger.org.apache.hadoop.yarn.server.resourcemanager.RMAuditLogger", "${rm.audit.logger}", "yarnservice-log4j.properties");
-        handle_result(status, "log4j.logger.org.apache.hadoop.yarn.server.resourcemanager.RMAuditLogger", "${rm.audit.logger}", "yarnservice-log4j.properties");
+//        status = modify_hdfs_config("log4j.logger.org.apache.hadoop.yarn.server.resourcemanager.RMAppManager$ApplicationSummary", "${yarn.server.resourcemanager.appsummary.logger}", "yarnservice-log4j.properties");
+//        handle_result(status, "log4j.logger.org.apache.hadoop.yarn.server.resourcemanager.RMAppManager$ApplicationSummary", "${yarn.server.resourcemanager.appsummary.logger}", "yarnservice-log4j.properties");
+//        status = modify_hdfs_config("log4j.additivity.org.apache.hadoop.yarn.server.resourcemanager.RMAppManager$ApplicationSummary", "false", "yarnservice-log4j.properties");
+//        handle_result(status, "log4j.additivity.org.apache.hadoop.yarn.server.resourcemanager.RMAppManager$ApplicationSummary", "false", "yarnservice-log4j.properties");
+//        status = modify_hdfs_config("rm.audit.logger", "${hadoop.root.logger}", "yarnservice-log4j.properties");
+//        handle_result(status, "rm.audit.logger", "${hadoop.root.logger}", "yarnservice-log4j.properties");
+//        status = modify_hdfs_config("log4j.logger.org.apache.hadoop.yarn.server.resourcemanager.RMAuditLogger", "${rm.audit.logger}", "yarnservice-log4j.properties");
+//        handle_result(status, "log4j.logger.org.apache.hadoop.yarn.server.resourcemanager.RMAuditLogger", "${rm.audit.logger}", "yarnservice-log4j.properties");
         status = modify_hdfs_config("log4j.additivity.org.apache.hadoop.yarn.server.resourcemanager.RMAuditLogger", "false", "yarnservice-log4j.properties");
         handle_result(status, "log4j.additivity.org.apache.hadoop.yarn.server.resourcemanager.RMAuditLogger", "false", "yarnservice-log4j.properties");
-        status = modify_hdfs_config("log4j.appender.RMAUDIT.File", "${yarn.log.dir}/rm-audit.log", "yarnservice-log4j.properties");
-        handle_result(status, "log4j.appender.RMAUDIT.File", "${yarn.log.dir}/rm-audit.log", "yarnservice-log4j.properties");
+//        status = modify_hdfs_config("log4j.appender.RMAUDIT.File", "${yarn.log.dir}/rm-audit.log", "yarnservice-log4j.properties");
+//        handle_result(status, "log4j.appender.RMAUDIT.File", "${yarn.log.dir}/rm-audit.log", "yarnservice-log4j.properties");
         status = modify_hdfs_config("log4j.appender.RMAUDIT.layout.ConversionPattern", "%d{ISO8601} %p %c{2}: %m%n", "yarnservice-log4j.properties");
         handle_result(status, "log4j.appender.RMAUDIT.layout.ConversionPattern", "%d{ISO8601} %p %c{2}: %m%n", "yarnservice-log4j.properties");
-        status = modify_hdfs_config("nm.audit.logger", "${hadoop.root.logger}", "yarnservice-log4j.properties");
-        handle_result(status, "nm.audit.logger", "${hadoop.root.logger}", "yarnservice-log4j.properties");
-        status = modify_hdfs_config("log4j.logger.org.apache.hadoop.yarn.server.nodemanager.NMAuditLogger", "${nm.audit.logger}", "yarnservice-log4j.properties");
-        handle_result(status, "log4j.logger.org.apache.hadoop.yarn.server.nodemanager.NMAuditLogger", "${nm.audit.logger}", "yarnservice-log4j.properties");
+//        status = modify_hdfs_config("nm.audit.logger", "${hadoop.root.logger}", "yarnservice-log4j.properties");
+//        handle_result(status, "nm.audit.logger", "${hadoop.root.logger}", "yarnservice-log4j.properties");
+//        status = modify_hdfs_config("log4j.logger.org.apache.hadoop.yarn.server.nodemanager.NMAuditLogger", "${nm.audit.logger}", "yarnservice-log4j.properties");
+//        handle_result(status, "log4j.logger.org.apache.hadoop.yarn.server.nodemanager.NMAuditLogger", "${nm.audit.logger}", "yarnservice-log4j.properties");
         status = modify_hdfs_config("log4j.additivity.org.apache.hadoop.yarn.server.nodemanager.NMAuditLogger", "false", "yarnservice-log4j.properties");
         handle_result(status, "log4j.additivity.org.apache.hadoop.yarn.server.nodemanager.NMAuditLogger", "false", "yarnservice-log4j.properties");
-        status = modify_hdfs_config("log4j.appender.NMAUDIT.File", "${yarn.log.dir}/nm-audit.log", "yarnservice-log4j.properties");
-        handle_result(status, "log4j.appender.NMAUDIT.File", "${yarn.log.dir}/nm-audit.log", "yarnservice-log4j.properties");
+//        status = modify_hdfs_config("log4j.appender.NMAUDIT.File", "${yarn.log.dir}/nm-audit.log", "yarnservice-log4j.properties");
+//        handle_result(status, "log4j.appender.NMAUDIT.File", "${yarn.log.dir}/nm-audit.log", "yarnservice-log4j.properties");
         status = modify_hdfs_config("log4j.appender.NMAUDIT.layout.ConversionPattern", "%d{ISO8601} %p %c{2}: %m%n", "yarnservice-log4j.properties");
         handle_result(status, "log4j.appender.NMAUDIT.layout.ConversionPattern", "%d{ISO8601} %p %c{2}: %m%n", "yarnservice-log4j.properties");
         //			 Update Capacity Scheduler configuration parameters
@@ -1138,36 +1152,36 @@ void configure_target_component(Component target) {
         handle_result(status, "xasecure.audit.is.enabled", "true", "ranger-yarn-audit.xml");
         status = modify_hdfs_config("xasecure.audit.destination.db", "false", "ranger-yarn-audit.xml");
         handle_result(status, "xasecure.audit.destination.db", "false", "ranger-yarn-audit.xml");
-        status = modify_hdfs_config("xasecure.audit.destination.db.jdbc.url", "{{audit_jdbc_url}}", "ranger-yarn-audit.xml");
-        handle_result(status, "xasecure.audit.destination.db.jdbc.url", "{{audit_jdbc_url}}", "ranger-yarn-audit.xml");
-        status = modify_hdfs_config("xasecure.audit.destination.db.user", "{{xa_audit_db_user}}", "ranger-yarn-audit.xml");
-        handle_result(status, "xasecure.audit.destination.db.user", "{{xa_audit_db_user}}", "ranger-yarn-audit.xml");
+//        status = modify_hdfs_config("xasecure.audit.destination.db.jdbc.url", "{{audit_jdbc_url}}", "ranger-yarn-audit.xml");
+//        handle_result(status, "xasecure.audit.destination.db.jdbc.url", "{{audit_jdbc_url}}", "ranger-yarn-audit.xml");
+//        status = modify_hdfs_config("xasecure.audit.destination.db.user", "{{xa_audit_db_user}}", "ranger-yarn-audit.xml");
+//        handle_result(status, "xasecure.audit.destination.db.user", "{{xa_audit_db_user}}", "ranger-yarn-audit.xml");
         status = modify_hdfs_config("xasecure.audit.destination.db.password", "crypted", "ranger-yarn-audit.xml");
         handle_result(status, "xasecure.audit.destination.db.password", "crypted", "ranger-yarn-audit.xml");
-        status = modify_hdfs_config("xasecure.audit.destination.db.jdbc.driver", "{{jdbc_driver}}", "ranger-yarn-audit.xml");
-        handle_result(status, "xasecure.audit.destination.db.jdbc.driver", "{{jdbc_driver}}", "ranger-yarn-audit.xml");
-        status = modify_hdfs_config("xasecure.audit.credential.provider.file", "jceks:file{{credential_file}}", "ranger-yarn-audit.xml");
-        handle_result(status, "xasecure.audit.credential.provider.file", "jceks:file{{credential_file}}", "ranger-yarn-audit.xml");
+//        status = modify_hdfs_config("xasecure.audit.destination.db.jdbc.driver", "{{jdbc_driver}}", "ranger-yarn-audit.xml");
+//        handle_result(status, "xasecure.audit.destination.db.jdbc.driver", "{{jdbc_driver}}", "ranger-yarn-audit.xml");
+//        status = modify_hdfs_config("xasecure.audit.credential.provider.file", "jceks:file{{credential_file}}", "ranger-yarn-audit.xml");
+//        handle_result(status, "xasecure.audit.credential.provider.file", "jceks:file{{credential_file}}", "ranger-yarn-audit.xml");
         status = modify_hdfs_config("xasecure.audit.destination.db.batch.filespool.dir", "/var/log/hadoop/yarn/audit/db/spool", "ranger-yarn-audit.xml");
-        handle_result(status, "xasecure.audit.destination.db.batch.filespool.dir", "/var/log/hadoop/yarn/audit/db/spool", "ranger-yarn-audit.xml");
+//        handle_result(status, "xasecure.audit.destination.db.batch.filespool.dir", "/var/log/hadoop/yarn/audit/db/spool", "ranger-yarn-audit.xml");
         status = modify_hdfs_config("xasecure.audit.destination.hdfs", "true", "ranger-yarn-audit.xml");
         handle_result(status, "xasecure.audit.destination.hdfs", "true", "ranger-yarn-audit.xml");
         status = modify_hdfs_config("xasecure.audit.destination.hdfs.dir", "hdfs:NAMENODE_HOSTNAME:8020/ranger/audit", "ranger-yarn-audit.xml");
         handle_result(status, "xasecure.audit.destination.hdfs.dir", "hdfs:NAMENODE_HOSTNAME:8020/ranger/audit", "ranger-yarn-audit.xml");
-        status = modify_hdfs_config("xasecure.audit.destination.hdfs.batch.filespool.dir", "/var/log/hadoop/yarn/audit/hdfs/spool", "ranger-yarn-audit.xml");
-        handle_result(status, "xasecure.audit.destination.hdfs.batch.filespool.dir", "/var/log/hadoop/yarn/audit/hdfs/spool", "ranger-yarn-audit.xml");
+//        status = modify_hdfs_config("xasecure.audit.destination.hdfs.batch.filespool.dir", "/var/log/hadoop/yarn/audit/hdfs/spool", "ranger-yarn-audit.xml");
+//        handle_result(status, "xasecure.audit.destination.hdfs.batch.filespool.dir", "/var/log/hadoop/yarn/audit/hdfs/spool", "ranger-yarn-audit.xml");
         status = modify_hdfs_config("xasecure.audit.destination.solr", "false", "ranger-yarn-audit.xml");
         handle_result(status, "xasecure.audit.destination.solr", "false", "ranger-yarn-audit.xml");
         status = modify_hdfs_config("xasecure.audit.destination.solr.urls", "", "ranger-yarn-audit.xml");
         handle_result(status, "xasecure.audit.destination.solr.urls", "", "ranger-yarn-audit.xml");
         status = modify_hdfs_config("xasecure.audit.destination.solr.zookeepers", "NONE", "ranger-yarn-audit.xml");
         handle_result(status, "xasecure.audit.destination.solr.zookeepers", "NONE", "ranger-yarn-audit.xml");
-        status = modify_hdfs_config("xasecure.audit.destination.solr.batch.filespool.dir", "/var/log/hadoop/yarn/audit/solr/spool", "ranger-yarn-audit.xml");
-        handle_result(status, "xasecure.audit.destination.solr.batch.filespool.dir", "/var/log/hadoop/yarn/audit/solr/spool", "ranger-yarn-audit.xml");
+//        status = modify_hdfs_config("xasecure.audit.destination.solr.batch.filespool.dir", "/var/log/hadoop/yarn/audit/solr/spool", "ranger-yarn-audit.xml");
+//        handle_result(status, "xasecure.audit.destination.solr.batch.filespool.dir", "/var/log/hadoop/yarn/audit/solr/spool", "ranger-yarn-audit.xml");
         status = modify_hdfs_config("xasecure.audit.provider.summary.enabled", "false", "ranger-yarn-audit.xml");
         handle_result(status, "xasecure.audit.provider.summary.enabled", "false", "ranger-yarn-audit.xml");
-        status = modify_hdfs_config("ranger.plugin.yarn.ambari.cluster.name", "{{cluster_name}}", "ranger-yarn-audit.xml");
-        handle_result(status, "ranger.plugin.yarn.ambari.cluster.name", "{{cluster_name}}", "ranger-yarn-audit.xml");
+//        status = modify_hdfs_config("ranger.plugin.yarn.ambari.cluster.name", "{{cluster_name}}", "ranger-yarn-audit.xml");
+//        handle_result(status, "ranger.plugin.yarn.ambari.cluster.name", "{{cluster_name}}", "ranger-yarn-audit.xml");
         //			 Update Ranger YARN Plugin configuration
         status = modify_hdfs_config("policy_user", "ambari-qa", "ranger-yarn-plugin.properties");
         handle_result(status, "policy_user", "ambari-qa", "ranger-yarn-plugin.properties");
@@ -1198,23 +1212,23 @@ void configure_target_component(Component target) {
         handle_result(status, "xasecure.policymgr.clientssl.truststore", "", "ranger-yarn-policymgr-ssl.xml");
         status = modify_hdfs_config("xasecure.policymgr.clientssl.truststore.password", "changeit", "ranger-yarn-policymgr-ssl.xml");
         handle_result(status, "xasecure.policymgr.clientssl.truststore.password", "changeit", "ranger-yarn-policymgr-ssl.xml");
-        status = modify_hdfs_config("xasecure.policymgr.clientssl.keystore.credential.file", "jceks:file{{credential_file}}", "ranger-yarn-policymgr-ssl.xml");
-        handle_result(status, "xasecure.policymgr.clientssl.keystore.credential.file", "jceks:file{{credential_file}}", "ranger-yarn-policymgr-ssl.xml");
-        status = modify_hdfs_config("xasecure.policymgr.clientssl.truststore.credential.file", "jceks:file{{credential_file}}", "ranger-yarn-policymgr-ssl.xml");
-        handle_result(status, "xasecure.policymgr.clientssl.truststore.credential.file", "jceks:file{{credential_file}}", "ranger-yarn-policymgr-ssl.xml");
+//        status = modify_hdfs_config("xasecure.policymgr.clientssl.keystore.credential.file", "jceks:file{{credential_file}}", "ranger-yarn-policymgr-ssl.xml");
+//        handle_result(status, "xasecure.policymgr.clientssl.keystore.credential.file", "jceks:file{{credential_file}}", "ranger-yarn-policymgr-ssl.xml");
+//        status = modify_hdfs_config("xasecure.policymgr.clientssl.truststore.credential.file", "jceks:file{{credential_file}}", "ranger-yarn-policymgr-ssl.xml");
+//        handle_result(status, "xasecure.policymgr.clientssl.truststore.credential.file", "jceks:file{{credential_file}}", "ranger-yarn-policymgr-ssl.xml");
         //			 Update Ranger YARN Security configuration
-        status = modify_hdfs_config("ranger.plugin.yarn.service.name", "{{repo_name}}", "ranger-yarn-security.xml");
-        handle_result(status, "ranger.plugin.yarn.service.name", "{{repo_name}}", "ranger-yarn-security.xml");
+//        status = modify_hdfs_config("ranger.plugin.yarn.service.name", "{{repo_name}}", "ranger-yarn-security.xml");
+//        handle_result(status, "ranger.plugin.yarn.service.name", "{{repo_name}}", "ranger-yarn-security.xml");
         status = modify_hdfs_config("ranger.plugin.yarn.policy.source.impl", "org.apache.ranger.admin.client.RangerAdminRESTClient", "ranger-yarn-security.xml");
         handle_result(status, "ranger.plugin.yarn.policy.source.impl", "org.apache.ranger.admin.client.RangerAdminRESTClient", "ranger-yarn-security.xml");
-        status = modify_hdfs_config("ranger.plugin.yarn.policy.rest.url", "{{policymgr_mgr_url}}", "ranger-yarn-security.xml");
-        handle_result(status, "ranger.plugin.yarn.policy.rest.url", "{{policymgr_mgr_url}}", "ranger-yarn-security.xml");
+//        status = modify_hdfs_config("ranger.plugin.yarn.policy.rest.url", "{{policymgr_mgr_url}}", "ranger-yarn-security.xml");
+//        handle_result(status, "ranger.plugin.yarn.policy.rest.url", "{{policymgr_mgr_url}}", "ranger-yarn-security.xml");
         status = modify_hdfs_config("ranger.plugin.yarn.policy.rest.ssl.config.file", "/etc/hadoop/conf/ranger-policymgr-ssl-yarn.xml", "ranger-yarn-security.xml");
         handle_result(status, "ranger.plugin.yarn.policy.rest.ssl.config.file", "/etc/hadoop/conf/ranger-policymgr-ssl-yarn.xml", "ranger-yarn-security.xml");
         status = modify_hdfs_config("ranger.plugin.yarn.policy.pollIntervalMs", "30000", "ranger-yarn-security.xml");
         handle_result(status, "ranger.plugin.yarn.policy.pollIntervalMs", "30000", "ranger-yarn-security.xml");
-        status = modify_hdfs_config("ranger.plugin.yarn.policy.cache.dir", "/etc/ranger/{{repo_name}}/policycache", "ranger-yarn-security.xml");
-        handle_result(status, "ranger.plugin.yarn.policy.cache.dir", "/etc/ranger/{{repo_name}}/policycache", "ranger-yarn-security.xml");
+//        status = modify_hdfs_config("ranger.plugin.yarn.policy.cache.dir", "/etc/ranger/{{repo_name}}/policycache", "ranger-yarn-security.xml");
+//        handle_result(status, "ranger.plugin.yarn.policy.cache.dir", "/etc/ranger/{{repo_name}}/policycache", "ranger-yarn-security.xml");
         status = modify_hdfs_config("ranger.add-yarn-authorization", "true", "ranger-yarn-security.xml");
         handle_result(status, "ranger.add-yarn-authorization", "true", "ranger-yarn-security.xml");
         //			 Update YARN resource types configuration
@@ -1245,14 +1259,14 @@ void configure_target_component(Component target) {
         handle_result(status, "hbase.log.dir", ".", "log4j2.properties");
         status = update_hbase_config("hbase.log.file", "hbase.log", "log4j2.properties");
         handle_result(status, "hbase.log.file", "hbase.log", "log4j2.properties");
-        status = update_hbase_config("log4j.rootLogger", "${hbase.root.logger}", "log4j2.properties");
-        handle_result(status, "log4j.rootLogger", "${hbase.root.logger}", "log4j2.properties");
+//        status = update_hbase_config("log4j.rootLogger", "${hbase.root.logger}", "log4j2.properties");
+//        handle_result(status, "log4j.rootLogger", "${hbase.root.logger}", "log4j2.properties");
         status = update_hbase_config("log4j.threshold", "ALL", "log4j2.properties");
         handle_result(status, "log4j.threshold", "ALL", "log4j2.properties");
         status = update_hbase_config("log4j.appender.DRFA", "org.apache.log4j.DailyRollingFileAppender", "log4j2.properties");
         handle_result(status, "log4j.appender.DRFA", "org.apache.log4j.DailyRollingFileAppender", "log4j2.properties");
-        status = update_hbase_config("log4j.appender.DRFA.File", "${hbase.log.dir}/${hbase.log.file}", "log4j2.properties");
-        handle_result(status, "log4j.appender.DRFA.File", "${hbase.log.dir}/${hbase.log.file}", "log4j2.properties");
+//        status = update_hbase_config("log4j.appender.DRFA.File", "${hbase.log.dir}/${hbase.log.file}", "log4j2.properties");
+//        handle_result(status, "log4j.appender.DRFA.File", "${hbase.log.dir}/${hbase.log.file}", "log4j2.properties");
         status = update_hbase_config("log4j.appender.DRFA.DatePattern", ".yyyy-MM-dd", "log4j2.properties");
         handle_result(status, "log4j.appender.DRFA.DatePattern", ".yyyy-MM-dd", "log4j2.properties");
         status = update_hbase_config("log4j.appender.DRFA.layout", "org.apache.log4j.PatternLayout", "log4j2.properties");
@@ -1265,12 +1279,12 @@ void configure_target_component(Component target) {
         handle_result(status, "hbase.log.maxbackupindex", "20", "log4j2.properties");
         status = update_hbase_config("log4j.appender.RFA", "org.apache.log4j.RollingFileAppender", "log4j2.properties");
         handle_result(status, "log4j.appender.RFA", "org.apache.log4j.RollingFileAppender", "log4j2.properties");
-        status = update_hbase_config("log4j.appender.RFA.File", "${hbase.log.dir}/${hbase.log.file}", "log4j2.properties");
-        handle_result(status, "log4j.appender.RFA.File", "${hbase.log.dir}/${hbase.log.file}", "log4j2.properties");
-        status = update_hbase_config("log4j.appender.RFA.MaxFileSize", "${hbase.log.maxfilesize}", "log4j2.properties");
-        handle_result(status, "log4j.appender.RFA.MaxFileSize", "${hbase.log.maxfilesize}", "log4j2.properties");
-        status = update_hbase_config("log4j.appender.RFA.MaxBackupIndex", "${hbase.log.maxbackupindex}", "log4j2.properties");
-        handle_result(status, "log4j.appender.RFA.MaxBackupIndex", "${hbase.log.maxbackupindex}", "log4j2.properties");
+//        status = update_hbase_config("log4j.appender.RFA.File", "${hbase.log.dir}/${hbase.log.file}", "log4j2.properties");
+//        handle_result(status, "log4j.appender.RFA.File", "${hbase.log.dir}/${hbase.log.file}", "log4j2.properties");
+//        status = update_hbase_config("log4j.appender.RFA.MaxFileSize", "${hbase.log.maxfilesize}", "log4j2.properties");
+//        handle_result(status, "log4j.appender.RFA.MaxFileSize", "${hbase.log.maxfilesize}", "log4j2.properties");
+//        status = update_hbase_config("log4j.appender.RFA.MaxBackupIndex", "${hbase.log.maxbackupindex}", "log4j2.properties");
+//        handle_result(status, "log4j.appender.RFA.MaxBackupIndex", "${hbase.log.maxbackupindex}", "log4j2.properties");
         status = update_hbase_config("log4j.appender.RFA.layout", "org.apache.log4j.PatternLayout", "log4j2.properties");
         handle_result(status, "log4j.appender.RFA.layout", "org.apache.log4j.PatternLayout", "log4j2.properties");
         status = update_hbase_config("log4j.appender.RFA.layout.ConversionPattern", "%d{ISO8601} %-5p [%t] %c{2}: %m%n", "log4j2.properties");
@@ -1283,18 +1297,18 @@ void configure_target_component(Component target) {
         handle_result(status, "hbase.security.log.maxbackupindex", "20", "log4j2.properties");
         status = update_hbase_config("log4j.appender.RFAS", "org.apache.log4j.RollingFileAppender", "log4j2.properties");
         handle_result(status, "log4j.appender.RFAS", "org.apache.log4j.RollingFileAppender", "log4j2.properties");
-        status = update_hbase_config("log4j.appender.RFAS.File", "${hbase.log.dir}/${hbase.security.log.file}", "log4j2.properties");
-        handle_result(status, "log4j.appender.RFAS.File", "${hbase.log.dir}/${hbase.security.log.file}", "log4j2.properties");
-        status = update_hbase_config("log4j.appender.RFAS.MaxFileSize", "${hbase.security.log.maxfilesize}", "log4j2.properties");
-        handle_result(status, "log4j.appender.RFAS.MaxFileSize", "${hbase.security.log.maxfilesize}", "log4j2.properties");
-        status = update_hbase_config("log4j.appender.RFAS.MaxBackupIndex", "${hbase.security.log.maxbackupindex}", "log4j2.properties");
-        handle_result(status, "log4j.appender.RFAS.MaxBackupIndex", "${hbase.security.log.maxbackupindex}", "log4j2.properties");
+//        status = update_hbase_config("log4j.appender.RFAS.File", "${hbase.log.dir}/${hbase.security.log.file}", "log4j2.properties");
+//        handle_result(status, "log4j.appender.RFAS.File", "${hbase.log.dir}/${hbase.security.log.file}", "log4j2.properties");
+//        status = update_hbase_config("log4j.appender.RFAS.MaxFileSize", "${hbase.security.log.maxfilesize}", "log4j2.properties");
+//        handle_result(status, "log4j.appender.RFAS.MaxFileSize", "${hbase.security.log.maxfilesize}", "log4j2.properties");
+//        status = update_hbase_config("log4j.appender.RFAS.MaxBackupIndex", "${hbase.security.log.maxbackupindex}", "log4j2.properties");
+//        handle_result(status, "log4j.appender.RFAS.MaxBackupIndex", "${hbase.security.log.maxbackupindex}", "log4j2.properties");
         status = update_hbase_config("log4j.appender.RFAS.layout", "org.apache.log4j.PatternLayout", "log4j2.properties");
         handle_result(status, "log4j.appender.RFAS.layout", "org.apache.log4j.PatternLayout", "log4j2.properties");
         status = update_hbase_config("log4j.appender.RFAS.layout.ConversionPattern", "%d{ISO8601} %p %c: %m%n", "log4j2.properties");
         handle_result(status, "log4j.appender.RFAS.layout.ConversionPattern", "%d{ISO8601} %p %c: %m%n", "log4j2.properties");
-        status = update_hbase_config("log4j.category.SecurityLogger", "${hbase.security.logger}", "log4j2.properties");
-        handle_result(status, "log4j.category.SecurityLogger", "${hbase.security.logger}", "log4j2.properties");
+//        status = update_hbase_config("log4j.category.SecurityLogger", "${hbase.security.logger}", "log4j2.properties");
+//        handle_result(status, "log4j.category.SecurityLogger", "${hbase.security.logger}", "log4j2.properties");
         status = update_hbase_config("log4j.additivity.SecurityLogger", "false", "log4j2.properties");
         handle_result(status, "log4j.additivity.SecurityLogger", "false", "log4j2.properties");
         status = update_hbase_config("log4j.appender.NullAppender", "org.apache.log4j.varia.NullAppender", "log4j2.properties");
@@ -1329,10 +1343,10 @@ void configure_target_component(Component target) {
         handle_result(status, "hbase.cluster.distributed", "true", "hbase-site.xml");
         status = update_hbase_config("hbase.master.port", "16000", "hbase-site.xml");
         handle_result(status, "hbase.master.port", "16000", "hbase-site.xml");
-        status = update_hbase_config("hbase.tmp.dir", "/tmp/hbase-${user.name}", "hbase-site.xml");
-        handle_result(status, "hbase.tmp.dir", "/tmp/hbase-${user.name}", "hbase-site.xml");
-        status = update_hbase_config("hbase.local.dir", "${hbase.tmp.dir}/local", "hbase-site.xml");
-        handle_result(status, "hbase.local.dir", "${hbase.tmp.dir}/local", "hbase-site.xml");
+//        status = update_hbase_config("hbase.tmp.dir", "/tmp/hbase-${user.name}", "hbase-site.xml");
+//        handle_result(status, "hbase.tmp.dir", "/tmp/hbase-${user.name}", "hbase-site.xml");
+//        status = update_hbase_config("hbase.local.dir", "${hbase.tmp.dir}/local", "hbase-site.xml");
+//        handle_result(status, "hbase.local.dir", "${hbase.tmp.dir}/local", "hbase-site.xml");
         status = update_hbase_config("hbase.master.info.bindAddress", "0.0.0.0", "hbase-site.xml");
         handle_result(status, "hbase.master.info.bindAddress", "0.0.0.0", "hbase-site.xml");
         status = update_hbase_config("hbase.master.info.port", "16010", "hbase-site.xml");
@@ -1381,8 +1395,8 @@ void configure_target_component(Component target) {
         handle_result(status, "hbase.zookeeper.quorum", "localhost", "hbase-site.xml");
         status = update_hbase_config("hbase.zookeeper.useMulti", "true", "hbase-site.xml");
         handle_result(status, "hbase.zookeeper.useMulti", "true", "hbase-site.xml");
-        status = update_hbase_config("zookeeper.znode.parent", "/hbase-unsecure", "hbase-site.xml");
-        handle_result(status, "zookeeper.znode.parent", "/hbase-unsecure", "hbase-site.xml");
+       // status = update_hbase_config("zookeeper.znode.parent", "/hbase-unsecure", "hbase-site.xml");
+        //handle_result(status, "zookeeper.znode.parent", "/hbase-unsecure", "hbase-site.xml");
         status = update_hbase_config("zookeeper.recovery.retry", "6", "hbase-site.xml");
         handle_result(status, "zookeeper.recovery.retry", "6", "hbase-site.xml");
 
@@ -1451,8 +1465,8 @@ void configure_target_component(Component target) {
         //			 Miscellaneous
         status = update_hbase_config("hbase.defaults.for.version.skip", "true", "hbase-site.xml");
         handle_result(status, "hbase.defaults.for.version.skip", "true", "hbase-site.xml");
-        status = update_hbase_config("dfs.domain.socket.path", "/var/lib/hadoop-hdfs/dn_socket", "hbase-site.xml");
-        handle_result(status, "dfs.domain.socket.path", "/var/lib/hadoop-hdfs/dn_socket", "hbase-site.xml");
+//        status = update_hbase_config("dfs.domain.socket.path", "/var/lib/hadoop-hdfs/dn_socket", "hbase-site.xml");
+//        handle_result(status, "dfs.domain.socket.path", "/var/lib/hadoop-hdfs/dn_socket", "hbase-site.xml");
         status = update_hbase_config("hbase.bulkload.staging.dir", "/apps/hbase/staging", "hbase-site.xml");
         handle_result(status, "hbase.bulkload.staging.dir", "/apps/hbase/staging", "hbase-site.xml");
 
@@ -1463,20 +1477,20 @@ void configure_target_component(Component target) {
         handle_result(status, "xasecure.audit.destination.hdfs", "true", "ranger-hbase-audit.xml");
         status = update_hbase_config("xasecure.audit.destination.hdfs.dir", "hdfs:NAMENODE_HOSTNAME:8020/ranger/audit", "ranger-hbase-audit.xml");
         handle_result(status, "xasecure.audit.destination.hdfs.dir", "hdfs:NAMENODE_HOSTNAME:8020/ranger/audit", "ranger-hbase-audit.xml");
-        status = update_hbase_config("xasecure.audit.destination.hdfs.batch.filespool.dir", "/var/log/hbase/audit/hdfs/spool", "ranger-hbase-audit.xml");
-        handle_result(status, "xasecure.audit.destination.hdfs.batch.filespool.dir", "/var/log/hbase/audit/hdfs/spool", "ranger-hbase-audit.xml");
+//        status = update_hbase_config("xasecure.audit.destination.hdfs.batch.filespool.dir", "/var/log/hbase/audit/hdfs/spool", "ranger-hbase-audit.xml");
+//        handle_result(status, "xasecure.audit.destination.hdfs.batch.filespool.dir", "/var/log/hbase/audit/hdfs/spool", "ranger-hbase-audit.xml");
         status = update_hbase_config("xasecure.audit.destination.solr", "false", "ranger-hbase-audit.xml");
         handle_result(status, "xasecure.audit.destination.solr", "false", "ranger-hbase-audit.xml");
         status = update_hbase_config("xasecure.audit.destination.solr.urls", "", "ranger-hbase-audit.xml");
         handle_result(status, "xasecure.audit.destination.solr.urls", "", "ranger-hbase-audit.xml");
         status = update_hbase_config("xasecure.audit.destination.solr.zookeepers", "NONE", "ranger-hbase-audit.xml");
         handle_result(status, "xasecure.audit.destination.solr.zookeepers", "NONE", "ranger-hbase-audit.xml");
-        status = update_hbase_config("xasecure.audit.destination.solr.batch.filespool.dir", "/var/log/hbase/audit/solr/spool", "ranger-hbase-audit.xml");
-        handle_result(status, "xasecure.audit.destination.solr.batch.filespool.dir", "/var/log/hbase/audit/solr/spool", "ranger-hbase-audit.xml");
+//        status = update_hbase_config("xasecure.audit.destination.solr.batch.filespool.dir", "/var/log/hbase/audit/solr/spool", "ranger-hbase-audit.xml");
+//        handle_result(status, "xasecure.audit.destination.solr.batch.filespool.dir", "/var/log/hbase/audit/solr/spool", "ranger-hbase-audit.xml");
         status = update_hbase_config("xasecure.audit.provider.summary.enabled", "true", "ranger-hbase-audit.xml");
         handle_result(status, "xasecure.audit.provider.summary.enabled", "true", "ranger-hbase-audit.xml");
-        status = update_hbase_config("ranger.plugin.hbase.ambari.cluster.name", "{{cluster_name}}", "ranger-hbase-audit.xml");
-        handle_result(status, "ranger.plugin.hbase.ambari.cluster.name", "{{cluster_name}}", "ranger-hbase-audit.xml");
+//        status = update_hbase_config("ranger.plugin.hbase.ambari.cluster.name", "{{cluster_name}}", "ranger-hbase-audit.xml");
+//        handle_result(status, "ranger.plugin.hbase.ambari.cluster.name", "{{cluster_name}}", "ranger-hbase-audit.xml");
         //			 Ranger HBase Plugin Configuration
         status = update_hbase_config("common.name.for.certificate", "", "ranger-hbase-plugin.properties");
         handle_result(status, "common.name.for.certificate", "", "ranger-hbase-plugin.properties");
@@ -1507,23 +1521,23 @@ void configure_target_component(Component target) {
         handle_result(status, "xasecure.policymgr.clientssl.truststore", "", "ranger-hbase-policymgr-ssl.xml");
         status = update_hbase_config("xasecure.policymgr.clientssl.truststore.password", "changeit", "ranger-hbase-policymgr-ssl.xml");
         handle_result(status, "xasecure.policymgr.clientssl.truststore.password", "changeit", "ranger-hbase-policymgr-ssl.xml");
-        status = update_hbase_config("xasecure.policymgr.clientssl.keystore.credential.file", "jceks:file{{credential_file}}", "ranger-hbase-policymgr-ssl.xml");
-        handle_result(status, "xasecure.policymgr.clientssl.keystore.credential.file", "jceks:file{{credential_file}}", "ranger-hbase-policymgr-ssl.xml");
-        status = update_hbase_config("xasecure.policymgr.clientssl.truststore.credential.file", "jceks:file{{credential_file}}", "ranger-hbase-policymgr-ssl.xml");
-        handle_result(status, "xasecure.policymgr.clientssl.truststore.credential.file", "jceks:file{{credential_file}}", "ranger-hbase-policymgr-ssl.xml");
+//        status = update_hbase_config("xasecure.policymgr.clientssl.keystore.credential.file", "jceks:file{{credential_file}}", "ranger-hbase-policymgr-ssl.xml");
+//        handle_result(status, "xasecure.policymgr.clientssl.keystore.credential.file", "jceks:file{{credential_file}}", "ranger-hbase-policymgr-ssl.xml");
+//        status = update_hbase_config("xasecure.policymgr.clientssl.truststore.credential.file", "jceks:file{{credential_file}}", "ranger-hbase-policymgr-ssl.xml");
+//        handle_result(status, "xasecure.policymgr.clientssl.truststore.credential.file", "jceks:file{{credential_file}}", "ranger-hbase-policymgr-ssl.xml");
         //			 Ranger HBase Security Configuration
-        status = update_hbase_config("ranger.plugin.hbase.service.name", "{{repo_name}}", "ranger-hbase-security.xml");
-        handle_result(status, "ranger.plugin.hbase.service.name", "{{repo_name}}", "ranger-hbase-security.xml");
+//        status = update_hbase_config("ranger.plugin.hbase.service.name", "{{repo_name}}", "ranger-hbase-security.xml");
+//        handle_result(status, "ranger.plugin.hbase.service.name", "{{repo_name}}", "ranger-hbase-security.xml");
         status = update_hbase_config("ranger.plugin.hbase.policy.source.impl", "org.apache.ranger.admin.client.RangerAdminRESTClient", "ranger-hbase-security.xml");
         handle_result(status, "ranger.plugin.hbase.policy.source.impl", "org.apache.ranger.admin.client.RangerAdminRESTClient", "ranger-hbase-security.xml");
-        status = update_hbase_config("ranger.plugin.hbase.policy.rest.url", "{{policymgr_mgr_url}}", "ranger-hbase-security.xml");
-        handle_result(status, "ranger.plugin.hbase.policy.rest.url", "{{policymgr_mgr_url}}", "ranger-hbase-security.xml");
+//        status = update_hbase_config("ranger.plugin.hbase.policy.rest.url", "{{policymgr_mgr_url}}", "ranger-hbase-security.xml");
+//        handle_result(status, "ranger.plugin.hbase.policy.rest.url", "{{policymgr_mgr_url}}", "ranger-hbase-security.xml");
         status = update_hbase_config("ranger.plugin.hbase.policy.rest.ssl.config.file", "/etc/hbase/conf/ranger-policymgr-ssl.xml", "ranger-hbase-security.xml");
         handle_result(status, "ranger.plugin.hbase.policy.rest.ssl.config.file", "/etc/hbase/conf/ranger-policymgr-ssl.xml", "ranger-hbase-security.xml");
         status = update_hbase_config("ranger.plugin.hbase.policy.pollIntervalMs", "30000", "ranger-hbase-security.xml");
         handle_result(status, "ranger.plugin.hbase.policy.pollIntervalMs", "30000", "ranger-hbase-security.xml");
-        status = update_hbase_config("ranger.plugin.hbase.policy.cache.dir", "/etc/ranger/{{repo_name}}/policycache", "ranger-hbase-security.xml");
-        handle_result(status, "ranger.plugin.hbase.policy.cache.dir", "/etc/ranger/{{repo_name}}/policycache", "ranger-hbase-security.xml");
+//        status = update_hbase_config("ranger.plugin.hbase.policy.cache.dir", "/etc/ranger/{{repo_name}}/policycache", "ranger-hbase-security.xml");
+//        handle_result(status, "ranger.plugin.hbase.policy.cache.dir", "/etc/ranger/{{repo_name}}/policycache", "ranger-hbase-security.xml");
         status = update_hbase_config("xasecure.hbase.update.xapolicies.on.grant.revoke", "true", "ranger-hbase-security.xml");
         handle_result(status, "xasecure.hbase.update.xapolicies.on.grant.revoke", "true", "ranger-hbase-security.xml");
 
@@ -1538,8 +1552,8 @@ void configure_target_component(Component target) {
         handle_result(status, "name", "BeelineLog4j2", "beeline-log4j2.properties");
         status = modify_hive_config("packages", "org.apache.hadoop.hive.ql.log", "beeline-log4j2.properties");
         handle_result(status, "packages", "org.apache.hadoop.hive.ql.log", "beeline-log4j2.properties");
-        status = modify_hive_config("property.hive.log.level", "{{hive_log_level}}", "beeline-log4j2.properties");
-        handle_result(status, "property.hive.log.level", "{{hive_log_level}}", "beeline-log4j2.properties");
+//        status = modify_hive_config("property.hive.log.level", "{{hive_log_level}}", "beeline-log4j2.properties");
+//        handle_result(status, "property.hive.log.level", "{{hive_log_level}}", "beeline-log4j2.properties");
         status = modify_hive_config("property.hive.root.logger", "console", "beeline-log4j2.properties");
         handle_result(status, "property.hive.root.logger", "console", "beeline-log4j2.properties");
         status = modify_hive_config("appenders", "console", "beeline-log4j2.properties");
@@ -1560,12 +1574,12 @@ void configure_target_component(Component target) {
         handle_result(status, "logger.HiveConnection.name", "org.apache.hive.jdbc.HiveConnection", "beeline-log4j2.properties");
         status = modify_hive_config("logger.HiveConnection.level", "INFO", "beeline-log4j2.properties");
         handle_result(status, "logger.HiveConnection.level", "INFO", "beeline-log4j2.properties");
-        status = modify_hive_config("rootLogger.level", "${sys:hive.log.level}", "beeline-log4j2.properties");
-        handle_result(status, "rootLogger.level", "${sys:hive.log.level}", "beeline-log4j2.properties");
+//        status = modify_hive_config("rootLogger.level", "${sys:hive.log.level}", "beeline-log4j2.properties");
+//        handle_result(status, "rootLogger.level", "${sys:hive.log.level}", "beeline-log4j2.properties");
         status = modify_hive_config("rootLogger.appenderRefs", "root", "beeline-log4j2.properties");
         handle_result(status, "rootLogger.appenderRefs", "root", "beeline-log4j2.properties");
-        status = modify_hive_config("rootLogger.appenderRef.root.ref", "${sys:hive.root.logger}", "beeline-log4j2.properties");
-        handle_result(status, "rootLogger.appenderRef.root.ref", "${sys:hive.root.logger}", "beeline-log4j2.properties");
+//        status = modify_hive_config("rootLogger.appenderRef.root.ref", "${sys:hive.root.logger}", "beeline-log4j2.properties");
+//        handle_result(status, "rootLogger.appenderRef.root.ref", "${sys:hive.root.logger}", "beeline-log4j2.properties");
         //			 Atlas Hive Hook Configuration
         status = modify_hive_config("atlas.hook.hive.synchronous", "false", "atlas-application.properties");
         handle_result(status, "atlas.hook.hive.synchronous", "false", "atlas-application.properties");
@@ -1588,16 +1602,16 @@ void configure_target_component(Component target) {
         handle_result(status, "packages", "org.apache.hadoop.hive.ql.log", "hive-exec-log4j2.properties");
 
         //			 Property definitions
-        status = modify_hive_config("property.hive.log.level", "{{hive_log_level}}", "hive-exec-log4j2.properties");
-        handle_result(status, "property.hive.log.level", "{{hive_log_level}}", "hive-exec-log4j2.properties");
+//        status = modify_hive_config("property.hive.log.level", "{{hive_log_level}}", "hive-exec-log4j2.properties");
+//        handle_result(status, "property.hive.log.level", "{{hive_log_level}}", "hive-exec-log4j2.properties");
         status = modify_hive_config("property.hive.root.logger", "FA", "hive-exec-log4j2.properties");
         handle_result(status, "property.hive.root.logger", "FA", "hive-exec-log4j2.properties");
         status = modify_hive_config("property.hive.query.id", "hadoop", "hive-exec-log4j2.properties");
         handle_result(status, "property.hive.query.id", "hadoop", "hive-exec-log4j2.properties");
-        status = modify_hive_config("property.hive.log.dir", "${sys:java.io.tmpdir}/${sys:user.name}", "hive-exec-log4j2.properties");
-        handle_result(status, "property.hive.log.dir", "${sys:java.io.tmpdir}/${sys:user.name}", "hive-exec-log4j2.properties");
-        status = modify_hive_config("property.hive.log.file", "${sys:hive.query.id}.log", "hive-exec-log4j2.properties");
-        handle_result(status, "property.hive.log.file", "${sys:hive.query.id}.log", "hive-exec-log4j2.properties");
+//        status = modify_hive_config("property.hive.log.dir", "${sys:java.io.tmpdir}/${sys:user.name}", "hive-exec-log4j2.properties");
+//        handle_result(status, "property.hive.log.dir", "${sys:java.io.tmpdir}/${sys:user.name}", "hive-exec-log4j2.properties");
+//        status = modify_hive_config("property.hive.log.file", "${sys:hive.query.id}.log", "hive-exec-log4j2.properties");
+//        handle_result(status, "property.hive.log.file", "${sys:hive.query.id}.log", "hive-exec-log4j2.properties");
 
         //			 Appender declarations
         status = modify_hive_config("appenders", "console, FA", "hive-exec-log4j2.properties");
@@ -1620,8 +1634,8 @@ void configure_target_component(Component target) {
         handle_result(status, "appender.FA.type", "File", "hive-exec-log4j2.properties");
         status = modify_hive_config("appender.FA.name", "FA", "hive-exec-log4j2.properties");
         handle_result(status, "appender.FA.name", "FA", "hive-exec-log4j2.properties");
-        status = modify_hive_config("appender.FA.fileName", "${sys:hive.log.dir}/${sys:hive.log.file}", "hive-exec-log4j2.properties");
-        handle_result(status, "appender.FA.fileName", "${sys:hive.log.dir}/${sys:hive.log.file}", "hive-exec-log4j2.properties");
+//        status = modify_hive_config("appender.FA.fileName", "${sys:hive.log.dir}/${sys:hive.log.file}", "hive-exec-log4j2.properties");
+//        handle_result(status, "appender.FA.fileName", "${sys:hive.log.dir}/${sys:hive.log.file}", "hive-exec-log4j2.properties");
         status = modify_hive_config("appender.FA.layout.type", "PatternLayout", "hive-exec-log4j2.properties");
         handle_result(status, "appender.FA.layout.type", "PatternLayout", "hive-exec-log4j2.properties");
         status = modify_hive_config("appender.FA.layout.pattern", "%d{ISO8601} %-5p [%t]: %c{2} (%F:%M(%L)) - %m%n", "hive-exec-log4j2.properties");
@@ -1654,12 +1668,12 @@ void configure_target_component(Component target) {
         handle_result(status, "logger.JPOX.level", "ERROR", "hive-exec-log4j2.properties");
 
         //			 Root logger configuration
-        status = modify_hive_config("rootLogger.level", "${sys:hive.log.level}", "hive-exec-log4j2.properties");
-        handle_result(status, "rootLogger.level", "${sys:hive.log.level}", "hive-exec-log4j2.properties");
+//        status = modify_hive_config("rootLogger.level", "${sys:hive.log.level}", "hive-exec-log4j2.properties");
+//        handle_result(status, "rootLogger.level", "${sys:hive.log.level}", "hive-exec-log4j2.properties");
         status = modify_hive_config("rootLogger.appenderRefs", "root", "hive-exec-log4j2.properties");
         handle_result(status, "rootLogger.appenderRefs", "root", "hive-exec-log4j2.properties");
-        status = modify_hive_config("rootLogger.appenderRef.root.ref", "${sys:hive.root.logger}", "hive-exec-log4j2.properties");
-        handle_result(status, "rootLogger.appenderRef.root.ref", "${sys:hive.root.logger}", "hive-exec-log4j2.properties");
+//        status = modify_hive_config("rootLogger.appenderRef.root.ref", "${sys:hive.root.logger}", "hive-exec-log4j2.properties");
+//        handle_result(status, "rootLogger.appenderRef.root.ref", "${sys:hive.root.logger}", "hive-exec-log4j2.properties");
         //			 Standalone properties (outside content)
         status = modify_hive_config("hive2_log_maxfilesize", "256", "hive-site.xml");
         handle_result(status, "hive2_log_maxfilesize", "256", "hive-site.xml");
@@ -1673,12 +1687,12 @@ void configure_target_component(Component target) {
         handle_result(status, "name", "HiveLog4j2", "hive-log4j2.properties");
         status = modify_hive_config("packages", "org.apache.hadoop.hive.ql.log", "hive-log4j2.properties");
         handle_result(status, "packages", "org.apache.hadoop.hive.ql.log", "hive-log4j2.properties");
-        status = modify_hive_config("property.hive.log.level", "{{hive_log_level}}", "hive-log4j2.properties");
-        handle_result(status, "property.hive.log.level", "{{hive_log_level}}", "hive-log4j2.properties");
+//        status = modify_hive_config("property.hive.log.level", "{{hive_log_level}}", "hive-log4j2.properties");
+//        handle_result(status, "property.hive.log.level", "{{hive_log_level}}", "hive-log4j2.properties");
         status = modify_hive_config("property.hive.root.logger", "DRFA", "hive-log4j2.properties");
         handle_result(status, "property.hive.root.logger", "DRFA", "hive-log4j2.properties");
-        status = modify_hive_config("property.hive.log.dir", "${sys:java.io.tmpdir}/${sys:user.name}", "hive-log4j2.properties");
-        handle_result(status, "property.hive.log.dir", "${sys:java.io.tmpdir}/${sys:user.name}", "hive-log4j2.properties");
+//        status = modify_hive_config("property.hive.log.dir", "${sys:java.io.tmpdir}/${sys:user.name}", "hive-log4j2.properties");
+//        handle_result(status, "property.hive.log.dir", "${sys:java.io.tmpdir}/${sys:user.name}", "hive-log4j2.properties");
         status = modify_hive_config("property.hive.log.file", "hive.log", "hive-log4j2.properties");
         handle_result(status, "property.hive.log.file", "hive.log", "hive-log4j2.properties");
         status = modify_hive_config("appenders", "console, DRFA", "hive-log4j2.properties");
@@ -1697,10 +1711,10 @@ void configure_target_component(Component target) {
         handle_result(status, "appender.DRFA.type", "RollingFile", "hive-log4j2.properties");
         status = modify_hive_config("appender.DRFA.name", "DRFA", "hive-log4j2.properties");
         handle_result(status, "appender.DRFA.name", "DRFA", "hive-log4j2.properties");
-        status = modify_hive_config("appender.DRFA.fileName", "${sys:hive.log.dir}/${sys:hive.log.file}", "hive-log4j2.properties");
-        handle_result(status, "appender.DRFA.fileName", "${sys:hive.log.dir}/${sys:hive.log.file}", "hive-log4j2.properties");
-        status = modify_hive_config("appender.DRFA.filePattern", "${sys:hive.log.dir}/${sys:hive.log.file}.%d{yyyy-MM-dd}_%i.gz", "hive-log4j2.properties");
-        handle_result(status, "appender.DRFA.filePattern", "${sys:hive.log.dir}/${sys:hive.log.file}.%d{yyyy-MM-dd}_%i.gz", "hive-log4j2.properties");
+//        status = modify_hive_config("appender.DRFA.fileName", "${sys:hive.log.dir}/${sys:hive.log.file}", "hive-log4j2.properties");
+//        handle_result(status, "appender.DRFA.fileName", "${sys:hive.log.dir}/${sys:hive.log.file}", "hive-log4j2.properties");
+//        status = modify_hive_config("appender.DRFA.filePattern", "${sys:hive.log.dir}/${sys:hive.log.file}.%d{yyyy-MM-dd}_%i.gz", "hive-log4j2.properties");
+//        handle_result(status, "appender.DRFA.filePattern", "${sys:hive.log.dir}/${sys:hive.log.file}.%d{yyyy-MM-dd}_%i.gz", "hive-log4j2.properties");
         status = modify_hive_config("appender.DRFA.layout.type", "PatternLayout", "hive-log4j2.properties");
         handle_result(status, "appender.DRFA.layout.type", "PatternLayout", "hive-log4j2.properties");
         status = modify_hive_config("appender.DRFA.layout.pattern", "%d{ISO8601} %-5p [%t]: %c{2} (%F:%M(%L)) - %m%n", "hive-log4j2.properties");
@@ -1715,12 +1729,12 @@ void configure_target_component(Component target) {
         handle_result(status, "appender.DRFA.policies.time.modulate", "true", "hive-log4j2.properties");
         status = modify_hive_config("appender.DRFA.strategy.type", "DefaultRolloverStrategy", "hive-log4j2.properties");
         handle_result(status, "appender.DRFA.strategy.type", "DefaultRolloverStrategy", "hive-log4j2.properties");
-        status = modify_hive_config("appender.DRFA.strategy.max", "{{hive2_log_maxbackupindex}}", "hive-log4j2.properties");
-        handle_result(status, "appender.DRFA.strategy.max", "{{hive2_log_maxbackupindex}}", "hive-log4j2.properties");
+//        status = modify_hive_config("appender.DRFA.strategy.max", "{{hive2_log_maxbackupindex}}", "hive-log4j2.properties");
+//        handle_result(status, "appender.DRFA.strategy.max", "{{hive2_log_maxbackupindex}}", "hive-log4j2.properties");
         status = modify_hive_config("appender.DRFA.policies.fsize.type", "SizeBasedTriggeringPolicy", "hive-log4j2.properties");
         handle_result(status, "appender.DRFA.policies.fsize.type", "SizeBasedTriggeringPolicy", "hive-log4j2.properties");
-        status = modify_hive_config("appender.DRFA.policies.fsize.size", "{{hive2_log_maxfilesize}}MB", "hive-log4j2.properties");
-        handle_result(status, "appender.DRFA.policies.fsize.size", "{{hive2_log_maxfilesize}}MB", "hive-log4j2.properties");
+//        status = modify_hive_config("appender.DRFA.policies.fsize.size", "{{hive2_log_maxfilesize}}MB", "hive-log4j2.properties");
+//        handle_result(status, "appender.DRFA.policies.fsize.size", "{{hive2_log_maxfilesize}}MB", "hive-log4j2.properties");
         status = modify_hive_config("loggers", "NIOServerCnxn, ClientCnxnSocketNIO, DataNucleus, Datastore, JPOX", "hive-log4j2.properties");
         handle_result(status, "loggers", "NIOServerCnxn, ClientCnxnSocketNIO, DataNucleus, Datastore, JPOX", "hive-log4j2.properties");
         status = modify_hive_config("logger.NIOServerCnxn.name", "org.apache.zookeeper.server.NIOServerCnxn", "hive-log4j2.properties");
@@ -1743,12 +1757,12 @@ void configure_target_component(Component target) {
         handle_result(status, "logger.JPOX.name", "JPOX", "hive-log4j2.properties");
         status = modify_hive_config("logger.JPOX.level", "ERROR", "hive-log4j2.properties");
         handle_result(status, "logger.JPOX.level", "ERROR", "hive-log4j2.properties");
-        status = modify_hive_config("rootLogger.level", "${sys:hive.log.level}", "hive-log4j2.properties");
-        handle_result(status, "rootLogger.level", "${sys:hive.log.level}", "hive-log4j2.properties");
+//        status = modify_hive_config("rootLogger.level", "${sys:hive.log.level}", "hive-log4j2.properties");
+//        handle_result(status, "rootLogger.level", "${sys:hive.log.level}", "hive-log4j2.properties");
         status = modify_hive_config("rootLogger.appenderRefs", "root", "hive-log4j2.properties");
         handle_result(status, "rootLogger.appenderRefs", "root", "hive-log4j2.properties");
-        status = modify_hive_config("rootLogger.appenderRef.root.ref", "${sys:hive.root.logger}", "hive-log4j2.properties");
-        handle_result(status, "rootLogger.appenderRef.root.ref", "${sys:hive.root.logger}", "hive-log4j2.properties");
+//        status = modify_hive_config("rootLogger.appenderRef.root.ref", "${sys:hive.root.logger}", "hive-log4j2.properties");
+//        handle_result(status, "rootLogger.appenderRef.root.ref", "${sys:hive.root.logger}", "hive-log4j2.properties");
         //			 Tez Configuration
         status = modify_hive_config("tez.session.am.dag.submit.timeout.secs", "0", "hive-site.xml");
         handle_result(status, "tez.session.am.dag.submit.timeout.secs", "0", "hive-site.xml");
@@ -1888,8 +1902,8 @@ void configure_target_component(Component target) {
         //			 Metastore URIs
         status = modify_hive_config("hive.metastore.uris", "thrift:localhost:9083", "hive-site.xml");
         handle_result(status, "hive.metastore.uris", "thrift:localhost:9083", "hive-site.xml");
-        status = modify_hive_config("hive.metastore.db.type", "{{hive_metastore_db_type}", "hive-site.xml");
-        handle_result(status, "hive.metastore.db.type", "{{hive_metastore_db_type}", "hive-site.xml");
+//        status = modify_hive_config("hive.metastore.db.type", "{{hive_metastore_db_type}", "hive-site.xml");
+//        handle_result(status, "hive.metastore.db.type", "{{hive_metastore_db_type}", "hive-site.xml");
 
         //			 Database Connection (Sensitive)
         status = modify_hive_config("javax.jdo.option.ConnectionPassword", "", "hive-site.xml");//   PASSWORD TYPE
@@ -2330,8 +2344,8 @@ void configure_target_component(Component target) {
         handle_result(status, "property.hive.log.level", "WARN", "llap-cli-log4j2.properties");
         status = modify_hive_config("property.hive.root.logger", "console", "llap-cli-log4j2.properties");
         handle_result(status, "property.hive.root.logger", "console", "llap-cli-log4j2.properties");
-        status = modify_hive_config("property.hive.log.dir", "${sys:java.io.tmpdir}/${sys:user.name}", "llap-cli-log4j2.properties");
-        handle_result(status, "property.hive.log.dir", "${sys:java.io.tmpdir}/${sys:user.name}", "llap-cli-log4j2.properties");
+//        status = modify_hive_config("property.hive.log.dir", "${sys:java.io.tmpdir}/${sys:user.name}", "llap-cli-log4j2.properties");
+//        handle_result(status, "property.hive.log.dir", "${sys:java.io.tmpdir}/${sys:user.name}", "llap-cli-log4j2.properties");
         status = modify_hive_config("property.hive.log.file", "llap-cli.log", "llap-cli-log4j2.properties");
         handle_result(status, "property.hive.log.file", "llap-cli.log", "llap-cli-log4j2.properties");
         status = modify_hive_config("property.hive.llapstatus.consolelogger.level", "INFO", "llap-cli-log4j2.properties");
@@ -2361,10 +2375,10 @@ void configure_target_component(Component target) {
         status = modify_hive_config("appender.DRFA.type", "RollingRandomAccessFile", "llap-cli-log4j2.properties");
         handle_result(status, "appender.DRFA.type", "RollingRandomAccessFile", "llap-cli-log4j2.properties");
         handle_result(status, "appender.DRFA.name", "DRFA", "llap-cli-log4j2.properties");
-        status = modify_hive_config("appender.DRFA.fileName", "${sys:hive.log.dir}/${sys:hive.log.file}", "llap-cli-log4j2.properties");
-        handle_result(status, "appender.DRFA.fileName", "${sys:hive.log.dir}/${sys:hive.log.file}", "llap-cli-log4j2.properties");
-        status = modify_hive_config("appender.DRFA.filePattern", "${sys:hive.log.dir}/${sys:hive.log.file}.%d{yyyy-MM-dd}_%i", "llap-cli-log4j2.properties");
-        handle_result(status, "appender.DRFA.filePattern", "${sys:hive.log.dir}/${sys:hive.log.file}.%d{yyyy-MM-dd}_%i", "llap-cli-log4j2.properties");
+//        status = modify_hive_config("appender.DRFA.fileName", "${sys:hive.log.dir}/${sys:hive.log.file}", "llap-cli-log4j2.properties");
+//        handle_result(status, "appender.DRFA.fileName", "${sys:hive.log.dir}/${sys:hive.log.file}", "llap-cli-log4j2.properties");
+//        status = modify_hive_config("appender.DRFA.filePattern", "${sys:hive.log.dir}/${sys:hive.log.file}.%d{yyyy-MM-dd}_%i", "llap-cli-log4j2.properties");
+//        handle_result(status, "appender.DRFA.filePattern", "${sys:hive.log.dir}/${sys:hive.log.file}.%d{yyyy-MM-dd}_%i", "llap-cli-log4j2.properties");
         status = modify_hive_config("appender.DRFA.layout.type", "PatternLayout", "llap-cli-log4j2.properties");
         handle_result(status, "appender.DRFA.layout.type", "PatternLayout", "llap-cli-log4j2.properties");
         status = modify_hive_config("appender.DRFA.layout.pattern", "%d{ISO8601} %5p [%t] %c{2}: %m%n", "llap-cli-log4j2.properties");
@@ -2379,12 +2393,12 @@ void configure_target_component(Component target) {
         handle_result(status, "appender.DRFA.policies.time.modulate", "true", "llap-cli-log4j2.properties");
         status = modify_hive_config("appender.DRFA.strategy.type", "DefaultRolloverStrategy", "llap-cli-log4j2.properties");
         handle_result(status, "appender.DRFA.strategy.type", "DefaultRolloverStrategy", "llap-cli-log4j2.properties");
-        status = modify_hive_config("appender.DRFA.strategy.max", "{{llap_cli_log_maxbackupindex}", "llap-cli-log4j2.properties");
-        handle_result(status, "appender.DRFA.strategy.max", "{{llap_cli_log_maxbackupindex}", "llap-cli-log4j2.properties");
+//        status = modify_hive_config("appender.DRFA.strategy.max", "{{llap_cli_log_maxbackupindex}", "llap-cli-log4j2.properties");
+//        handle_result(status, "appender.DRFA.strategy.max", "{{llap_cli_log_maxbackupindex}", "llap-cli-log4j2.properties");
         status = modify_hive_config("appender.DRFA.policies.fsize.type", "SizeBasedTriggeringPolicy", "llap-cli-log4j2.properties");
         handle_result(status, "appender.DRFA.policies.fsize.type", "SizeBasedTriggeringPolicy", "llap-cli-log4j2.properties");
-        status = modify_hive_config("appender.DRFA.policies.fsize.size", "{{llap_cli_log_maxfilesize}}MB", "llap-cli-log4j2.properties");
-        handle_result(status, "appender.DRFA.policies.fsize.size", "{{llap_cli_log_maxfilesize}}MB", "llap-cli-log4j2.properties");
+//        status = modify_hive_config("appender.DRFA.policies.fsize.size", "{{llap_cli_log_maxfilesize}}MB", "llap-cli-log4j2.properties");
+//        handle_result(status, "appender.DRFA.policies.fsize.size", "{{llap_cli_log_maxfilesize}}MB", "llap-cli-log4j2.properties");
         status = modify_hive_config("loggers", "ZooKeeper, DataNucleus, Datastore, JPOX, HadoopConf, LlapStatusServiceDriverConsole", "llap-cli-log4j2.properties");
         handle_result(status, "loggers", "ZooKeeper, DataNucleus, Datastore, JPOX, HadoopConf, LlapStatusServiceDriverConsole", "llap-cli-log4j2.properties");
         status = modify_hive_config("logger.ZooKeeper.name", "org.apache.zookeeper", "llap-cli-log4j2.properties");
@@ -2411,14 +2425,14 @@ void configure_target_component(Component target) {
         handle_result(status, "logger.LlapStatusServiceDriverConsole.name", "LlapStatusServiceDriverConsole", "llap-cli-log4j2.properties");
         status = modify_hive_config("logger.LlapStatusServiceDriverConsole.additivity", "false", "llap-cli-log4j2.properties");
         handle_result(status, "logger.LlapStatusServiceDriverConsole.additivity", "false", "llap-cli-log4j2.properties");
-        status = modify_hive_config("logger.LlapStatusServiceDriverConsole.level", "${sys:hive.llapstatus.consolelogger.level}", "llap-cli-log4j2.properties");
-        handle_result(status, "logger.LlapStatusServiceDriverConsole.level", "${sys:hive.llapstatus.consolelogger.level}", "llap-cli-log4j2.properties");
-        status = modify_hive_config("rootLogger.level", "${sys:hive.log.level}", "llap-cli-log4j2.properties");
-        handle_result(status, "rootLogger.level", "${sys:hive.log.level}", "llap-cli-log4j2.properties");
+//        status = modify_hive_config("logger.LlapStatusServiceDriverConsole.level", "${sys:hive.llapstatus.consolelogger.level}", "llap-cli-log4j2.properties");
+//        handle_result(status, "logger.LlapStatusServiceDriverConsole.level", "${sys:hive.llapstatus.consolelogger.level}", "llap-cli-log4j2.properties");
+//        status = modify_hive_config("rootLogger.level", "${sys:hive.log.level}", "llap-cli-log4j2.properties");
+//        handle_result(status, "rootLogger.level", "${sys:hive.log.level}", "llap-cli-log4j2.properties");
         status = modify_hive_config("rootLogger.appenderRefs", "root, DRFA", "llap-cli-log4j2.properties");
         handle_result(status, "rootLogger.appenderRefs", "root, DRFA", "llap-cli-log4j2.properties");
-        status = modify_hive_config("rootLogger.appenderRef.root.ref", "${sys:hive.root.logger}", "llap-cli-log4j2.properties");
-        handle_result(status, "rootLogger.appenderRef.root.ref", "${sys:hive.root.logger}", "llap-cli-log4j2.properties");
+//        status = modify_hive_config("rootLogger.appenderRef.root.ref", "${sys:hive.root.logger}", "llap-cli-log4j2.properties");
+//        handle_result(status, "rootLogger.appenderRef.root.ref", "${sys:hive.root.logger}", "llap-cli-log4j2.properties");
         status = modify_hive_config("rootLogger.appenderRef.DRFA.ref", "DRFA", "llap-cli-log4j2.properties");
         handle_result(status, "rootLogger.appenderRef.DRFA.ref", "DRFA", "llap-cli-log4j2.properties");
         status = modify_hive_config("logger.LlapStatusServiceDriverConsole.appenderRefs", "llapstatusconsole, DRFA", "llap-cli-log4j2.properties");
@@ -2441,8 +2455,8 @@ void configure_target_component(Component target) {
         handle_result(status, "name", "LlapDaemonLog4j2", "llap-daemon-log4j2.properties");
         status = modify_hive_config("packages", "org.apache.hadoop.hive.ql.log", "llap-daemon-log4j2.properties");
         handle_result(status, "packages", "org.apache.hadoop.hive.ql.log", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("property.llap.daemon.log.level", "{{hive_log_level}}", "llap-daemon-log4j2.properties");
-        handle_result(status, "property.llap.daemon.log.level", "{{hive_log_level}}", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("property.llap.daemon.log.level", "{{hive_log_level}}", "llap-daemon-log4j2.properties");
+//        handle_result(status, "property.llap.daemon.log.level", "{{hive_log_level}}", "llap-daemon-log4j2.properties");
         status = modify_hive_config("property.llap.daemon.root.logger", "console", "llap-daemon-log4j2.properties");
         handle_result(status, "property.llap.daemon.root.logger", "console", "llap-daemon-log4j2.properties");
         status = modify_hive_config("property.llap.daemon.log.dir", ".", "llap-daemon-log4j2.properties");
@@ -2451,10 +2465,10 @@ void configure_target_component(Component target) {
         handle_result(status, "property.llap.daemon.log.file", "llapdaemon.log", "llap-daemon-log4j2.properties");
         status = modify_hive_config("property.llap.daemon.historylog.file", "llapdaemon_history.log", "llap-daemon-log4j2.properties");
         handle_result(status, "property.llap.daemon.historylog.file", "llapdaemon_history.log", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("property.llap.daemon.log.maxfilesize", "{{hive_llap_log_maxfilesize}}MB", "llap-daemon-log4j2.properties");
-        handle_result(status, "property.llap.daemon.log.maxfilesize", "{{hive_llap_log_maxfilesize}}MB", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("property.llap.daemon.log.maxbackupindex", "{{hive_llap_log_maxbackupindex}}", "llap-daemon-log4j2.properties");
-        handle_result(status, "property.llap.daemon.log.maxbackupindex", "{{hive_llap_log_maxbackupindex}}", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("property.llap.daemon.log.maxfilesize", "{{hive_llap_log_maxfilesize}}MB", "llap-daemon-log4j2.properties");
+//        handle_result(status, "property.llap.daemon.log.maxfilesize", "{{hive_llap_log_maxfilesize}}MB", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("property.llap.daemon.log.maxbackupindex", "{{hive_llap_log_maxbackupindex}}", "llap-daemon-log4j2.properties");
+//        handle_result(status, "property.llap.daemon.log.maxbackupindex", "{{hive_llap_log_maxbackupindex}}", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appenders", "console, RFA, HISTORYAPPENDER, query-routing", "llap-daemon-log4j2.properties");
         handle_result(status, "appenders", "console, RFA, HISTORYAPPENDER, query-routing", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.console.type", "Console", "llap-daemon-log4j2.properties");
@@ -2471,10 +2485,10 @@ void configure_target_component(Component target) {
         handle_result(status, "appender.RFA.type", "RollingRandomAccessFile", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.RFA.name", "RFA", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.RFA.name", "RFA", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("appender.RFA.fileName", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.log.file}", "llap-daemon-log4j2.properties");
-        handle_result(status, "appender.RFA.fileName", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.log.file}", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("appender.RFA.filePattern", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.log.file}_%d{yyyy-MM-dd-HH}_%i.done", "llap-daemon-log4j2.properties");
-        handle_result(status, "appender.RFA.filePattern", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.log.file}_%d{yyyy-MM-dd-HH}_%i.done", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("appender.RFA.fileName", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.log.file}", "llap-daemon-log4j2.properties");
+//        handle_result(status, "appender.RFA.fileName", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.log.file}", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("appender.RFA.filePattern", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.log.file}_%d{yyyy-MM-dd-HH}_%i.done", "llap-daemon-log4j2.properties");
+//        handle_result(status, "appender.RFA.filePattern", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.log.file}_%d{yyyy-MM-dd-HH}_%i.done", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.RFA.layout.type", "PatternLayout", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.RFA.layout.type", "PatternLayout", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.RFA.layout.pattern", "%d{ISO8601} %-5p [%t (%X{fragmentId})] %c: %m%n", "llap-daemon-log4j2.properties");
@@ -2489,20 +2503,20 @@ void configure_target_component(Component target) {
         handle_result(status, "appender.RFA.policies.time.modulate", "true", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.RFA.policies.size.type", "SizeBasedTriggeringPolicy", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.RFA.policies.size.type", "SizeBasedTriggeringPolicy", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("appender.RFA.policies.size.size", "${sys:llap.daemon.log.maxfilesize}", "llap-daemon-log4j2.properties");
-        handle_result(status, "appender.RFA.policies.size.size", "${sys:llap.daemon.log.maxfilesize}", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("appender.RFA.policies.size.size", "${sys:llap.daemon.log.maxfilesize}", "llap-daemon-log4j2.properties");
+//        handle_result(status, "appender.RFA.policies.size.size", "${sys:llap.daemon.log.maxfilesize}", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.RFA.strategy.type", "DefaultRolloverStrategy", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.RFA.strategy.type", "DefaultRolloverStrategy", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("appender.RFA.strategy.max", "${sys:llap.daemon.log.maxbackupindex}", "llap-daemon-log4j2.properties");
-        handle_result(status, "appender.RFA.strategy.max", "${sys:llap.daemon.log.maxbackupindex}", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("appender.RFA.strategy.max", "${sys:llap.daemon.log.maxbackupindex}", "llap-daemon-log4j2.properties");
+//        handle_result(status, "appender.RFA.strategy.max", "${sys:llap.daemon.log.maxbackupindex}", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.HISTORYAPPENDER.type", "RollingRandomAccessFile", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.HISTORYAPPENDER.type", "RollingRandomAccessFile", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.HISTORYAPPENDER.name", "HISTORYAPPENDER", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.HISTORYAPPENDER.name", "HISTORYAPPENDER", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("appender.HISTORYAPPENDER.fileName", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.historylog.file}", "llap-daemon-log4j2.properties");
-        handle_result(status, "appender.HISTORYAPPENDER.fileName", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.historylog.file}", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("appender.HISTORYAPPENDER.filePattern", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.historylog.file}_%d{yyyy-MM-dd}_%i.done", "llap-daemon-log4j2.properties");
-        handle_result(status, "appender.HISTORYAPPENDER.filePattern", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.historylog.file}_%d{yyyy-MM-dd}_%i.done", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("appender.HISTORYAPPENDER.fileName", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.historylog.file}", "llap-daemon-log4j2.properties");
+//        handle_result(status, "appender.HISTORYAPPENDER.fileName", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.historylog.file}", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("appender.HISTORYAPPENDER.filePattern", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.historylog.file}_%d{yyyy-MM-dd}_%i.done", "llap-daemon-log4j2.properties");
+//        handle_result(status, "appender.HISTORYAPPENDER.filePattern", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.historylog.file}_%d{yyyy-MM-dd}_%i.done", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.HISTORYAPPENDER.layout.type", "PatternLayout", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.HISTORYAPPENDER.layout.type", "PatternLayout", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.HISTORYAPPENDER.layout.pattern", "%m%n", "llap-daemon-log4j2.properties");
@@ -2511,8 +2525,8 @@ void configure_target_component(Component target) {
         handle_result(status, "appender.HISTORYAPPENDER.policies.type", "Policies", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.HISTORYAPPENDER.policies.size.type", "SizeBasedTriggeringPolicy", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.HISTORYAPPENDER.policies.size.type", "SizeBasedTriggeringPolicy", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("appender.HISTORYAPPENDER.policies.size.size", "${sys:llap.daemon.log.maxfilesize}", "llap-daemon-log4j2.properties");
-        handle_result(status, "appender.HISTORYAPPENDER.policies.size.size", "${sys:llap.daemon.log.maxfilesize}", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("appender.HISTORYAPPENDER.policies.size.size", "${sys:llap.daemon.log.maxfilesize}", "llap-daemon-log4j2.properties");
+//        handle_result(status, "appender.HISTORYAPPENDER.policies.size.size", "${sys:llap.daemon.log.maxfilesize}", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.HISTORYAPPENDER.policies.time.type", "TimeBasedTriggeringPolicy", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.HISTORYAPPENDER.policies.time.type", "TimeBasedTriggeringPolicy", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.HISTORYAPPENDER.policies.time.interval", "1", "llap-daemon-log4j2.properties");
@@ -2521,24 +2535,24 @@ void configure_target_component(Component target) {
         handle_result(status, "appender.HISTORYAPPENDER.policies.time.modulate", "true", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.HISTORYAPPENDER.strategy.type", "DefaultRolloverStrategy", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.HISTORYAPPENDER.strategy.type", "DefaultRolloverStrategy", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("appender.HISTORYAPPENDER.strategy.max", "${sys:llap.daemon.log.maxbackupindex}", "llap-daemon-log4j2.properties");
-        handle_result(status, "appender.HISTORYAPPENDER.strategy.max", "${sys:llap.daemon.log.maxbackupindex}", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("appender.HISTORYAPPENDER.strategy.max", "${sys:llap.daemon.log.maxbackupindex}", "llap-daemon-log4j2.properties");
+//        handle_result(status, "appender.HISTORYAPPENDER.strategy.max", "${sys:llap.daemon.log.maxbackupindex}", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.query-routing.type", "Routing", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.query-routing.type", "Routing", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.query-routing.name", "query-routing", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.query-routing.name", "query-routing", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.query-routing.routes.type", "Routes", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.query-routing.routes.type", "Routes", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("appender.query-routing.routes.pattern", "$${ctx:queryId}", "llap-daemon-log4j2.properties");
-        handle_result(status, "appender.query-routing.routes.pattern", "$${ctx:queryId}", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("appender.query-routing.routes.pattern", "$${ctx:queryId}", "llap-daemon-log4j2.properties");
+//        handle_result(status, "appender.query-routing.routes.pattern", "$${ctx:queryId}", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.query-routing.purgePolicy.type", "LlapRoutingAppenderPurgePolicy", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.query-routing.purgePolicy.type", "LlapRoutingAppenderPurgePolicy", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.query-routing.purgePolicy.name", "llapLogPurgerQueryRouting", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.query-routing.purgePolicy.name", "llapLogPurgerQueryRouting", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.query-routing.routes.route-default.type", "Route", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.query-routing.routes.route-default.type", "Route", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("appender.query-routing.routes.route-default.key", "$${ctx:queryId}", "llap-daemon-log4j2.properties");
-        handle_result(status, "appender.query-routing.routes.route-default.key", "$${ctx:queryId}", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("appender.query-routing.routes.route-default.key", "$${ctx:queryId}", "llap-daemon-log4j2.properties");
+//        handle_result(status, "appender.query-routing.routes.route-default.key", "$${ctx:queryId}", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.query-routing.routes.route-default.ref", "RFA", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.query-routing.routes.route-default.ref", "RFA", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.query-routing.routes.route-mdc.type", "Route", "llap-daemon-log4j2.properties");
@@ -2551,8 +2565,8 @@ void configure_target_component(Component target) {
         handle_result(status, "appender.query-routing.routes.route-mdc.file-mdc.app.type", "RandomAccessFile", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.query-routing.routes.route-mdc.file-mdc.app.name", "file-mdc", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.query-routing.routes.route-mdc.file-mdc.app.name", "file-mdc", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("appender.query-routing.routes.route-mdc.file-mdc.app.fileName", "${sys:llap.daemon.log.dir}/${ctx:queryId}-${ctx:dagId}.log", "llap-daemon-log4j2.properties");
-        handle_result(status, "appender.query-routing.routes.route-mdc.file-mdc.app.fileName", "${sys:llap.daemon.log.dir}/${ctx:queryId}-${ctx:dagId}.log", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("appender.query-routing.routes.route-mdc.file-mdc.app.fileName", "${sys:llap.daemon.log.dir}/${ctx:queryId}-${ctx:dagId}.log", "llap-daemon-log4j2.properties");
+//        handle_result(status, "appender.query-routing.routes.route-mdc.file-mdc.app.fileName", "${sys:llap.daemon.log.dir}/${ctx:queryId}-${ctx:dagId}.log", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.query-routing.routes.route-mdc.file-mdc.app.layout.type", "PatternLayout", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.query-routing.routes.route-mdc.file-mdc.app.layout.type", "PatternLayout", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.query-routing.routes.route-mdc.file-mdc.app.layout.pattern", "%d{ISO8601} %5p [%t (%X{fragmentId})] %c{2}: %m%n", "llap-daemon-log4j2.properties");
@@ -2625,12 +2639,12 @@ void configure_target_component(Component target) {
         handle_result(status, "logger.HistoryLogger.appenderRefs", "HistoryAppender", "llap-daemon-log4j2.properties");
         status = modify_hive_config("logger.HistoryLogger.appenderRef.HistoryAppender.ref", "HISTORYAPPENDER", "llap-daemon-log4j2.properties");
         handle_result(status, "logger.HistoryLogger.appenderRef.HistoryAppender.ref", "HISTORYAPPENDER", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("rootLogger.level", "${sys:llap.daemon.log.level}", "llap-daemon-log4j2.properties");
-        handle_result(status, "rootLogger.level", "${sys:llap.daemon.log.level}", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("rootLogger.level", "${sys:llap.daemon.log.level}", "llap-daemon-log4j2.properties");
+//        handle_result(status, "rootLogger.level", "${sys:llap.daemon.log.level}", "llap-daemon-log4j2.properties");
         status = modify_hive_config("rootLogger.appenderRefs", "root", "llap-daemon-log4j2.properties");
         handle_result(status, "rootLogger.appenderRefs", "root", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("rootLogger.appenderRef.root.ref", "${sys:llap.daemon.root.logger}", "llap-daemon-log4j2.properties");
-        handle_result(status, "rootLogger.appenderRef.root.ref", "${sys:llap.daemon.root.logger}", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("rootLogger.appenderRef.root.ref", "${sys:llap.daemon.root.logger}", "llap-daemon-log4j2.properties");
+//        handle_result(status, "rootLogger.appenderRef.root.ref", "${sys:llap.daemon.root.logger}", "llap-daemon-log4j2.properties");
         //			 ... continuing from previous response
 
         //			 Standalone log rotation settings
@@ -2646,8 +2660,8 @@ void configure_target_component(Component target) {
         handle_result(status, "name", "LlapDaemonLog4j2", "llap-daemon-log4j2.properties");
         status = modify_hive_config("packages", "org.apache.hadoop.hive.ql.log", "llap-daemon-log4j2.properties");
         handle_result(status, "packages", "org.apache.hadoop.hive.ql.log", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("property.llap.daemon.log.level", "{{hive_log_level}}", "llap-daemon-log4j2.properties");
-        handle_result(status, "property.llap.daemon.log.level", "{{hive_log_level}}", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("property.llap.daemon.log.level", "{{hive_log_level}}", "llap-daemon-log4j2.properties");
+//        handle_result(status, "property.llap.daemon.log.level", "{{hive_log_level}}", "llap-daemon-log4j2.properties");
         status = modify_hive_config("property.llap.daemon.root.logger", "console", "llap-daemon-log4j2.properties");
         handle_result(status, "property.llap.daemon.root.logger", "console", "llap-daemon-log4j2.properties");
         status = modify_hive_config("property.llap.daemon.log.dir", ".", "llap-daemon-log4j2.properties");
@@ -2656,10 +2670,10 @@ void configure_target_component(Component target) {
         handle_result(status, "property.llap.daemon.log.file", "llapdaemon.log", "llap-daemon-log4j2.properties");
         status = modify_hive_config("property.llap.daemon.historylog.file", "llapdaemon_history.log", "llap-daemon-log4j2.properties");
         handle_result(status, "property.llap.daemon.historylog.file", "llapdaemon_history.log", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("property.llap.daemon.log.maxfilesize", "{{hive_llap_log_maxfilesize}}MB", "llap-daemon-log4j2.properties");
-        handle_result(status, "property.llap.daemon.log.maxfilesize", "{{hive_llap_log_maxfilesize}}MB", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("property.llap.daemon.log.maxbackupindex", "{{hive_llap_log_maxbackupindex}}", "llap-daemon-log4j2.properties");
-        handle_result(status, "property.llap.daemon.log.maxbackupindex", "{{hive_llap_log_maxbackupindex}}", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("property.llap.daemon.log.maxfilesize", "{{hive_llap_log_maxfilesize}}MB", "llap-daemon-log4j2.properties");
+//        handle_result(status, "property.llap.daemon.log.maxfilesize", "{{hive_llap_log_maxfilesize}}MB", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("property.llap.daemon.log.maxbackupindex", "{{hive_llap_log_maxbackupindex}}", "llap-daemon-log4j2.properties");
+//        handle_result(status, "property.llap.daemon.log.maxbackupindex", "{{hive_llap_log_maxbackupindex}}", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appenders", "console, RFA, HISTORYAPPENDER, query-routing", "llap-daemon-log4j2.properties");
         handle_result(status, "appenders", "console, RFA, HISTORYAPPENDER, query-routing", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.console.type", "Console", "llap-daemon-log4j2.properties");
@@ -2676,10 +2690,10 @@ void configure_target_component(Component target) {
         handle_result(status, "appender.RFA.type", "RollingRandomAccessFile", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.RFA.name", "RFA", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.RFA.name", "RFA", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("appender.RFA.fileName", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.log.file}", "llap-daemon-log4j2.properties");
-        handle_result(status, "appender.RFA.fileName", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.log.file}", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("appender.RFA.filePattern", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.log.file}_%d{yyyy-MM-dd-HH}_%i.done", "llap-daemon-log4j2.properties");
-        handle_result(status, "appender.RFA.filePattern", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.log.file}_%d{yyyy-MM-dd-HH}_%i.done", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("appender.RFA.fileName", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.log.file}", "llap-daemon-log4j2.properties");
+//        handle_result(status, "appender.RFA.fileName", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.log.file}", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("appender.RFA.filePattern", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.log.file}_%d{yyyy-MM-dd-HH}_%i.done", "llap-daemon-log4j2.properties");
+//        handle_result(status, "appender.RFA.filePattern", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.log.file}_%d{yyyy-MM-dd-HH}_%i.done", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.RFA.layout.type", "PatternLayout", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.RFA.layout.type", "PatternLayout", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.RFA.layout.pattern", "%d{ISO8601} %-5p [%t (%X{fragmentId})] %c: %m%n", "llap-daemon-log4j2.properties");
@@ -2694,20 +2708,20 @@ void configure_target_component(Component target) {
         handle_result(status, "appender.RFA.policies.time.modulate", "true", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.RFA.policies.size.type", "SizeBasedTriggeringPolicy", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.RFA.policies.size.type", "SizeBasedTriggeringPolicy", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("appender.RFA.policies.size.size", "${sys:llap.daemon.log.maxfilesize}", "llap-daemon-log4j2.properties");
-        handle_result(status, "appender.RFA.policies.size.size", "${sys:llap.daemon.log.maxfilesize}", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("appender.RFA.policies.size.size", "${sys:llap.daemon.log.maxfilesize}", "llap-daemon-log4j2.properties");
+//        handle_result(status, "appender.RFA.policies.size.size", "${sys:llap.daemon.log.maxfilesize}", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.RFA.strategy.type", "DefaultRolloverStrategy", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.RFA.strategy.type", "DefaultRolloverStrategy", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("appender.RFA.strategy.max", "${sys:llap.daemon.log.maxbackupindex}", "llap-daemon-log4j2.properties");
-        handle_result(status, "appender.RFA.strategy.max", "${sys:llap.daemon.log.maxbackupindex}", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("appender.RFA.strategy.max", "${sys:llap.daemon.log.maxbackupindex}", "llap-daemon-log4j2.properties");
+//        handle_result(status, "appender.RFA.strategy.max", "${sys:llap.daemon.log.maxbackupindex}", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.HISTORYAPPENDER.type", "RollingRandomAccessFile", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.HISTORYAPPENDER.type", "RollingRandomAccessFile", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.HISTORYAPPENDER.name", "HISTORYAPPENDER", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.HISTORYAPPENDER.name", "HISTORYAPPENDER", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("appender.HISTORYAPPENDER.fileName", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.historylog.file}", "llap-daemon-log4j2.properties");
-        handle_result(status, "appender.HISTORYAPPENDER.fileName", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.historylog.file}", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("appender.HISTORYAPPENDER.filePattern", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.historylog.file}_%d{yyyy-MM-dd}_%i.done", "llap-daemon-log4j2.properties");
-        handle_result(status, "appender.HISTORYAPPENDER.filePattern", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.historylog.file}_%d{yyyy-MM-dd}_%i.done", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("appender.HISTORYAPPENDER.fileName", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.historylog.file}", "llap-daemon-log4j2.properties");
+//        handle_result(status, "appender.HISTORYAPPENDER.fileName", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.historylog.file}", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("appender.HISTORYAPPENDER.filePattern", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.historylog.file}_%d{yyyy-MM-dd}_%i.done", "llap-daemon-log4j2.properties");
+//        handle_result(status, "appender.HISTORYAPPENDER.filePattern", "${sys:llap.daemon.log.dir}/${sys:llap.daemon.historylog.file}_%d{yyyy-MM-dd}_%i.done", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.HISTORYAPPENDER.layout.type", "PatternLayout", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.HISTORYAPPENDER.layout.type", "PatternLayout", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.HISTORYAPPENDER.layout.pattern", "%m%n", "llap-daemon-log4j2.properties");
@@ -2716,8 +2730,8 @@ void configure_target_component(Component target) {
         handle_result(status, "appender.HISTORYAPPENDER.policies.type", "Policies", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.HISTORYAPPENDER.policies.size.type", "SizeBasedTriggeringPolicy", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.HISTORYAPPENDER.policies.size.type", "SizeBasedTriggeringPolicy", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("appender.HISTORYAPPENDER.policies.size.size", "${sys:llap.daemon.log.maxfilesize}", "llap-daemon-log4j2.properties");
-        handle_result(status, "appender.HISTORYAPPENDER.policies.size.size", "${sys:llap.daemon.log.maxfilesize}", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("appender.HISTORYAPPENDER.policies.size.size", "${sys:llap.daemon.log.maxfilesize}", "llap-daemon-log4j2.properties");
+//        handle_result(status, "appender.HISTORYAPPENDER.policies.size.size", "${sys:llap.daemon.log.maxfilesize}", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.HISTORYAPPENDER.policies.time.type", "TimeBasedTriggeringPolicy", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.HISTORYAPPENDER.policies.time.type", "TimeBasedTriggeringPolicy", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.HISTORYAPPENDER.policies.time.interval", "1", "llap-daemon-log4j2.properties");
@@ -2726,24 +2740,24 @@ void configure_target_component(Component target) {
         handle_result(status, "appender.HISTORYAPPENDER.policies.time.modulate", "true", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.HISTORYAPPENDER.strategy.type", "DefaultRolloverStrategy", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.HISTORYAPPENDER.strategy.type", "DefaultRolloverStrategy", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("appender.HISTORYAPPENDER.strategy.max", "${sys:llap.daemon.log.maxbackupindex}", "llap-daemon-log4j2.properties");
-        handle_result(status, "appender.HISTORYAPPENDER.strategy.max", "${sys:llap.daemon.log.maxbackupindex}", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("appender.HISTORYAPPENDER.strategy.max", "${sys:llap.daemon.log.maxbackupindex}", "llap-daemon-log4j2.properties");
+//        handle_result(status, "appender.HISTORYAPPENDER.strategy.max", "${sys:llap.daemon.log.maxbackupindex}", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.query-routing.type", "Routing", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.query-routing.type", "Routing", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.query-routing.name", "query-routing", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.query-routing.name", "query-routing", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.query-routing.routes.type", "Routes", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.query-routing.routes.type", "Routes", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("appender.query-routing.routes.pattern", "$${ctx:queryId}", "llap-daemon-log4j2.properties");
-        handle_result(status, "appender.query-routing.routes.pattern", "$${ctx:queryId}", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("appender.query-routing.routes.pattern", "$${ctx:queryId}", "llap-daemon-log4j2.properties");
+//        handle_result(status, "appender.query-routing.routes.pattern", "$${ctx:queryId}", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.query-routing.purgePolicy.type", "LlapRoutingAppenderPurgePolicy", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.query-routing.purgePolicy.type", "LlapRoutingAppenderPurgePolicy", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.query-routing.purgePolicy.name", "llapLogPurgerQueryRouting", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.query-routing.purgePolicy.name", "llapLogPurgerQueryRouting", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.query-routing.routes.route-default.type", "Route", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.query-routing.routes.route-default.type", "Route", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("appender.query-routing.routes.route-default.key", "$${ctx:queryId}", "llap-daemon-log4j2.properties");
-        handle_result(status, "appender.query-routing.routes.route-default.key", "$${ctx:queryId}", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("appender.query-routing.routes.route-default.key", "$${ctx:queryId}", "llap-daemon-log4j2.properties");
+//        handle_result(status, "appender.query-routing.routes.route-default.key", "$${ctx:queryId}", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.query-routing.routes.route-default.ref", "RFA", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.query-routing.routes.route-default.ref", "RFA", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.query-routing.routes.route-mdc.type", "Route", "llap-daemon-log4j2.properties");
@@ -2756,8 +2770,8 @@ void configure_target_component(Component target) {
         handle_result(status, "appender.query-routing.routes.route-mdc.file-mdc.app.type", "RandomAccessFile", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.query-routing.routes.route-mdc.file-mdc.app.name", "file-mdc", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.query-routing.routes.route-mdc.file-mdc.app.name", "file-mdc", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("appender.query-routing.routes.route-mdc.file-mdc.app.fileName", "${sys:llap.daemon.log.dir}/${ctx:queryId}-${ctx:dagId}.log", "llap-daemon-log4j2.properties");
-        handle_result(status, "appender.query-routing.routes.route-mdc.file-mdc.app.fileName", "${sys:llap.daemon.log.dir}/${ctx:queryId}-${ctx:dagId}.log", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("appender.query-routing.routes.route-mdc.file-mdc.app.fileName", "${sys:llap.daemon.log.dir}/${ctx:queryId}-${ctx:dagId}.log", "llap-daemon-log4j2.properties");
+//        handle_result(status, "appender.query-routing.routes.route-mdc.file-mdc.app.fileName", "${sys:llap.daemon.log.dir}/${ctx:queryId}-${ctx:dagId}.log", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.query-routing.routes.route-mdc.file-mdc.app.layout.type", "PatternLayout", "llap-daemon-log4j2.properties");
         handle_result(status, "appender.query-routing.routes.route-mdc.file-mdc.app.layout.type", "PatternLayout", "llap-daemon-log4j2.properties");
         status = modify_hive_config("appender.query-routing.routes.route-mdc.file-mdc.app.layout.pattern", "%d{ISO8601} %5p [%t (%X{fragmentId})] %c{2}: %m%n", "llap-daemon-log4j2.properties");
@@ -2830,12 +2844,12 @@ void configure_target_component(Component target) {
         handle_result(status, "logger.HistoryLogger.appenderRefs", "HistoryAppender", "llap-daemon-log4j2.properties");
         status = modify_hive_config("logger.HistoryLogger.appenderRef.HistoryAppender.ref", "HISTORYAPPENDER", "llap-daemon-log4j2.properties");
         handle_result(status, "logger.HistoryLogger.appenderRef.HistoryAppender.ref", "HISTORYAPPENDER", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("rootLogger.level", "${sys:llap.daemon.log.level}", "llap-daemon-log4j2.properties");
-        handle_result(status, "rootLogger.level", "${sys:llap.daemon.log.level}", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("rootLogger.level", "${sys:llap.daemon.log.level}", "llap-daemon-log4j2.properties");
+//        handle_result(status, "rootLogger.level", "${sys:llap.daemon.log.level}", "llap-daemon-log4j2.properties");
         status = modify_hive_config("rootLogger.appenderRefs", "root", "llap-daemon-log4j2.properties");
         handle_result(status, "rootLogger.appenderRefs", "root", "llap-daemon-log4j2.properties");
-        status = modify_hive_config("rootLogger.appenderRef.root.ref", "${sys:llap.daemon.root.logger}", "llap-daemon-log4j2.properties");
-        handle_result(status, "rootLogger.appenderRef.root.ref", "${sys:llap.daemon.root.logger}", "llap-daemon-log4j2.properties");
+//        status = modify_hive_config("rootLogger.appenderRef.root.ref", "${sys:llap.daemon.root.logger}", "llap-daemon-log4j2.properties");
+//        handle_result(status, "rootLogger.appenderRef.root.ref", "${sys:llap.daemon.root.logger}", "llap-daemon-log4j2.properties");
 
         break;
 
@@ -2917,8 +2931,8 @@ void configure_target_component(Component target) {
         handle_result(status, "controlled.shutdown.max.retries", "3", "server.properties");
         status = modify_kafka_config("controlled.shutdown.retry.backoff.ms", "5000", "server.properties");
         handle_result(status, "controlled.shutdown.retry.backoff.ms", "5000", "server.properties");
-        status = modify_kafka_config("kafka.metrics.reporters", "{{metrics_reporters}}", "server.properties");
-        handle_result(status, "kafka.metrics.reporters", "{{metrics_reporters}}", "server.properties");
+//        status = modify_kafka_config("kafka.metrics.reporters", "{{metrics_reporters}}", "server.properties");
+//        handle_result(status, "kafka.metrics.reporters", "{{metrics_reporters}}", "server.properties");
         status = modify_kafka_config("kafka.ganglia.metrics.reporter.enabled", "true", "server.properties");
         handle_result(status, "kafka.ganglia.metrics.reporter.enabled", "true", "server.properties");
         status = modify_kafka_config("kafka.ganglia.metrics.host", "localhost", "server.properties");
@@ -2929,28 +2943,28 @@ void configure_target_component(Component target) {
         handle_result(status, "kafka.ganglia.metrics.group", "kafka", "server.properties");
         status = modify_kafka_config("kafka.timeline.metrics.reporter.enabled", "true", "server.properties");
         handle_result(status, "kafka.timeline.metrics.reporter.enabled", "true", "server.properties");
-        status = modify_kafka_config("kafka.timeline.metrics.hosts", "{{ams_collector_hosts}}", "server.properties");
-        handle_result(status, "kafka.timeline.metrics.hosts", "{{ams_collector_hosts}}", "server.properties");
-        status = modify_kafka_config("kafka.timeline.metrics.port", "{{metric_collector_port}}", "server.properties");
-        handle_result(status, "kafka.timeline.metrics.port", "{{metric_collector_port}}", "server.properties");
-        status = modify_kafka_config("kafka.timeline.metrics.protocol", "{{metric_collector_protocol}}", "server.properties");
-        handle_result(status, "kafka.timeline.metrics.protocol", "{{metric_collector_protocol}}", "server.properties");
-        status = modify_kafka_config("kafka.timeline.metrics.truststore.path", "{{metric_truststore_path}}", "server.properties");
-        handle_result(status, "kafka.timeline.metrics.truststore.path", "{{metric_truststore_path}}", "server.properties");
-        status = modify_kafka_config("kafka.timeline.metrics.truststore.type", "{{metric_truststore_type}}", "server.properties");
-        handle_result(status, "kafka.timeline.metrics.truststore.type", "{{metric_truststore_type}}", "server.properties");
-        status = modify_kafka_config("kafka.timeline.metrics.truststore.password", "{{metric_truststore_password}}", "server.properties");
-        handle_result(status, "kafka.timeline.metrics.truststore.password", "{{metric_truststore_password}}", "server.properties");
+//        status = modify_kafka_config("kafka.timeline.metrics.hosts", "{{ams_collector_hosts}}", "server.properties");
+//        handle_result(status, "kafka.timeline.metrics.hosts", "{{ams_collector_hosts}}", "server.properties");
+//        status = modify_kafka_config("kafka.timeline.metrics.port", "{{metric_collector_port}}", "server.properties");
+//        handle_result(status, "kafka.timeline.metrics.port", "{{metric_collector_port}}", "server.properties");
+//        status = modify_kafka_config("kafka.timeline.metrics.protocol", "{{metric_collector_protocol}}", "server.properties");
+//        handle_result(status, "kafka.timeline.metrics.protocol", "{{metric_collector_protocol}}", "server.properties");
+//        status = modify_kafka_config("kafka.timeline.metrics.truststore.path", "{{metric_truststore_path}}", "server.properties");
+//        handle_result(status, "kafka.timeline.metrics.truststore.path", "{{metric_truststore_path}}", "server.properties");
+//        status = modify_kafka_config("kafka.timeline.metrics.truststore.type", "{{metric_truststore_type}}", "server.properties");
+//        handle_result(status, "kafka.timeline.metrics.truststore.type", "{{metric_truststore_type}}", "server.properties");
+//        status = modify_kafka_config("kafka.timeline.metrics.truststore.password", "{{metric_truststore_password}}", "server.properties");
+//        handle_result(status, "kafka.timeline.metrics.truststore.password", "{{metric_truststore_password}}", "server.properties");
         status = modify_kafka_config("kafka.timeline.metrics.reporter.sendInterval", "5900", "server.properties");
         handle_result(status, "kafka.timeline.metrics.reporter.sendInterval", "5900", "server.properties");
         status = modify_kafka_config("kafka.timeline.metrics.maxRowCacheSize", "10000", "server.properties");
         handle_result(status, "kafka.timeline.metrics.maxRowCacheSize", "10000", "server.properties");
-        status = modify_kafka_config("kafka.timeline.metrics.host_in_memory_aggregation", "{{host_in_memory_aggregation}}", "server.properties");
-        handle_result(status, "kafka.timeline.metrics.host_in_memory_aggregation", "{{host_in_memory_aggregation}}", "server.properties");
-        status = modify_kafka_config("kafka.timeline.metrics.host_in_memory_aggregation_port", "{{host_in_memory_aggregation_port}}", "server.properties");
-        handle_result(status, "kafka.timeline.metrics.host_in_memory_aggregation_port", "{{host_in_memory_aggregation_port}}", "server.properties");
-        status = modify_kafka_config("kafka.timeline.metrics.host_in_memory_aggregation_protocol", "{{host_in_memory_aggregation_protocol}}", "server.properties");
-        handle_result(status, "kafka.timeline.metrics.host_in_memory_aggregation_protocol", "{{host_in_memory_aggregation_protocol}}", "server.properties");
+//        status = modify_kafka_config("kafka.timeline.metrics.host_in_memory_aggregation", "{{host_in_memory_aggregation}}", "server.properties");
+//        handle_result(status, "kafka.timeline.metrics.host_in_memory_aggregation", "{{host_in_memory_aggregation}}", "server.properties");
+//        status = modify_kafka_config("kafka.timeline.metrics.host_in_memory_aggregation_port", "{{host_in_memory_aggregation_port}}", "server.properties");
+//        handle_result(status, "kafka.timeline.metrics.host_in_memory_aggregation_port", "{{host_in_memory_aggregation_port}}", "server.properties");
+//        status = modify_kafka_config("kafka.timeline.metrics.host_in_memory_aggregation_protocol", "{{host_in_memory_aggregation_protocol}}", "server.properties");
+//        handle_result(status, "kafka.timeline.metrics.host_in_memory_aggregation_protocol", "{{host_in_memory_aggregation_protocol}}", "server.properties");
         status = modify_kafka_config("listeners", "PLAINTEXT:localhost:9092", "server.properties");
         handle_result(status, "listeners", "PLAINTEXT:localhost:9092", "server.properties");
         status = modify_kafka_config("raw.listeners", "", "server.properties");
@@ -3030,8 +3044,8 @@ void configure_target_component(Component target) {
         handle_result(status, "log4j.appender.kafkaAppender", "org.apache.log4j.DailyRollingFileAppender", "log4j.properties");
         status = modify_kafka_config("log4j.appender.kafkaAppender.DatePattern", "'.'yyyy-MM-dd-HH", "log4j.properties");
         handle_result(status, "log4j.appender.kafkaAppender.DatePattern", "'.'yyyy-MM-dd-HH", "log4j.properties");
-        status = modify_kafka_config("log4j.appender.kafkaAppender.File", "${kafka.logs.dir}/server.log", "log4j.properties");
-        handle_result(status, "log4j.appender.kafkaAppender.File", "${kafka.logs.dir}/server.log", "log4j.properties");
+//        status = modify_kafka_config("log4j.appender.kafkaAppender.File", "${kafka.logs.dir}/server.log", "log4j.properties");
+//        handle_result(status, "log4j.appender.kafkaAppender.File", "${kafka.logs.dir}/server.log", "log4j.properties");
         status = modify_kafka_config("log4j.appender.kafkaAppender.layout", "org.apache.log4j.PatternLayout", "log4j.properties");
         handle_result(status, "log4j.appender.kafkaAppender.layout", "org.apache.log4j.PatternLayout", "log4j.properties");
         status = modify_kafka_config("log4j.appender.kafkaAppender.layout.ConversionPattern", "[%d{ISO8601}] %p %m (%c)%n", "log4j.properties");
@@ -3044,8 +3058,8 @@ void configure_target_component(Component target) {
         handle_result(status, "log4j.appender.stateChangeAppender", "org.apache.log4j.DailyRollingFileAppender", "log4j.properties");
         status = modify_kafka_config("log4j.appender.stateChangeAppender.DatePattern", "'.'yyyy-MM-dd-HH", "log4j.properties");
         handle_result(status, "log4j.appender.stateChangeAppender.DatePattern", "'.'yyyy-MM-dd-HH", "log4j.properties");
-        status = modify_kafka_config("log4j.appender.stateChangeAppender.File", "${kafka.logs.dir}/state-change.log", "log4j.properties");
-        handle_result(status, "log4j.appender.stateChangeAppender.File", "${kafka.logs.dir}/state-change.log", "log4j.properties");
+//        status = modify_kafka_config("log4j.appender.stateChangeAppender.File", "${kafka.logs.dir}/state-change.log", "log4j.properties");
+//        handle_result(status, "log4j.appender.stateChangeAppender.File", "${kafka.logs.dir}/state-change.log", "log4j.properties");
         status = modify_kafka_config("log4j.appender.stateChangeAppender.layout", "org.apache.log4j.PatternLayout", "log4j.properties");
         handle_result(status, "log4j.appender.stateChangeAppender.layout", "org.apache.log4j.PatternLayout", "log4j.properties");
         status = modify_kafka_config("log4j.appender.stateChangeAppender.layout.ConversionPattern", "[%d{ISO8601}] %p %m (%c)%n", "log4j.properties");
@@ -3054,8 +3068,8 @@ void configure_target_component(Component target) {
         handle_result(status, "log4j.appender.requestAppender", "org.apache.log4j.DailyRollingFileAppender", "log4j.properties");
         status = modify_kafka_config("log4j.appender.requestAppender.DatePattern", "'.'yyyy-MM-dd-HH", "log4j.properties");
         handle_result(status, "log4j.appender.requestAppender.DatePattern", "'.'yyyy-MM-dd-HH", "log4j.properties");
-        status = modify_kafka_config("log4j.appender.requestAppender.File", "${kafka.logs.dir}/kafka-request.log", "log4j.properties");
-        handle_result(status, "log4j.appender.requestAppender.File", "${kafka.logs.dir}/kafka-request.log", "log4j.properties");
+//        status = modify_kafka_config("log4j.appender.requestAppender.File", "${kafka.logs.dir}/kafka-request.log", "log4j.properties");
+//        handle_result(status, "log4j.appender.requestAppender.File", "${kafka.logs.dir}/kafka-request.log", "log4j.properties");
         status = modify_kafka_config("log4j.appender.requestAppender.layout", "org.apache.log4j.PatternLayout", "log4j.properties");
         handle_result(status, "log4j.appender.requestAppender.layout", "org.apache.log4j.PatternLayout", "log4j.properties");
         status = modify_kafka_config("log4j.appender.requestAppender.layout.ConversionPattern", "[%d{ISO8601}] %p %m (%c)%n", "log4j.properties");
@@ -3064,8 +3078,8 @@ void configure_target_component(Component target) {
         handle_result(status, "log4j.appender.cleanerAppender", "org.apache.log4j.DailyRollingFileAppender", "log4j.properties");
         status = modify_kafka_config("log4j.appender.cleanerAppender.DatePattern", "'.'yyyy-MM-dd-HH", "log4j.properties");
         handle_result(status, "log4j.appender.cleanerAppender.DatePattern", "'.'yyyy-MM-dd-HH", "log4j.properties");
-        status = modify_kafka_config("log4j.appender.cleanerAppender.File", "${kafka.logs.dir}/log-cleaner.log", "log4j.properties");
-        handle_result(status, "log4j.appender.cleanerAppender.File", "${kafka.logs.dir}/log-cleaner.log", "log4j.properties");
+//        status = modify_kafka_config("log4j.appender.cleanerAppender.File", "${kafka.logs.dir}/log-cleaner.log", "log4j.properties");
+//        handle_result(status, "log4j.appender.cleanerAppender.File", "${kafka.logs.dir}/log-cleaner.log", "log4j.properties");
         status = modify_kafka_config("log4j.appender.cleanerAppender.layout", "org.apache.log4j.PatternLayout", "log4j.properties");
         handle_result(status, "log4j.appender.cleanerAppender.layout", "org.apache.log4j.PatternLayout", "log4j.properties");
         status = modify_kafka_config("log4j.appender.cleanerAppender.layout.ConversionPattern", "[%d{ISO8601}] %p %m (%c)%n", "log4j.properties");
@@ -3074,8 +3088,8 @@ void configure_target_component(Component target) {
         handle_result(status, "log4j.appender.controllerAppender", "org.apache.log4j.DailyRollingFileAppender", "log4j.properties");
         status = modify_kafka_config("log4j.appender.controllerAppender.DatePattern", "'.'yyyy-MM-dd-HH", "log4j.properties");
         handle_result(status, "log4j.appender.controllerAppender.DatePattern", "'.'yyyy-MM-dd-HH", "log4j.properties");
-        status = modify_kafka_config("log4j.appender.controllerAppender.File", "${kafka.logs.dir}/controller.log", "log4j.properties");
-        handle_result(status, "log4j.appender.controllerAppender.File", "${kafka.logs.dir}/controller.log", "log4j.properties");
+//        status = modify_kafka_config("log4j.appender.controllerAppender.File", "${kafka.logs.dir}/controller.log", "log4j.properties");
+//        handle_result(status, "log4j.appender.controllerAppender.File", "${kafka.logs.dir}/controller.log", "log4j.properties");
         status = modify_kafka_config("log4j.appender.controllerAppender.layout", "org.apache.log4j.PatternLayout", "log4j.properties");
         handle_result(status, "log4j.appender.controllerAppender.layout", "org.apache.log4j.PatternLayout", "log4j.properties");
         status = modify_kafka_config("log4j.appender.controllerAppender.layout.ConversionPattern", "[%d{ISO8601}] %p %m (%c)%n", "log4j.properties");
@@ -3086,10 +3100,10 @@ void configure_target_component(Component target) {
         handle_result(status, "log4j.appender.controllerAppender.MaxBackupIndex", "20", "log4j.properties");
         status = modify_kafka_config("log4j.logger.kafka", "INFO, kafkaAppender", "log4j.properties");
         handle_result(status, "log4j.logger.kafka", "INFO, kafkaAppender", "log4j.properties");
-        status = modify_kafka_config("log4j.logger.kafka.network.RequestChannel$", "WARN, requestAppender", "log4j.properties");
-        handle_result(status, "log4j.logger.kafka.network.RequestChannel$", "WARN, requestAppender", "log4j.properties");
-        status = modify_kafka_config("log4j.additivity.kafka.network.RequestChannel$", "false", "log4j.properties");
-        handle_result(status, "log4j.additivity.kafka.network.RequestChannel$", "false", "log4j.properties");
+//        status = modify_kafka_config("log4j.logger.kafka.network.RequestChannel$", "WARN, requestAppender", "log4j.properties");
+//        handle_result(status, "log4j.logger.kafka.network.RequestChannel$", "WARN, requestAppender", "log4j.properties");
+//        status = modify_kafka_config("log4j.additivity.kafka.network.RequestChannel$", "false", "log4j.properties");
+//        handle_result(status, "log4j.additivity.kafka.network.RequestChannel$", "false", "log4j.properties");
         status = modify_kafka_config("log4j.logger.kafka.request.logger", "WARN, requestAppender", "log4j.properties");
         handle_result(status, "log4j.logger.kafka.request.logger", "WARN, requestAppender", "log4j.properties");
         status = modify_kafka_config("log4j.additivity.kafka.request.logger", "false", "log4j.properties");
@@ -3167,37 +3181,37 @@ void configure_target_component(Component target) {
                                      "          KafkaServer {\n"
                                      "          com.sun.security.auth.module.Krb5LoginModule required\n"
                                      "          useKeyTab=true\n"
-                                     "          keyTab=\"{{kafka_keytab_path}}\"\n"
+//                                     "          keyTab=\"{{kafka_keytab_path}}\"\n"
                                      "          storeKey=true\n"
                                      "          useTicketCache=false\n"
-                                     "          serviceName=\"{{kafka_bare_jaas_principal}}\"\n"
-                                     "          principal=\"{{kafka_jaas_principal}}\";\n"
+//                                     "          serviceName=\"{{kafka_bare_jaas_principal}}\"\n"
+//                                     "          principal=\"{{kafka_jaas_principal}}\";\n"
                                      "          };\n"
                                      "          KafkaClient {\n"
                                      "          com.sun.security.auth.module.Krb5LoginModule required\n"
                                      "          useTicketCache=true\n"
                                      "          renewTicket=true\n"
-                                     "          serviceName=\"{{kafka_bare_jaas_principal}}\";\n"
+//                                     "          serviceName=\"{{kafka_bare_jaas_principal}}\";\n"
                                      "          };\n"
                                      "          Client {\n"
                                      "          com.sun.security.auth.module.Krb5LoginModule required\n"
                                      "          useKeyTab=true\n"
-                                     "          keyTab=\"{{kafka_keytab_path}}\"\n"
+//                                     "          keyTab=\"{{kafka_keytab_path}}\"\n"
                                      "          storeKey=true\n"
                                      "          useTicketCache=false\n"
                                      "          serviceName=\"zookeeper\"\n"
-                                     "          principal=\"{{kafka_jaas_principal}}\";\n"
+//                                     "          principal=\"{{kafka_jaas_principal}}\";\n"
                                      "          };\n"
                                      "          com.sun.security.jgss.krb5.initiate {\n"
                                      "          com.sun.security.auth.module.Krb5LoginModule required\n"
                                      "          renewTGT=false\n"
                                      "          doNotPrompt=true\n"
                                      "          useKeyTab=true\n"
-                                     "          keyTab=\"{{kafka_keytab_path}}\"\n"
+//                                     "          keyTab=\"{{kafka_keytab_path}}\"\n"
                                      "          storeKey=true\n"
                                      "          useTicketCache=false\n"
-                                     "          serviceName=\"{{kafka_bare_jaas_principal}}\"\n"
-                                     "          principal=\"{{kafka_jaas_principal}}\";\n"
+//                                     "          serviceName=\"{{kafka_bare_jaas_principal}}\"\n"
+//                                     "          principal=\"{{kafka_jaas_principal}}\";\n"
                                      "          };\n"
                                      "  \n"
                                      "          {% endif %}\n"
@@ -3223,8 +3237,8 @@ void configure_target_component(Component target) {
         handle_result(status, "xasecure.audit.destination.solr.batch.filespool.dir", "/var/log/kafka/audit/solr/spool", "ranger-kafka-audit.xml");
         status = modify_kafka_config("xasecure.audit.provider.summary.enabled", "true", "ranger-kafka-audit.xml");
         handle_result(status, "xasecure.audit.provider.summary.enabled", "true", "ranger-kafka-audit.xml");
-        status = modify_kafka_config("ranger.plugin.kafka.ambari.cluster.name", "{{cluster_name}}", "ranger-kafka-audit.xml");
-        handle_result(status, "ranger.plugin.kafka.ambari.cluster.name", "{{cluster_name}}", "ranger-kafka-audit.xml");
+//        status = modify_kafka_config("ranger.plugin.kafka.ambari.cluster.name", "{{cluster_name}}", "ranger-kafka-audit.xml");
+//        handle_result(status, "ranger.plugin.kafka.ambari.cluster.name", "{{cluster_name}}", "ranger-kafka-audit.xml");
         // Update Ranger-Kafka plugin properties
         status = modify_kafka_config("policy_user", "ambari-qa", "ranger-kafka-plugin.properties");
         handle_result(status, "policy_user", "ambari-qa", "ranger-kafka-plugin.properties");
@@ -3257,23 +3271,23 @@ void configure_target_component(Component target) {
         handle_result(status, "xasecure.policymgr.clientssl.truststore", "", "ranger-kafka-policymgr-ssl.xml");
         status = modify_kafka_config("xasecure.policymgr.clientssl.truststore.password", "changeit", "ranger-kafka-policymgr-ssl.xml");
         handle_result(status, "xasecure.policymgr.clientssl.truststore.password", "changeit", "ranger-kafka-policymgr-ssl.xml");
-        status = modify_kafka_config("xasecure.policymgr.clientssl.keystore.credential.file", "jceks:file/{{credential_file}}", "ranger-kafka-policymgr-ssl.xml");
-        handle_result(status, "xasecure.policymgr.clientssl.keystore.credential.file", "jceks:file/{{credential_file}}", "ranger-kafka-policymgr-ssl.xml");
-        status = modify_kafka_config("xasecure.policymgr.clientssl.truststore.credential.file", "jceks:file/{{credential_file}}", "ranger-kafka-policymgr-ssl.xml");
-        handle_result(status, "xasecure.policymgr.clientssl.truststore.credential.file", "jceks:file/{{credential_file}}", "ranger-kafka-policymgr-ssl.xml");
+//        status = modify_kafka_config("xasecure.policymgr.clientssl.keystore.credential.file", "jceks:file/{{credential_file}}", "ranger-kafka-policymgr-ssl.xml");
+//        handle_result(status, "xasecure.policymgr.clientssl.keystore.credential.file", "jceks:file/{{credential_file}}", "ranger-kafka-policymgr-ssl.xml");
+//        status = modify_kafka_config("xasecure.policymgr.clientssl.truststore.credential.file", "jceks:file/{{credential_file}}", "ranger-kafka-policymgr-ssl.xml");
+//        handle_result(status, "xasecure.policymgr.clientssl.truststore.credential.file", "jceks:file/{{credential_file}}", "ranger-kafka-policymgr-ssl.xml");
         //Update Ranger-Kafka security configuration
-        status = modify_kafka_config("ranger.plugin.kafka.service.name", "{{repo_name}}", "ranger-kafka-security.xml");
-        handle_result(status, "ranger.plugin.kafka.service.name", "{{repo_name}}", "ranger-kafka-security.xml");
+//        status = modify_kafka_config("ranger.plugin.kafka.service.name", "{{repo_name}}", "ranger-kafka-security.xml");
+//        handle_result(status, "ranger.plugin.kafka.service.name", "{{repo_name}}", "ranger-kafka-security.xml");
         status = modify_kafka_config("ranger.plugin.kafka.policy.source.impl", "org.apache.ranger.admin.client.RangerAdminRESTClient", "ranger-kafka-security.xml");
         handle_result(status, "ranger.plugin.kafka.policy.source.impl", "org.apache.ranger.admin.client.RangerAdminRESTClient", "ranger-kafka-security.xml");
-        status = modify_kafka_config("ranger.plugin.kafka.policy.rest.url", "{{policymgr_mgr_url}}", "ranger-kafka-security.xml");
-        handle_result(status, "ranger.plugin.kafka.policy.rest.url", "{{policymgr_mgr_url}}", "ranger-kafka-security.xml");
+//        status = modify_kafka_config("ranger.plugin.kafka.policy.rest.url", "{{policymgr_mgr_url}}", "ranger-kafka-security.xml");
+//        handle_result(status, "ranger.plugin.kafka.policy.rest.url", "{{policymgr_mgr_url}}", "ranger-kafka-security.xml");
         status = modify_kafka_config("ranger.plugin.kafka.policy.rest.ssl.config.file", "/etc/kafka/conf/ranger-policymgr-ssl.xml", "ranger-kafka-security.xml");
         handle_result(status, "ranger.plugin.kafka.policy.rest.ssl.config.file", "/etc/kafka/conf/ranger-policymgr-ssl.xml", "ranger-kafka-security.xml");
         status = modify_kafka_config("ranger.plugin.kafka.policy.pollIntervalMs", "30000", "ranger-kafka-security.xml");
         handle_result(status, "ranger.plugin.kafka.policy.pollIntervalMs", "30000", "ranger-kafka-security.xml");
-        status = modify_kafka_config("ranger.plugin.kafka.policy.cache.dir", "/etc/ranger/{{repo_name}}/policycache", "ranger-kafka-security.xml");
-        handle_result(status, "ranger.plugin.kafka.policy.cache.dir", "/etc/ranger/{{repo_name}}/policycache", "ranger-kafka-security.xml");
+//        status = modify_kafka_config("ranger.plugin.kafka.policy.cache.dir", "/etc/ranger/{{repo_name}}/policycache", "ranger-kafka-security.xml");
+//        handle_result(status, "ranger.plugin.kafka.policy.cache.dir", "/etc/ranger/{{repo_name}}/policycache", "ranger-kafka-security.xml");
         // Core Kafka Broker Configuration
         status = modify_kafka_config("log.dirs", "/kafka-logs", "server.properties");
         handle_result(status, "log.dirs", "/kafka-logs", "server.properties");
@@ -3387,8 +3401,8 @@ void configure_target_component(Component target) {
         handle_result(status, "controlled.shutdown.retry.backoff.ms", "5000", "server.properties");
 
         //	 Metrics Configuration
-        status = modify_kafka_config("kafka.metrics.reporters", "{{metrics_reporters}}", "server.properties");
-        handle_result(status, "kafka.metrics.reporters", "{{metrics_reporters}}", "server.properties");
+//        status = modify_kafka_config("kafka.metrics.reporters", "{{metrics_reporters}}", "server.properties");
+//        handle_result(status, "kafka.metrics.reporters", "{{metrics_reporters}}", "server.properties");
         status = modify_kafka_config("kafka.ganglia.metrics.reporter.enabled", "true", "server.properties");
         handle_result(status, "kafka.ganglia.metrics.reporter.enabled", "true", "server.properties");
         status = modify_kafka_config("kafka.ganglia.metrics.host", "localhost", "server.properties");
@@ -3399,28 +3413,28 @@ void configure_target_component(Component target) {
         handle_result(status, "kafka.ganglia.metrics.group", "kafka", "server.properties");
         status = modify_kafka_config("kafka.timeline.metrics.reporter.enabled", "true", "server.properties");
         handle_result(status, "kafka.timeline.metrics.reporter.enabled", "true", "server.properties");
-        status = modify_kafka_config("kafka.timeline.metrics.hosts", "{{ams_collector_hosts}}", "server.properties");
-        handle_result(status, "kafka.timeline.metrics.hosts", "{{ams_collector_hosts}}", "server.properties");
-        status = modify_kafka_config("kafka.timeline.metrics.port", "{{metric_collector_port}}", "server.properties");
-        handle_result(status, "kafka.timeline.metrics.port", "{{metric_collector_port}}", "server.properties");
-        status = modify_kafka_config("kafka.timeline.metrics.protocol", "{{metric_collector_protocol}}", "server.properties");
-        handle_result(status, "kafka.timeline.metrics.protocol", "{{metric_collector_protocol}}", "server.properties");
-        status = modify_kafka_config("kafka.timeline.metrics.truststore.path", "{{metric_truststore_path}}", "server.properties");
-        handle_result(status, "kafka.timeline.metrics.truststore.path", "{{metric_truststore_path}}", "server.properties");
-        status = modify_kafka_config("kafka.timeline.metrics.truststore.type", "{{metric_truststore_type}}", "server.properties");
-        handle_result(status, "kafka.timeline.metrics.truststore.type", "{{metric_truststore_type}}", "server.properties");
-        status = modify_kafka_config("kafka.timeline.metrics.truststore.password", "{{metric_truststore_password}}", "server.properties");
-        handle_result(status, "kafka.timeline.metrics.truststore.password", "{{metric_truststore_password}}", "server.properties");
+//        status = modify_kafka_config("kafka.timeline.metrics.hosts", "{{ams_collector_hosts}}", "server.properties");
+//        handle_result(status, "kafka.timeline.metrics.hosts", "{{ams_collector_hosts}}", "server.properties");
+//        status = modify_kafka_config("kafka.timeline.metrics.port", "{{metric_collector_port}}", "server.properties");
+//        handle_result(status, "kafka.timeline.metrics.port", "{{metric_collector_port}}", "server.properties");
+//        status = modify_kafka_config("kafka.timeline.metrics.protocol", "{{metric_collector_protocol}}", "server.properties");
+//        handle_result(status, "kafka.timeline.metrics.protocol", "{{metric_collector_protocol}}", "server.properties");
+//        status = modify_kafka_config("kafka.timeline.metrics.truststore.path", "{{metric_truststore_path}}", "server.properties");
+//        handle_result(status, "kafka.timeline.metrics.truststore.path", "{{metric_truststore_path}}", "server.properties");
+//        status = modify_kafka_config("kafka.timeline.metrics.truststore.type", "{{metric_truststore_type}}", "server.properties");
+//        handle_result(status, "kafka.timeline.metrics.truststore.type", "{{metric_truststore_type}}", "server.properties");
+//        status = modify_kafka_config("kafka.timeline.metrics.truststore.password", "{{metric_truststore_password}}", "server.properties");
+//        handle_result(status, "kafka.timeline.metrics.truststore.password", "{{metric_truststore_password}}", "server.properties");
         status = modify_kafka_config("kafka.timeline.metrics.reporter.sendInterval", "5900", "server.properties");
         handle_result(status, "kafka.timeline.metrics.reporter.sendInterval", "5900", "server.properties");
         status = modify_kafka_config("kafka.timeline.metrics.maxRowCacheSize", "10000", "server.properties");
         handle_result(status, "kafka.timeline.metrics.maxRowCacheSize", "10000", "server.properties");
-        status = modify_kafka_config("kafka.timeline.metrics.host_in_memory_aggregation", "{{host_in_memory_aggregation}}", "server.properties");
-        handle_result(status, "kafka.timeline.metrics.host_in_memory_aggregation", "{{host_in_memory_aggregation}}", "server.properties");
-        status = modify_kafka_config("kafka.timeline.metrics.host_in_memory_aggregation_port", "{{host_in_memory_aggregation_port}}", "server.properties");
-        handle_result(status, "kafka.timeline.metrics.host_in_memory_aggregation_port", "{{host_in_memory_aggregation_port}}", "server.properties");
-        status = modify_kafka_config("kafka.timeline.metrics.host_in_memory_aggregation_protocol", "{{host_in_memory_aggregation_protocol}}", "server.properties");
-        handle_result(status, "kafka.timeline.metrics.host_in_memory_aggregation_protocol", "{{host_in_memory_aggregation_protocol}}", "server.properties");
+//        status = modify_kafka_config("kafka.timeline.metrics.host_in_memory_aggregation", "{{host_in_memory_aggregation}}", "server.properties");
+//        handle_result(status, "kafka.timeline.metrics.host_in_memory_aggregation", "{{host_in_memory_aggregation}}", "server.properties");
+//        status = modify_kafka_config("kafka.timeline.metrics.host_in_memory_aggregation_port", "{{host_in_memory_aggregation_port}}", "server.properties");
+//        handle_result(status, "kafka.timeline.metrics.host_in_memory_aggregation_port", "{{host_in_memory_aggregation_port}}", "server.properties");
+//        status = modify_kafka_config("kafka.timeline.metrics.host_in_memory_aggregation_protocol", "{{host_in_memory_aggregation_protocol}}", "server.properties");
+//        handle_result(status, "kafka.timeline.metrics.host_in_memory_aggregation_protocol", "{{host_in_memory_aggregation_protocol}}", "server.properties");
 
         //	 Network Configuration
         status = modify_kafka_config("listeners", "PLAINTEXT:localhost:9092", "server.properties");
@@ -3806,10 +3820,10 @@ void configure_target_component(Component target) {
         handle_result(status, "update_spark_config: spark.eventLog.enabled", "true", config_file);
         status = update_spark_config("spark.eventLog.dir", "hdfs:/spark-history/", config_file);
         handle_result(status, "update_spark_config: spark.eventLog.dir", "hdfs:/spark-history/", config_file);
-        status = update_spark_config("spark.yarn.historyServer.address", "{{spark_history_server_host}}:{{spark_history_ui_port}}", config_file);
-        handle_result(status, "update_spark_config: spark.yarn.historyServer.address", "{{spark_history_server_host}}:{{spark_history_ui_port}}", config_file);
-        status = update_spark_config("spark.scheduler.allocation.file", "file:/{{spark_conf_dir}}/spark-thrift-fairscheduler.xml", config_file);
-        handle_result(status, "update_spark_config: spark.scheduler.allocation.file", "file:/{{spark_conf_dir}}/spark-thrift-fairscheduler.xml", config_file);
+//        status = update_spark_config("spark.yarn.historyServer.address", "{{spark_history_server_host}}:{{spark_history_ui_port}}", config_file);
+//        handle_result(status, "update_spark_config: spark.yarn.historyServer.address", "{{spark_history_server_host}}:{{spark_history_ui_port}}", config_file);
+//        status = update_spark_config("spark.scheduler.allocation.file", "file:/{{spark_conf_dir}}/spark-thrift-fairscheduler.xml", config_file);
+//        handle_result(status, "update_spark_config: spark.scheduler.allocation.file", "file:/{{spark_conf_dir}}/spark-thrift-fairscheduler.xml", config_file);
         status = update_spark_config("spark.scheduler.mode", "FAIR", config_file);
         handle_result(status, "update_spark_config: spark.scheduler.mode", "FAIR", config_file);
         status = update_spark_config("spark.hadoop.cacheConf", "false", config_file);
@@ -3842,12 +3856,12 @@ void configure_target_component(Component target) {
         handle_result(status, "update_spark_config: spark.master", "yarn", config_file);
         status = update_spark_config("spark.executor.extraJavaOptions", "-XX:+UseNUMA", config_file);
         handle_result(status, "update_spark_config: spark.executor.extraJavaOptions", "-XX:+UseNUMA", config_file);
-        status = update_spark_config("spark.sql.warehouse.dir", "{{spark_warehouse_dir}}", config_file);
-        handle_result(status, "update_spark_config: spark.sql.warehouse.dir", "{{spark_warehouse_dir}}", config_file);
+//        status = update_spark_config("spark.sql.warehouse.dir", "{{spark_warehouse_dir}}", config_file);
+//        handle_result(status, "update_spark_config: spark.sql.warehouse.dir", "{{spark_warehouse_dir}}", config_file);
         status = update_spark_config("spark.sql.hive.metastore.version", "3.1.3", config_file);
         handle_result(status, "update_spark_config: spark.sql.hive.metastore.version", "3.1.3", config_file);
-        status = update_spark_config("spark.sql.hive.metastore.jars", "{{hive_home}}/lib/*", config_file);
-        handle_result(status, "update_spark_config: spark.sql.hive.metastore.jars", "{{hive_home}}/lib/*", config_file);
+//        status = update_spark_config("spark.sql.hive.metastore.jars", "{{hive_home}}/lib/*", config_file);
+//        handle_result(status, "update_spark_config: spark.sql.hive.metastore.jars", "{{hive_home}}/lib/*", config_file);
         status = update_spark_config("spark.history.store.path", "/var/lib/spark/shs_db", config_file);
         handle_result(status, "update_spark_config: spark.history.store.path", "/var/lib/spark/shs_db", config_file);
 
@@ -3868,10 +3882,10 @@ void configure_target_component(Component target) {
         handle_result(status, "update_spark_config: log4j.logger.org.eclipse.jetty", "WARN", log4j_config_file);
         status = update_spark_config("log4j.logger.org.eclipse.jetty.util.component.AbstractLifeCycle", "ERROR", log4j_config_file);
         handle_result(status, "update_spark_config: log4j.logger.org.eclipse.jetty.util.component.AbstractLifeCycle", "ERROR", log4j_config_file);
-        status = update_spark_config("log4j.logger.org.apache.spark.repl.SparkIMain$exprTyper", "INFO", log4j_config_file);
-        handle_result(status, "update_spark_config: log4j.logger.org.apache.spark.repl.SparkIMain$exprTyper", "INFO", log4j_config_file);
-        status = update_spark_config("log4j.logger.org.apache.spark.repl.SparkILoop$SparkILoopInterpreter", "INFO", log4j_config_file);
-        handle_result(status, "update_spark_config: log4j.logger.org.apache.spark.repl.SparkILoop$SparkILoopInterpreter", "INFO", log4j_config_file);
+//        status = update_spark_config("log4j.logger.org.apache.spark.repl.SparkIMain$exprTyper", "INFO", log4j_config_file);
+//        handle_result(status, "update_spark_config: log4j.logger.org.apache.spark.repl.SparkIMain$exprTyper", "INFO", log4j_config_file);
+//        status = update_spark_config("log4j.logger.org.apache.spark.repl.SparkILoop$SparkILoopInterpreter", "INFO", log4j_config_file);
+//        handle_result(status, "update_spark_config: log4j.logger.org.apache.spark.repl.SparkILoop$SparkILoopInterpreter", "INFO", log4j_config_file);
 
         //				 Update spark-metrics.properties configuration
         //	const char* metrics_config_file = "spark-metrics.properties";
@@ -4000,11 +4014,11 @@ void configure_target_component(Component target) {
     case TEZ:
 
         //	 Update Tez configuration parameters
-        status = modify_tez_config("tez.lib.uris.classpath", "{{hadoop_conf_dir}},{{hadoop_home}}/*,{{hadoop_home}}/lib/*,{{hadoop_hdfs_home}}/*,{{hadoop_hdfs_home}}/lib/*,{{hadoop_yarn_home}}/*,{{hadoop_yarn_home}}/lib/*,{{tez_home}}/*,{{tez_home}}/lib/*,{{tez_conf_dir}}", "tez-site.xml");
-        handle_result(status, "modify_tez_config: tez.lib.uris.classpath", "{{hadoop_conf_dir}},{{hadoop_home}}/*,{{hadoop_home}}/lib/*,{{hadoop_hdfs_home}}/*,{{hadoop_hdfs_home}}/lib/*,{{hadoop_yarn_home}}/*,{{hadoop_yarn_home}}/lib/*,{{tez_home}}/*,{{tez_home}}/lib/*,{{tez_conf_dir}}", "tez-site.xml");
+//        status = modify_tez_config("tez.lib.uris.classpath", "{{hadoop_conf_dir}},{{hadoop_home}}/*,{{hadoop_home}}/lib/*,{{hadoop_hdfs_home}}/*,{{hadoop_hdfs_home}}/lib/*,{{hadoop_yarn_home}}/*,{{hadoop_yarn_home}}/lib/*,{{tez_home}}/*,{{tez_home}}/lib/*,{{tez_conf_dir}}", "tez-site.xml");
+//        handle_result(status, "modify_tez_config: tez.lib.uris.classpath", "{{hadoop_conf_dir}},{{hadoop_home}}/*,{{hadoop_home}}/lib/*,{{hadoop_hdfs_home}}/*,{{hadoop_hdfs_home}}/lib/*,{{hadoop_yarn_home}}/*,{{hadoop_yarn_home}}/lib/*,{{tez_home}}/*,{{tez_home}}/lib/*,{{tez_conf_dir}}", "tez-site.xml");
 
-        status = modify_tez_config("tez.lib.uris", "{{tez_lib_uris}}", "tez-site.xml");
-        handle_result(status, "modify_tez_config: tez.lib.uris", "{{tez_lib_uris}}", "tez-site.xml");
+//        status = modify_tez_config("tez.lib.uris", "{{tez_lib_uris}}", "tez-site.xml");
+//        handle_result(status, "modify_tez_config: tez.lib.uris", "{{tez_lib_uris}}", "tez-site.xml");
 
         status = modify_tez_config("tez.cluster.additional.classpath.prefix", "/etc/hadoop/conf/secure", "tez-site.xml");
         handle_result(status, "modify_tez_config: tez.cluster.additional.classpath.prefix", "/etc/hadoop/conf/secure", "tez-site.xml");
@@ -4015,32 +4029,32 @@ void configure_target_component(Component target) {
         status = modify_tez_config("tez.generate.debug.artifacts", "false", "tez-site.xml");
         handle_result(status, "modify_tez_config: tez.generate.debug.artifacts", "false", "tez-site.xml");
 
-        status = modify_tez_config("tez.staging-dir", "/tmp/${user.name}/staging", "tez-site.xml");
-        handle_result(status, "modify_tez_config: tez.staging-dir", "/tmp/${user.name}/staging", "tez-site.xml");
+//        status = modify_tez_config("tez.staging-dir", "/tmp/${user.name}/staging", "tez-site.xml");
+//        handle_result(status, "modify_tez_config: tez.staging-dir", "/tmp/${user.name}/staging", "tez-site.xml");
 
         status = modify_tez_config("tez.am.resource.memory.mb", "2048", "tez-site.xml");
         handle_result(status, "modify_tez_config: tez.am.resource.memory.mb", "2048", "tez-site.xml");
 
-        status = modify_tez_config("tez.am.launch.cmd-opts", "-XX:+PrintGCDetails -verbose:gc -XX:+PrintGCTimeStamps -XX:+UseNUMA -XX:+UseG1GC -XX:+ResizeTLAB{{heap_dump_opts}}", "tez-site.xml");
-        handle_result(status, "modify_tez_config: tez.am.launch.cmd-opts", "-XX:+PrintGCDetails -verbose:gc -XX:+PrintGCTimeStamps -XX:+UseNUMA -XX:+UseG1GC -XX:+ResizeTLAB{{heap_dump_opts}}", "tez-site.xml");
+//        status = modify_tez_config("tez.am.launch.cmd-opts", "-XX:+PrintGCDetails -verbose:gc -XX:+PrintGCTimeStamps -XX:+UseNUMA -XX:+UseG1GC -XX:+ResizeTLAB{{heap_dump_opts}}", "tez-site.xml");
+//        handle_result(status, "modify_tez_config: tez.am.launch.cmd-opts", "-XX:+PrintGCDetails -verbose:gc -XX:+PrintGCTimeStamps -XX:+UseNUMA -XX:+UseG1GC -XX:+ResizeTLAB{{heap_dump_opts}}", "tez-site.xml");
 
         status = modify_tez_config("tez.am.launch.cluster-default.cmd-opts", "-server -Djava.net.preferIPv4Stack=true", "tez-site.xml");
         handle_result(status, "modify_tez_config: tez.am.launch.cluster-default.cmd-opts", "-server -Djava.net.preferIPv4Stack=true", "tez-site.xml");
 
-        status = modify_tez_config("tez.am.launch.env", "LD_LIBRARY_PATH={{hadoop_home}}/lib/native", "tez-site.xml");
-        handle_result(status, "modify_tez_config: tez.am.launch.env", "LD_LIBRARY_PATH={{hadoop_home}}/lib/native", "tez-site.xml");
+//        status = modify_tez_config("tez.am.launch.env", "LD_LIBRARY_PATH={{hadoop_home}}/lib/native", "tez-site.xml");
+//        handle_result(status, "modify_tez_config: tez.am.launch.env", "LD_LIBRARY_PATH={{hadoop_home}}/lib/native", "tez-site.xml");
 
         status = modify_tez_config("tez.task.resource.memory.mb", "1536", "tez-site.xml");
         handle_result(status, "modify_tez_config: tez.task.resource.memory.mb", "1536", "tez-site.xml");
 
-        status = modify_tez_config("tez.task.launch.cmd-opts", "-XX:+PrintGCDetails -verbose:gc -XX:+PrintGCTimeStamps -XX:+UseNUMA -XX:+UseG1GC -XX:+ResizeTLAB{{heap_dump_opts}}", "tez-site.xml");
-        handle_result(status, "modify_tez_config: tez.task.launch.cmd-opts", "-XX:+PrintGCDetails -verbose:gc -XX:+PrintGCTimeStamps -XX:+UseNUMA -XX:+UseG1GC -XX:+ResizeTLAB{{heap_dump_opts}}", "tez-site.xml");
+//        status = modify_tez_config("tez.task.launch.cmd-opts", "-XX:+PrintGCDetails -verbose:gc -XX:+PrintGCTimeStamps -XX:+UseNUMA -XX:+UseG1GC -XX:+ResizeTLAB{{heap_dump_opts}}", "tez-site.xml");
+//        handle_result(status, "modify_tez_config: tez.task.launch.cmd-opts", "-XX:+PrintGCDetails -verbose:gc -XX:+PrintGCTimeStamps -XX:+UseNUMA -XX:+UseG1GC -XX:+ResizeTLAB{{heap_dump_opts}}", "tez-site.xml");
 
         status = modify_tez_config("tez.task.launch.cluster-default.cmd-opts", "-server -Djava.net.preferIPv4Stack=true", "tez-site.xml");
         handle_result(status, "modify_tez_config: tez.task.launch.cluster-default.cmd-opts", "-server -Djava.net.preferIPv4Stack=true", "tez-site.xml");
 
-        status = modify_tez_config("tez.task.launch.env", "LD_LIBRARY_PATH={{hadoop_home}}/lib/native", "tez-site.xml");
-        handle_result(status, "modify_tez_config: tez.task.launch.env", "LD_LIBRARY_PATH={{hadoop_home}}/lib/native", "tez-site.xml");
+//        status = modify_tez_config("tez.task.launch.env", "LD_LIBRARY_PATH={{hadoop_home}}/lib/native", "tez-site.xml");
+//        handle_result(status, "modify_tez_config: tez.task.launch.env", "LD_LIBRARY_PATH={{hadoop_home}}/lib/native", "tez-site.xml");
 
         status = modify_tez_config("tez.shuffle-vertex-manager.min-src-fraction", "0.2", "tez-site.xml");
         handle_result(status, "modify_tez_config: tez.shuffle-vertex-manager.min-src-fraction", "0.2", "tez-site.xml");
@@ -4273,8 +4287,8 @@ void configure_target_component(Component target) {
         status = set_zeppelin_config("log4j.properties", "log4j.appender.dailyfile", "org.apache.log4j.DailyRollingFileAppender");
         handle_result(status, "log4j.appender.dailyfile", "org.apache.log4j.DailyRollingFileAppender", "log4j.properties");
 
-        status = set_zeppelin_config("log4j.properties", "log4j.appender.dailyfile.File", "${zeppelin.log.file}");
-        handle_result(status, "log4j.appender.dailyfile.File", "${zeppelin.log.file}", "log4j.properties");
+//        status = set_zeppelin_config("log4j.properties", "log4j.appender.dailyfile.File", "${zeppelin.log.file}");
+//        handle_result(status, "log4j.appender.dailyfile.File", "${zeppelin.log.file}", "log4j.properties");
 
         status = set_zeppelin_config("log4j.properties", "log4j.appender.dailyfile.layout", "org.apache.log4j.PatternLayout");
         handle_result(status, "log4j.appender.dailyfile.layout", "org.apache.log4j.PatternLayout", "log4j.properties");
@@ -4284,23 +4298,23 @@ void configure_target_component(Component target) {
 
 
         //		 Update Shiro configuration parameters
-        status = set_zeppelin_config("zeppelin-shiro.ini", "users.admin", "$shiro1$SHA-256$500000$p6Be9+t2hdUXJQj2D0b1fg==$bea5JIMqcVF3J6eNZGWQ/3eeDByn5iEZDuGsEip06+M=, admin");
-        handle_result(status, "users.admin", "$shiro1$SHA-256$500000$p6Be9+t2hdUXJQj2D0b1fg==$bea5JIMqcVF3J6eNZGWQ/3eeDByn5iEZDuGsEip06+M=, admin", "zeppelin-shiro.ini");
+//        status = set_zeppelin_config("zeppelin-shiro.ini", "users.admin", "$shiro1$SHA-256$500000$p6Be9+t2hdUXJQj2D0b1fg==$bea5JIMqcVF3J6eNZGWQ/3eeDByn5iEZDuGsEip06+M=, admin");
+//        handle_result(status, "users.admin", "$shiro1$SHA-256$500000$p6Be9+t2hdUXJQj2D0b1fg==$bea5JIMqcVF3J6eNZGWQ/3eeDByn5iEZDuGsEip06+M=, admin", "zeppelin-shiro.ini");
 
-        status = set_zeppelin_config("zeppelin-shiro.ini", "users.user1", "$shiro1$SHA-256$500000$G2ymy/qmuZnGY6or4v2KfA==$v9fabqWgCNCgechtOUqAQenGDs0OSLP28q2wolPT4wU=, role1, role2");
-        handle_result(status, "users.user1", "$shiro1$SHA-256$500000$G2ymy/qmuZnGY6or4v2KfA==$v9fabqWgCNCgechtOUqAQenGDs0OSLP28q2wolPT4wU=, role1, role2", "zeppelin-shiro.ini");
+//        status = set_zeppelin_config("zeppelin-shiro.ini", "users.user1", "$shiro1$SHA-256$500000$G2ymy/qmuZnGY6or4v2KfA==$v9fabqWgCNCgechtOUqAQenGDs0OSLP28q2wolPT4wU=, role1, role2");
+//        handle_result(status, "users.user1", "$shiro1$SHA-256$500000$G2ymy/qmuZnGY6or4v2KfA==$v9fabqWgCNCgechtOUqAQenGDs0OSLP28q2wolPT4wU=, role1, role2", "zeppelin-shiro.ini");
 
-        status = set_zeppelin_config("zeppelin-shiro.ini", "users.user2", "$shiro1$SHA-256$500000$aHBgiuwSgAcP3Xt5mEzeFw==$KosBnN2BNKA9/KHBL0hnU/woJFl+xzJFj12NQ0fnjCU=, role3");
-        handle_result(status, "users.user2", "$shiro1$SHA-256$500000$aHBgiuwSgAcP3Xt5mEzeFw==$KosBnN2BNKA9/KHBL0hnU/woJFl+xzJFj12NQ0fnjCU=, role3", "zeppelin-shiro.ini");
+//        status = set_zeppelin_config("zeppelin-shiro.ini", "users.user2", "$shiro1$SHA-256$500000$aHBgiuwSgAcP3Xt5mEzeFw==$KosBnN2BNKA9/KHBL0hnU/woJFl+xzJFj12NQ0fnjCU=, role3");
+//        handle_result(status, "users.user2", "$shiro1$SHA-256$500000$aHBgiuwSgAcP3Xt5mEzeFw==$KosBnN2BNKA9/KHBL0hnU/woJFl+xzJFj12NQ0fnjCU=, role3", "zeppelin-shiro.ini");
 
-        status = set_zeppelin_config("zeppelin-shiro.ini", "users.user3", "$shiro1$SHA-256$500000$nf0GzH10GbYVoxa7DOlOSw==$ov/IA5W8mRWPwvAoBjNYxg3udJK0EmrVMvFCwcr9eAs=, role2");
-        handle_result(status, "users.user3", "$shiro1$SHA-256$500000$nf0GzH10GbYVoxa7DOlOSw==$ov/IA5W8mRWPwvAoBjNYxg3udJK0EmrVMvFCwcr9eAs=, role2", "zeppelin-shiro.ini");
+//        status = set_zeppelin_config("zeppelin-shiro.ini", "users.user3", "$shiro1$SHA-256$500000$nf0GzH10GbYVoxa7DOlOSw==$ov/IA5W8mRWPwvAoBjNYxg3udJK0EmrVMvFCwcr9eAs=, role2");
+//        handle_result(status, "users.user3", "$shiro1$SHA-256$500000$nf0GzH10GbYVoxa7DOlOSw==$ov/IA5W8mRWPwvAoBjNYxg3udJK0EmrVMvFCwcr9eAs=, role2", "zeppelin-shiro.ini");
 
         status = set_zeppelin_config("zeppelin-shiro.ini", "main.passwordMatcher", "org.apache.shiro.authc.credential.PasswordMatcher");
         handle_result(status, "main.passwordMatcher", "org.apache.shiro.authc.credential.PasswordMatcher", "zeppelin-shiro.ini");
 
-        status = set_zeppelin_config("zeppelin-shiro.ini", "main.iniRealm.credentialsMatcher", "$passwordMatcher");
-        handle_result(status, "main.iniRealm.credentialsMatcher", "$passwordMatcher", "zeppelin-shiro.ini");
+//        status = set_zeppelin_config("zeppelin-shiro.ini", "main.iniRealm.credentialsMatcher", "$passwordMatcher");
+//        handle_result(status, "main.iniRealm.credentialsMatcher", "$passwordMatcher", "zeppelin-shiro.ini");
 
         status = set_zeppelin_config("zeppelin-shiro.ini", "main.sessionManager", "org.apache.shiro.web.session.mgt.DefaultWebSessionManager");
         handle_result(status, "main.sessionManager", "org.apache.shiro.web.session.mgt.DefaultWebSessionManager", "zeppelin-shiro.ini");
@@ -4308,8 +4322,8 @@ void configure_target_component(Component target) {
         status = set_zeppelin_config("zeppelin-shiro.ini", "main.cacheManager", "org.apache.shiro.cache.MemoryConstrainedCacheManager");
         handle_result(status, "main.cacheManager", "org.apache.shiro.cache.MemoryConstrainedCacheManager", "zeppelin-shiro.ini");
 
-        status = set_zeppelin_config("zeppelin-shiro.ini", "main.securityManager.cacheManager", "$cacheManager");
-        handle_result(status, "main.securityManager.cacheManager", "$cacheManager", "zeppelin-shiro.ini");
+//        status = set_zeppelin_config("zeppelin-shiro.ini", "main.securityManager.cacheManager", "$cacheManager");
+//        handle_result(status, "main.securityManager.cacheManager", "$cacheManager", "zeppelin-shiro.ini");
 
         status = set_zeppelin_config("zeppelin-shiro.ini", "main.cookie", "org.apache.shiro.web.servlet.SimpleCookie");
         handle_result(status, "main.cookie", "org.apache.shiro.web.servlet.SimpleCookie", "zeppelin-shiro.ini");
@@ -4421,11 +4435,11 @@ void configure_target_component(Component target) {
         status = modify_zookeeper_config("log4j.appender.ROLLINGFILE.Threshold", "DEBUG", "log4j.properties");
         handle_result(status, "modify_zookeeper_config: log4j.appender.ROLLINGFILE.Threshold", "DEBUG", "log4j.properties");
 
-        status = modify_zookeeper_config("log4j.appender.ROLLINGFILE.File", "{{zk_log_dir}}/zookeeper.log", "log4j.properties");
-        handle_result(status, "modify_zookeeper_config: log4j.appender.ROLLINGFILE.File", "{{zk_log_dir}}/zookeeper.log", "log4j.properties");
+//        status = modify_zookeeper_config("log4j.appender.ROLLINGFILE.File", "{{zk_log_dir}}/zookeeper.log", "log4j.properties");
+//        handle_result(status, "modify_zookeeper_config: log4j.appender.ROLLINGFILE.File", "{{zk_log_dir}}/zookeeper.log", "log4j.properties");
 
-        status = modify_zookeeper_config("log4j.appender.ROLLINGFILE.MaxFileSize", "{{zookeeper_log_max_backup_size}}MB", "log4j.properties");
-        handle_result(status, "modify_zookeeper_config: log4j.appender.ROLLINGFILE.MaxFileSize", "{{zookeeper_log_max_backup_size}}MB", "log4j.properties");
+//        status = modify_zookeeper_config("log4j.appender.ROLLINGFILE.MaxFileSize", "{{zookeeper_log_max_backup_size}}MB", "log4j.properties");
+//        handle_result(status, "modify_zookeeper_config: log4j.appender.ROLLINGFILE.MaxFileSize", "{{zookeeper_log_max_backup_size}}MB", "log4j.properties");
 
         status = modify_zookeeper_config("log4j.appender.ROLLINGFILE.layout", "org.apache.log4j.PatternLayout", "log4j.properties");
         handle_result(status, "modify_zookeeper_config: log4j.appender.ROLLINGFILE.layout", "org.apache.log4j.PatternLayout", "log4j.properties");
@@ -4497,36 +4511,36 @@ void configure_target_component(Component target) {
         handle_result(status, "taskmanager.numberOfTaskSlots", "1", "config.yaml");
         status = update_flink_config("parallelism.default", "1", "config.yaml");
         handle_result(status, "parallelism.default", "1", "config.yaml");
-        status = update_flink_config("env.java.home", "{{java_home}}", "config.yaml");
-        handle_result(status, "env.java.home", "{{java_home}}", "config.yaml");
-        status = update_flink_config("env.hadoop.conf.dir", "{{hadoop_conf_dir}}", "config.yaml");
-        handle_result(status, "env.hadoop.conf.dir", "{{hadoop_conf_dir}}", "config.yaml");
-        status = update_flink_config("env.pid.dir", "{{flink_pid_dir}}", "config.yaml");
-        handle_result(status, "env.pid.dir", "{{flink_pid_dir}}", "config.yaml");
-        status = update_flink_config("env.log.dir", "{{flink_log_dir}}", "config.yaml");
-        handle_result(status, "env.log.dir", "{{flink_log_dir}}", "config.yaml");
+//        status = update_flink_config("env.java.home", "{{java_home}}", "config.yaml");
+//        handle_result(status, "env.java.home", "{{java_home}}", "config.yaml");
+//        status = update_flink_config("env.hadoop.conf.dir", "{{hadoop_conf_dir}}", "config.yaml");
+//        handle_result(status, "env.hadoop.conf.dir", "{{hadoop_conf_dir}}", "config.yaml");
+//        status = update_flink_config("env.pid.dir", "{{flink_pid_dir}}", "config.yaml");
+//        handle_result(status, "env.pid.dir", "{{flink_pid_dir}}", "config.yaml");
+//        status = update_flink_config("env.log.dir", "{{flink_log_dir}}", "config.yaml");
+//        handle_result(status, "env.log.dir", "{{flink_log_dir}}", "config.yaml");
         status = update_flink_config("jobmanager.execution.failover-strategy", "region", "config.yaml");
         handle_result(status, "jobmanager.execution.failover-strategy", "region", "config.yaml");
         status = update_flink_config("rest.address", "localhost", "config.yaml");
         handle_result(status, "rest.address", "localhost", "config.yaml");
         status = update_flink_config("rest.bind-address", "localhost", "config.yaml");
         handle_result(status, "rest.bind-address", "localhost", "config.yaml");
-        status = update_flink_config("jobmanager.archive.fs.dir", "{{jobmanager_archive_fs_dir}}", "config.yaml");
-        handle_result(status, "jobmanager.archive.fs.dir", "{{jobmanager_archive_fs_dir}}", "config.yaml");
-        status = update_flink_config("historyserver.web.port", "{{historyserver_web_port}}", "config.yaml");
-        handle_result(status, "historyserver.web.port", "{{historyserver_web_port}}", "config.yaml");
-        status = update_flink_config("historyserver.archive.fs.dir", "{{historyserver_archive_fs_dir}}", "config.yaml");
-        handle_result(status, "historyserver.archive.fs.dir", "{{historyserver_archive_fs_dir}}", "config.yaml");
-        status = update_flink_config("historyserver.archive.fs.refresh-interval", "{{historyserver_archive_fs_refresh_interval}}", "config.yaml");
-        handle_result(status, "historyserver.archive.fs.refresh-interval", "{{historyserver_archive_fs_refresh_interval}}", "config.yaml");
+//        status = update_flink_config("jobmanager.archive.fs.dir", "{{jobmanager_archive_fs_dir}}", "config.yaml");
+//        handle_result(status, "jobmanager.archive.fs.dir", "{{jobmanager_archive_fs_dir}}", "config.yaml");
+//        status = update_flink_config("historyserver.web.port", "{{historyserver_web_port}}", "config.yaml");
+//        handle_result(status, "historyserver.web.port", "{{historyserver_web_port}}", "config.yaml");
+//        status = update_flink_config("historyserver.archive.fs.dir", "{{historyserver_archive_fs_dir}}", "config.yaml");
+//        handle_result(status, "historyserver.archive.fs.dir", "{{historyserver_archive_fs_dir}}", "config.yaml");
+//        status = update_flink_config("historyserver.archive.fs.refresh-interval", "{{historyserver_archive_fs_refresh_interval}}", "config.yaml");
+//        handle_result(status, "historyserver.archive.fs.refresh-interval", "{{historyserver_archive_fs_refresh_interval}}", "config.yaml");
 
         //		 Conditionally include Kerberos configuration
-        status = update_flink_config("security.kerberos.login.use-ticket-cache", "{{'true' if security_enabled else ''}}", "config.yaml");
-        handle_result(status, "security.kerberos.login.use-ticket-cache", "{{'true' if security_enabled else ''}}", "config.yaml");
-        status = update_flink_config("security.kerberos.login.keytab", "{{security_kerberos_login_keytab if security_enabled else ''}}", "config.yaml");
-        handle_result(status, "security.kerberos.login.keytab", "{{security_kerberos_login_keytab if security_enabled else ''}}", "config.yaml");
-        status = update_flink_config("security.kerberos.login.principal", "{{security_kerberos_login_principal if security_enabled else ''}}", "config.yaml");
-        handle_result(status, "security.kerberos.login.principal", "{{security_kerberos_login_principal if security_enabled else ''}}", "config.yaml");
+//        status = update_flink_config("security.kerberos.login.use-ticket-cache", "{{'true' if security_enabled else ''}}", "config.yaml");
+//        handle_result(status, "security.kerberos.login.use-ticket-cache", "{{'true' if security_enabled else ''}}", "config.yaml");
+//        status = update_flink_config("security.kerberos.login.keytab", "{{security_kerberos_login_keytab if security_enabled else ''}}", "config.yaml");
+//        handle_result(status, "security.kerberos.login.keytab", "{{security_kerberos_login_keytab if security_enabled else ''}}", "config.yaml");
+//        status = update_flink_config("security.kerberos.login.principal", "{{security_kerberos_login_principal if security_enabled else ''}}", "config.yaml");
+//        handle_result(status, "security.kerberos.login.principal", "{{security_kerberos_login_principal if security_enabled else ''}}", "config.yaml");
 
         //		 Update with explicit values from XML properties
         status = update_flink_config("jobmanager.archive.fs.dir", "hdfs:/completed-jobs/", "config.yaml");
@@ -4554,8 +4568,8 @@ void configure_target_component(Component target) {
         handle_result(status, "appender.file.type", "FILE", "log4j.properties");
         status = update_flink_config("appender.file.append", "false", "log4j.properties");
         handle_result(status, "appender.file.append", "false", "log4j.properties");
-        status = update_flink_config("appender.file.fileName", "${sys:log.file}", "log4j.properties");
-        handle_result(status, "appender.file.fileName", "${sys:log.file}", "log4j.properties");
+//        status = update_flink_config("appender.file.fileName", "${sys:log.file}", "log4j.properties");
+//        handle_result(status, "appender.file.fileName", "${sys:log.file}", "log4j.properties");
         status = update_flink_config("appender.file.layout.type", "PatternLayout", "log4j.properties");
         handle_result(status, "appender.file.layout.type", "PatternLayout", "log4j.properties");
         status = update_flink_config("appender.file.layout.pattern", "%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p %-60c %x - %m%n", "log4j.properties");
@@ -4651,10 +4665,10 @@ void configure_target_component(Component target) {
         handle_result(status, "appender.rolling.type", "RollingFile", "log4j-console.properties");
         status = update_flink_config("appender.rolling.append", "true", "log4j-console.properties");
         handle_result(status, "appender.rolling.append", "true", "log4j-console.properties");
-        status = update_flink_config("appender.rolling.fileName", "${sys:log.file}", "log4j-console.properties");
-        handle_result(status, "appender.rolling.fileName", "${sys:log.file}", "log4j-console.properties");
-        status = update_flink_config("appender.rolling.filePattern", "${sys:log.file}.%i", "log4j-console.properties");
-        handle_result(status, "appender.rolling.filePattern", "${sys:log.file}.%i", "log4j-console.properties");
+//        status = update_flink_config("appender.rolling.fileName", "${sys:log.file}", "log4j-console.properties");
+//        handle_result(status, "appender.rolling.fileName", "${sys:log.file}", "log4j-console.properties");
+//        status = update_flink_config("appender.rolling.filePattern", "${sys:log.file}.%i", "log4j-console.properties");
+//        handle_result(status, "appender.rolling.filePattern", "${sys:log.file}.%i", "log4j-console.properties");
         status = update_flink_config("appender.rolling.layout.type", "PatternLayout", "log4j-console.properties");
         handle_result(status, "appender.rolling.layout.type", "PatternLayout", "log4j-console.properties");
         status = update_flink_config("appender.rolling.layout.pattern", "%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p %-60c %x - %m%n", "log4j-console.properties");
@@ -4669,8 +4683,8 @@ void configure_target_component(Component target) {
         handle_result(status, "appender.rolling.policies.startup.type", "OnStartupTriggeringPolicy", "log4j-console.properties");
         status = update_flink_config("appender.rolling.strategy.type", "DefaultRolloverStrategy", "log4j-console.properties");
         handle_result(status, "appender.rolling.strategy.type", "DefaultRolloverStrategy", "log4j-console.properties");
-        status = update_flink_config("appender.rolling.strategy.max", "${env:MAX_LOG_FILE_NUMBER:-10}", "log4j-console.properties");
-        handle_result(status, "appender.rolling.strategy.max", "${env:MAX_LOG_FILE_NUMBER:-10}", "log4j-console.properties");
+//        status = update_flink_config("appender.rolling.strategy.max", "${env:MAX_LOG_FILE_NUMBER:-10}", "log4j-console.properties");
+//        handle_result(status, "appender.rolling.strategy.max", "${env:MAX_LOG_FILE_NUMBER:-10}", "log4j-console.properties");
         status = update_flink_config("logger.netty.name", "org.jboss.netty.channel.DefaultChannelPipeline", "log4j-console.properties");
         handle_result(status, "logger.netty.name", "org.jboss.netty.channel.DefaultChannelPipeline", "log4j-console.properties");
         status = update_flink_config("logger.netty.level", "OFF", "log4j-console.properties");
@@ -4708,10 +4722,10 @@ void configure_target_component(Component target) {
         handle_result(status, "appender.main.type", "RollingFile", "log4j.properties");
         status = update_flink_config("appender.main.append", "true", "log4j.properties");
         handle_result(status, "appender.main.append", "true", "log4j.properties");
-        status = update_flink_config("appender.main.fileName", "${sys:log.file}", "log4j.properties");
-        handle_result(status, "appender.main.fileName", "${sys:log.file}", "log4j.properties");
-        status = update_flink_config("appender.main.filePattern", "${sys:log.file}.%i", "log4j.properties");
-        handle_result(status, "appender.main.filePattern", "${sys:log.file}.%i", "log4j.properties");
+//        status = update_flink_config("appender.main.fileName", "${sys:log.file}", "log4j.properties");
+//        handle_result(status, "appender.main.fileName", "${sys:log.file}", "log4j.properties");
+//        status = update_flink_config("appender.main.filePattern", "${sys:log.file}.%i", "log4j.properties");
+//        handle_result(status, "appender.main.filePattern", "${sys:log.file}.%i", "log4j.properties");
         status = update_flink_config("appender.main.layout.type", "PatternLayout", "log4j.properties");
         handle_result(status, "appender.main.layout.type", "PatternLayout", "log4j.properties");
         status = update_flink_config("appender.main.layout.pattern", "%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p %-60c %x - %m%n", "log4j.properties");
@@ -4726,8 +4740,8 @@ void configure_target_component(Component target) {
         handle_result(status, "appender.main.policies.startup.type", "OnStartupTriggeringPolicy", "log4j.properties");
         status = update_flink_config("appender.main.strategy.type", "DefaultRolloverStrategy", "log4j.properties");
         handle_result(status, "appender.main.strategy.type", "DefaultRolloverStrategy", "log4j.properties");
-        status = update_flink_config("appender.main.strategy.max", "${env:MAX_LOG_FILE_NUMBER:-10}", "log4j.properties");
-        handle_result(status, "appender.main.strategy.max", "${env:MAX_LOG_FILE_NUMBER:-10}", "log4j.properties");
+//        status = update_flink_config("appender.main.strategy.max", "${env:MAX_LOG_FILE_NUMBER:-10}", "log4j.properties");
+//        handle_result(status, "appender.main.strategy.max", "${env:MAX_LOG_FILE_NUMBER:-10}", "log4j.properties");
         //		 Update Flink session logging configuration
         status = update_flink_config("monitorInterval", "30", "log4j-session.properties");
         handle_result(status, "monitorInterval", "30", "log4j-session.properties");

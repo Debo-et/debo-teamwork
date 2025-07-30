@@ -1,3 +1,20 @@
+/*
+ * Copyright 2025 Surafel Temesgen
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -315,6 +332,12 @@ void install_hadoop(const char *version, char *location) {
 
     if (create_properties_file(candidate_path, "ranger-hdfs-plugin.properties") !=0)
         fprintf(stderr,   "Failed to create XML file\n");
+    ConfigStatus status;
+    status = modify_hdfs_config("dfs.namenode.name.dir", nameNode, "hdfs-site.xml");
+    handle_result(status, "dfs.namenode.name.dir", nameNode, "hdfs-site.xml");
+        
+    status = modify_hdfs_config("dfs.datanode.data.dir", dataNode, "hdfs-site.xml");
+    handle_result(status, "dfs.datanode.data.dir", dataNode, "hdfs-site.xml");
 
 
     printf( "Hadoop installed successfully to %s\n", install_dir);
@@ -1445,10 +1468,11 @@ void install_HBase(char *version, char *location) {
     char dir_name[256];
     char command[1024];
     char url[256];
-    const char* default_version = "2.5.11";
+    const char* default_version = "2.5.12";
 
     // Create download URL
-    snprintf(url, sizeof(url), "https://downloads.apache.org/hbase/stable/hbase-%s-bin.tar.gz",
+    snprintf(url, sizeof(url), "https://downloads.apache.org/hbase/%s/hbase-%s-bin.tar.gz",
+             version ? version : default_version,
              version ? version : default_version);
 
     // Download the archive
@@ -1807,9 +1831,9 @@ void install_zookeeper(char *version, char *location) {
 
     // Generate download URL
     if (version)
-        snprintf(url, sizeof(url), "https://downloads.apache.org/zookeeper/stable/apache-zookeeper-%s-bin.tar.gz", version);
+        snprintf(url, sizeof(url), "https://downloads.apache.org/zookeeper/zookeeper-%s/apache-zookeeper-%s-bin.tar.gz", version, version);
     else
-        snprintf(url, sizeof(url), "https://downloads.apache.org/zookeeper/stable/apache-zookeeper-3.8.4-bin.tar.gz");
+        snprintf(url, sizeof(url), "https://downloads.apache.org/zookeeper/zookeeper-3.8.4/apache-zookeeper-3.8.4-bin.tar.gz");
 
     // Download using wget
     snprintf(command, sizeof(command), "wget -q %s >/dev/null 2>&1", url);

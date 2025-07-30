@@ -1,3 +1,20 @@
+/*
+ * Copyright 2025 Surafel Temesgen
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 #include "utiles.h"
 #include "connect.h"
 #include "protocol.h"
@@ -1206,7 +1223,7 @@ static const char* tez_versions[] = {"0.10.1", "0.10.2", "0.10.3", "0.10.4", "0.
 static const char* ranger_versions[] = {"0.6.3", "0.7.1", "1.0.0", "1.1.0", "1.2.0", "2.0.0", "2.1.0", "2.2.0", "2.3.0", "2.4.0", "2.5.0", "2.6.0", NULL};
 static const char* phoenix_versions[] = {"4.16.1", "5.1.2", "5.1.3", "5.2.0", "5.2.1", NULL};
 static const char* solr_versions[] = {"9.8.1", NULL};
-static const char* spark_versions[] = {"3.4.4", "3.5.5", NULL};
+static const char* spark_versions[] = {"3.4.4", "4.0.0", NULL};
 static const char* zeppelin_versions[] = {"0.10.0", "0.10.1", "0.11.0", "0.11.1", "0.11.2", "0.12.0", "0.8.2", "0.9.0", NULL};
 static const char* kafka_versions[] = {"3.7.2", "3.8.0", "3.8.1", "3.9.0", NULL};
 static const char* zookeeper_versions[] = {"3.7.2", "3.8.4", "3.9.3", NULL};

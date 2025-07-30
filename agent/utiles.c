@@ -1,3 +1,20 @@
+/*
+ * Copyright 2025 Surafel Temesgen
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 #include "utiles.h"
 #include "connutil.h"
 #include <libssh/libssh.h>
@@ -710,6 +727,7 @@ bool isComponentVersionSupported(Component component, const char *version) {
     return false;
 }
 
+
 void buffer_intermediary_function(ClientSocket *client_sock, char *buf) {
     if (buf == NULL || *buf == '\0') {
         return; // Handle NULL or empty input
@@ -741,6 +759,15 @@ void buffer_intermediary_function(ClientSocket *client_sock, char *buf) {
     }
 }
 
+int send_string_over_gssapi(ClientSocket *client_sock, char *buffer) {
+    size_t len = 0;
+    
+    if (buffer != NULL) {
+        len = strlen(buffer);
+    }
+    
+    return be_gssapi_write(client_sock, buffer, len);
+}
 
 int FPRINTF(ClientSocket *client_sock, const char *format, ...) {
     va_list args;
@@ -763,7 +790,8 @@ int FPRINTF(ClientSocket *client_sock, const char *format, ...) {
     vsnprintf(buffer, needed + 1, format, args);
     va_end(args);
 
-    buffer_intermediary_function(client_sock, buffer);
+    send_string_over_gssapi(client_sock, buffer);
+    
     free(buffer);
 
     return needed;
@@ -790,7 +818,7 @@ int PRINTF(ClientSocket *client_sock, const char *format, ...) {
     va_start(args, format);
     vsnprintf(buffer, needed + 1, format, args);
     va_end(args);
-    buffer_intermediary_function(client_sock, buffer);
+    send_string_over_gssapi(client_sock, buffer);
     free(buffer);
 
     return needed;
@@ -827,7 +855,7 @@ void PERROR(ClientSocket *client_sock, const char *s) {
     } else {
         snprintf(buffer, needed + 1, "%s\n", error_str);
     }
-    buffer_intermediary_function(client_sock, buffer);
+    send_string_over_gssapi(client_sock, buffer);
     free(buffer);
 }
 
@@ -855,7 +883,7 @@ int SEND_STRING(ClientSocket *client_sock, const char *str) {
     }
 
     strcpy(buffer, str);  // Safe since we know exact length
-    buffer_intermediary_function(client_sock, buffer);
+    send_string_over_gssapi(client_sock, buffer);
     free(buffer);
     
     return length;  // Return number of characters sent

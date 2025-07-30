@@ -1,37 +1,17 @@
-/*-------------------------------------------------------------------------
- *
- * comm.c
- *	  Communication functions between the Frontend and the Backend
- *
- * These routines handle the low-level details of communication between
- * frontend and backend.  They just shove data across the communication
- * channel, and are ignorant of the semantics of the data.
- *
- * To emit an outgoing message, use the routines in format.c to construct
- * the message in a buffer and then emit it in one call to putmessage.
- * There are no functions to send raw bytes or partial messages; this
- * ensures that the channel will not be clogged by an incomplete message if
- * execution is aborted by partway through the message.
- *
- *-------------------------------------------------------------------------
- */
-
-/*------------------------
- * INTERFACE ROUTINES
- *
- * setup/teardown:
- *		ListenServerPort	- Open  server port
- *		AcceptConnection	- Accept new connection with client
- *
- * low-level I/O:
- *		getbytes		- get a known number of bytes from connection
- *		getmessage	- get a message with length word from connection
- *		getbyte		- get next byte from connection
- *		peekbyte		- peek at next byte from connection
- *		flush		- flush pending output
- *		flush_if_writable - flush pending output if writable without blocking
- *
- *------------------------
+/*
+ * Copyright 2025 Surafel Temesgen
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 #ifdef HAVE_POLL_H

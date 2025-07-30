@@ -1,10 +1,17 @@
-/*-------------------------------------------------------------------------
- *
- * apache.c
- *		command-line interface for the Hadoop ecosystem..
- *
- * Copyright (c) 2025 Surafel Temesgen
- *-------------------------------------------------------------------------
+/*
+ * Copyright 2025 Surafel Temesgen
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 #include "getopt_long.h"
@@ -1090,10 +1097,7 @@ void report(Component comp) {
 }
 
 void perform(Component comp, Action action, char *version , char *config_param ,  char *value) {
-    if (!isComponentInstalled(comp) && (comp != PRESTO) && (comp != PHOENIX)) {
-        fprintf(stderr, "%s is not installed.\n", component_to_string(comp));
-        return;
-    }
+
     // Define the two input strings
     const char* act;
     char* message;
@@ -1200,6 +1204,10 @@ void perform(Component comp, Action action, char *version , char *config_param ,
         }
         break;
     case INSTALL:
+        if (isComponentInstalled(comp)) {
+        fprintf(stderr, "%s is  installed.\n", component_to_string(comp));
+        return;
+        }
         install_component(comp, version);
         break;
     case VERSION_SWITCH:
@@ -1400,22 +1408,22 @@ print_inBuffer(const Conn *conn)
 // Helper function to get required reads for INSTALL based on component
 static int get_required_reads_for_install(Component comp) {
     const char *comp_str = component_to_string(comp);
-    if (strcasecmp(comp_str, "HDFS") == 0) return 534;
-    if (strcasecmp(comp_str, "HBASE") == 0) return 133;
-    if (strcasecmp(comp_str, "HIVE") == 0) return 566;
-    if (strcasecmp(comp_str, "KAFKA") == 0) return 246;
+    if (strcasecmp(comp_str, "HDFS") == 0) return 466;
+    if (strcasecmp(comp_str, "HBASE") == 0) return 112;
+    if (strcasecmp(comp_str, "HIVE") == 0) return 508;
+    if (strcasecmp(comp_str, "KAFKA") == 0) return 213;
     if (strcasecmp(comp_str, "LIVY") == 0) return 19;
     if (strcasecmp(comp_str, "STORM") == 0) return 4;
     if (strcasecmp(comp_str, "PIG") == 0) return 4;
-    if (strcasecmp(comp_str, "PRESTO") == 0) return 4;
+    if (strcasecmp(comp_str, "PRESTO") == 0) return 14;
     if (strcasecmp(comp_str, "ATLAS") == 0) return 7;
     if (strcasecmp(comp_str, "RANGER") == 0) return 4;
     if (strcasecmp(comp_str, "SOLR") == 0) return 5;
-    if (strcasecmp(comp_str, "SPARK") == 0) return 72;
-    if (strcasecmp(comp_str, "TEZ") == 0) return 53;
-    if (strcasecmp(comp_str, "ZEPPELIN") == 0) return 62;
-    if (strcasecmp(comp_str, "ZOOKEEPER") == 0) return 32;
-    if (strcasecmp(comp_str, "FLINK") == 0) return 147;
+    if (strcasecmp(comp_str, "SPARK") == 0) return 66;
+    if (strcasecmp(comp_str, "TEZ") == 0) return 46;
+    if (strcasecmp(comp_str, "ZEPPELIN") == 0) return 55;
+    if (strcasecmp(comp_str, "ZOOKEEPER") == 0) return 30;
+    if (strcasecmp(comp_str, "FLINK") == 0) return 129;
     return 1; // Default for unknown components
 }
 
@@ -1554,7 +1562,7 @@ static void handle_remote_components(bool ALL, Component component, Action actio
         }
     }
 // Fixed component handling code
-} else {
+    } else {
     if (component == NONE) {
         fprintf(stderr, "Component must be specified when ALL=false\n");
         return;
