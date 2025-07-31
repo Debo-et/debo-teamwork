@@ -549,10 +549,10 @@ const char* get_env_variable(Component comp) {
 
 static void install_component(Component comp, char *version) {
 
-  //  if (isComponentInstalled(comp)) {
-    //    printf("%s is already installed.\n", component_to_string(comp));
-      //  return;
-    //}
+    if (isComponentInstalled(comp)) {
+        fprintf(stderr,"%s is already installed.\n", component_to_string(comp));
+        exit(EXIT_FAILURE);
+    }
 
     int dep_count;
 
@@ -1408,8 +1408,8 @@ print_inBuffer(const Conn *conn)
 // Helper function to get required reads for INSTALL based on component
 static int get_required_reads_for_install(Component comp) {
     const char *comp_str = component_to_string(comp);
-    if (strcasecmp(comp_str, "HDFS") == 0) return 466;
-    if (strcasecmp(comp_str, "HBASE") == 0) return 112;
+    if (strcasecmp(comp_str, "HDFS") == 0) return 465;
+    if (strcasecmp(comp_str, "HBASE") == 0) return 111;
     if (strcasecmp(comp_str, "HIVE") == 0) return 508;
     if (strcasecmp(comp_str, "KAFKA") == 0) return 213;
     if (strcasecmp(comp_str, "LIVY") == 0) return 19;

@@ -1099,11 +1099,11 @@ void install_Solr(char* version, char *location) {
     if (version)
     {
         snprintf(command, sizeof(command),
-                 "wget https://downloads.apache.org/solr/solr/9.8.1/solr-%s.tgz >/dev/null 2>&1", version);
+                 "wget https://downloads.apache.org/solr/solr/9.9.0/solr-%s.tgz >/dev/null 2>&1", version);
     }
     else
         snprintf(command, sizeof(command),
-                 "wget https://downloads.apache.org/solr/solr/9.8.1/solr-9.8.1.tgz >/dev/null 2>&1");
+                 "wget https://downloads.apache.org/solr/solr/9.9.0/solr-9.9.0.tgz >/dev/null 2>&1");
 
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "downloading faild\n");
@@ -1115,7 +1115,7 @@ void install_Solr(char* version, char *location) {
                  "tar xzf solr-%s.tgz >/dev/null 2>&1", version);
     else
         snprintf(command, sizeof(command),
-                 "tar xzf solr-9.8.1.tgz >/dev/null 2>&1");
+                 "tar xzf solr-9.9.0.tgz >/dev/null 2>&1");
 
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "download failed.\n");
@@ -1127,7 +1127,7 @@ void install_Solr(char* version, char *location) {
     if (version)
         snprintf(command, sizeof(command), "sudo rm -f solr-%s.tgz >/dev/null 2>&1", version);
     else
-        snprintf(command, sizeof(command), "sudo rm -f solr-9.8.1.tgz >/dev/null 2>&1");
+        snprintf(command, sizeof(command), "sudo rm -f solr-9.9.0.tgz >/dev/null 2>&1");
 
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "Failed to remove archive.\n");
@@ -1151,7 +1151,7 @@ void install_Solr(char* version, char *location) {
                  version, install_dir, install_dir);
     else
         snprintf(command, sizeof(command),
-                 "sudo mv solr-9.8.1 %s && sudo chown -R $(whoami): %s >/dev/null 2>&1", install_dir, install_dir);
+                 "sudo mv solr-9.9.0 %s && sudo chown -R $(whoami): %s >/dev/null 2>&1", install_dir, install_dir);
 
     if (!executeSystemCommand(command)) {
         fprintf(stderr,   "move failed.\n");

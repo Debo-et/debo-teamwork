@@ -1100,11 +1100,11 @@ void install_Solr(char* version, char *location) {
     if (version)
     {
         snprintf(command, sizeof(command),
-                 "wget https://downloads.apache.org/solr/solr/9.8.1/solr-%s.tgz", version);
+                 "wget https://downloads.apache.org/solr/solr/9.9.0/solr-%s.tgz", version);
     }
     else
         snprintf(command, sizeof(command),
-                 "wget https://downloads.apache.org/solr/solr/9.8.1/solr-9.8.1.tgz");
+                 "wget https://downloads.apache.org/solr/solr/9.9.0/solr-9.9.0.tgz");
 
     if (!executeSystemCommand(command)) {
         FPRINTF(global_client_socket,  "downloading faild\n");
@@ -1116,7 +1116,7 @@ void install_Solr(char* version, char *location) {
                  "tar xzf solr-%s.tgz", version);
     else
         snprintf(command, sizeof(command),
-                 "tar xzf solr-9.8.1.tgz");
+                 "tar xzf solr-9.9.0.tgz");
 
     if (!executeSystemCommand(command)) {
         FPRINTF(global_client_socket,  "download failed.\n");
@@ -1128,7 +1128,7 @@ void install_Solr(char* version, char *location) {
     if (version)
         snprintf(command, sizeof(command), "sudo rm -f solr-%s.tgz", version);
     else
-        snprintf(command, sizeof(command), "sudo rm -f solr-9.8.1.tgz");
+        snprintf(command, sizeof(command), "sudo rm -f solr-9.9.0.tgz");
 
     if (!executeSystemCommand(command)) {
         FPRINTF(global_client_socket,  "Failed to remove archive.\n");
@@ -1152,7 +1152,7 @@ void install_Solr(char* version, char *location) {
                  version, install_dir, install_dir);
     else
         snprintf(command, sizeof(command),
-                 "sudo mv solr-9.8.1 %s && sudo chown -R $(whoami): %s", install_dir, install_dir);
+                 "sudo mv solr-9.9.0 %s && sudo chown -R $(whoami): %s", install_dir, install_dir);
 
     if (!executeSystemCommand(command)) {
         FPRINTF(global_client_socket,  "move failed.\n");

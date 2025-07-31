@@ -1082,7 +1082,7 @@ Component* get_dependencies(Component comp, int *count) {
     static Component pig_deps[] = {HDFS};
     static Component solr_deps[] = {ZOOKEEPER};
     static Component yarn_deps[] = {HDFS};
-    static Component flink_deps[] = {HDFS, YARN};
+    static Component flink_deps[] = {HDFS};
 
     switch (comp) {
     case HBASE: *count = 2; return hbase_deps;
@@ -1091,7 +1091,7 @@ Component* get_dependencies(Component comp, int *count) {
     case PHOENIX: *count = 1; return phoenix_deps;
     case STORM: *count = 1; return storm_deps;
     case SPARK: *count = 2; return spark_deps;        // Updated count
-    case TEZ: *count = 2; return tez_deps;            // Updated count
+    case TEZ: *count = 1; return tez_deps;            // Updated count
     case LIVY: *count = 1; return livy_deps;
     case RANGER: *count = 2; return ranger_deps;      // Updated count
                                                       // New cases for previously missing components
@@ -1099,7 +1099,7 @@ Component* get_dependencies(Component comp, int *count) {
     case PIG: *count = 2; return pig_deps;
     case SOLR: *count = 1; return solr_deps;
     case YARN: *count = 1; return yarn_deps;
-    case FLINK: *count = 2; return flink_deps;
+    case FLINK: *count = 1; return flink_deps;
                 // Components with no dependencies
     case PRESTO:
     case ZEPPELIN:

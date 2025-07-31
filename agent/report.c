@@ -940,10 +940,10 @@ char *report_solr() {
 
 char *report_spark() {
     const char *dir = NULL;
-    char *spark_home = getenv("spark_HOME");
-    char spark_shell_path[4096]; // Use a reasonable buffer size
+    char *spark_home = getenv("SPARK_HOME"); // Fixed case: SPARK_HOME
+    char spark_shell_path[4096];
 
-    // Determine the Spark installation directory
+    // Determine Spark installation directory
     if (spark_home != NULL && access(spark_home, F_OK) == 0) {
         dir = spark_home;
     } else if (access("/opt/spark", F_OK) == 0) {
@@ -954,38 +954,37 @@ char *report_spark() {
         return strdup("Spark installation directory not found.");
     }
 
-    // Check if spark-shell exists and is executable
+    // Check spark-shell executable
     snprintf(spark_shell_path, sizeof(spark_shell_path), "%s/bin/spark-shell", dir);
     if (access(spark_shell_path, X_OK) != 0) {
-        return strdup("Spark installation directory found but spark-shell is missing or not executable.");
+        return strdup("Spark installation found but spark-shell is missing or not executable.");
     }
 
-    // Check if Spark processes are running
+    // Check Spark processes
     int is_running = 0;
     int ret = system("pgrep -f spark > /dev/null 2>&1");
     if (ret != -1 && WIFEXITED(ret)) {
         is_running = (WEXITSTATUS(ret) == 0);
     }
-
     if (!is_running) {
         return strdup("Spark is not started.");
     }
 
-    // Execute spark-shell command and capture output
-    char command[8192]; // Sufficient size for command
-    snprintf(command, sizeof(command), "%s --master yarn", spark_shell_path);
+    // Execute spark-shell and capture stdout/stderr
+    char command[8192];
+    snprintf(command, sizeof(command), "%s --master yarn 2>&1", spark_shell_path); // Redirect stderr to stdout
     FILE *fp = popen(command, "r");
     if (!fp) {
         return strdup("Error executing spark-shell.");
     }
 
+    // Read output
     char buffer[1024];
     char *output = NULL;
     size_t output_size = 0;
-    size_t buffer_len;
 
     while (fgets(buffer, sizeof(buffer), fp) != NULL) {
-        buffer_len = strlen(buffer);
+        size_t buffer_len = strlen(buffer);
         char *new_output = realloc(output, output_size + buffer_len + 1);
         if (!new_output) {
             free(output);
@@ -997,20 +996,55 @@ char *report_spark() {
         output_size += buffer_len;
     }
 
-    // Check if pclose encountered an error
+    // Close pipe and get exit status
     int exit_status = pclose(fp);
     if (exit_status == -1) {
         free(output);
         return strdup("Error closing command stream.");
     }
 
+    // Handle empty output
     if (output == NULL) {
-        return strdup("No output from spark-shell.");
+        output = strdup("");
+        if (!output) {
+            return strdup("Memory allocation error for empty output.");
+        }
     }
 
-    return output;
-}
+    // Check command exit status
+    if (WIFEXITED(exit_status)) {
+        int exit_code = WEXITSTATUS(exit_status);
+        if (exit_code == 0) {
+            return output; // Success: return captured output
+        }
+    }
 
+    // Format error message with exit status and output
+    char *error_msg;
+    if (WIFEXITED(exit_status)) {
+        int exit_code = WEXITSTATUS(exit_status);
+        if (asprintf(&error_msg, "Error: spark-shell failed with exit code %d\nOutput:\n%s", exit_code, output) == -1) {
+            free(output);
+            return strdup("Memory allocation error for error message.");
+        }
+    } else if (WIFSIGNALED(exit_status)) {
+        int sig = WTERMSIG(exit_status);
+        if (asprintf(&error_msg, "Error: spark-shell killed by signal %d (%s)\nOutput:\n%s", 
+                     sig, strsignal(sig), output) == -1) {
+            free(output);
+            return strdup("Memory allocation error for error message.");
+        }
+    } else {
+        if (asprintf(&error_msg, "Error: spark-shell terminated abnormally (status: 0x%x)\nOutput:\n%s", 
+                     exit_status, output) == -1) {
+            free(output);
+            return strdup("Memory allocation error for error message.");
+        }
+    }
+
+    free(output);
+    return error_msg;
+}
 
 
 char *report_tez() {

@@ -499,8 +499,8 @@ void configure_target_component(Component target) {
         //handle_result(status, "dfs.client.read.shortcircuit.streams.cache.size", "4096", "hdfs-site.xml");
 
         //			 Host Management
-        status = modify_hdfs_config("dfs.hosts.exclude", "/etc/hadoop/conf/dfs.exclude", "hdfs-site.xml");
-        handle_result(status, "dfs.hosts.exclude", "/etc/hadoop/conf/dfs.exclude", "hdfs-site.xml");
+        //status = modify_hdfs_config("dfs.hosts.exclude", "/etc/hadoop/conf/dfs.exclude", "hdfs-site.xml");
+        //handle_result(status, "dfs.hosts.exclude", "/etc/hadoop/conf/dfs.exclude", "hdfs-site.xml");
         status = modify_hdfs_config("manage.include.files", "false", "hdfs-site.xml");
         handle_result(status, "manage.include.files", "false", "hdfs-site.xml");
 
@@ -1337,8 +1337,8 @@ void configure_target_component(Component target) {
         status = update_hbase_config("security.masterregion.protocol.acl", "*", "hbase-policy.xml");
         handle_result(status, "security.masterregion.protocol.acl", "*", "hbase-policy.xml");
         //			 Core HBase Configuration
-        status = update_hbase_config("hbase.rootdir", "/apps/hbase/data", "hbase-site.xml");
-        handle_result(status, "hbase.rootdir", "/apps/hbase/data", "hbase-site.xml");
+       // status = update_hbase_config("hbase.rootdir", "/apps/hbase/data", "hbase-site.xml");
+        //handle_result(status, "hbase.rootdir", "/apps/hbase/data", "hbase-site.xml");
         status = update_hbase_config("hbase.cluster.distributed", "true", "hbase-site.xml");
         handle_result(status, "hbase.cluster.distributed", "true", "hbase-site.xml");
         status = update_hbase_config("hbase.master.port", "16000", "hbase-site.xml");

@@ -780,21 +780,18 @@ void HBase_action(Action a) {
 #define true 1
 #define false 0
 
-
 const char *get_tez_home() {
     struct stat st;
     const char *tez_home = getenv("TEZ_HOME");
     const char *paths[] = {"/opt/tez", "/usr/local/tez"};
 
-    // Check TEZ_HOME first if set
     if (tez_home != NULL) {
         if (stat(tez_home, &st) == 0 && S_ISDIR(st.st_mode)) {
             return tez_home;
         }
-        FPRINTF(global_client_socket,  "TEZ_HOME set to invalid directory: %s\n", tez_home);
+        FPRINTF(global_client_socket, "TEZ_HOME set to invalid directory: %s\n", tez_home);
     }
 
-    // Check standard installation paths
     for (size_t i = 0; i < sizeof(paths)/sizeof(paths[0]); i++) {
         if (stat(paths[i], &st) == 0 && S_ISDIR(st.st_mode)) {
             return paths[i];
@@ -804,112 +801,39 @@ const char *get_tez_home() {
     return NULL;
 }
 
-bool verify_tez_installation(const char *tez_home) {
-    char script_path[PATH_MAX];
-    struct stat st;
-
-    if (snprintf(script_path, sizeof(script_path), "%s/bin/tez-daemon.sh", tez_home) >= (int)sizeof(script_path)) {
-        FPRINTF(global_client_socket,  "Path to tez-daemon.sh exceeds maximum length\n");
+bool is_tez_installed() {
+    const char *tez_home = get_tez_home();
+    if (tez_home == NULL) {
+        FPRINTF(global_client_socket,
+            "Tez is NOT installed. Checked:\n"
+            "- TEZ_HOME environment variable\n"
+            "- /opt/tez (Red Hat)\n"
+            "- /usr/local/tez (Debian)\n");
         return false;
     }
 
-    if (stat(script_path, &st) != 0 || !S_ISREG(st.st_mode)) {
-        FPRINTF(global_client_socket,  "tez-daemon.sh not found at: %s\n", script_path);
-        return false;
-    }
-
-    if (access(script_path, X_OK) != 0) {
-        FPRINTF(global_client_socket,  "tez-daemon.sh is not executable at: %s\n", script_path);
-        return false;
-    }
-
+    PRINTF(global_client_socket, "Tez is installed at: %s\n", tez_home);
     return true;
 }
 
-bool execute_tez_command(const char *operation) {
-    const char *tez_home = get_tez_home();
-    if (!tez_home) {
-        FPRINTF(global_client_socket,  "Tez installation not found. Checked:\n"
-                "- TEZ_HOME environment variable\n"
-                "- /opt/tez (Red Hat)\n"
-                "- /usr/local/tez (Debian)\n");
-        return false;
-    }
-
-    if (!verify_tez_installation(tez_home)) {
-        return false;
-    }
-
-    // Build command safely with dynamic allocation
-    char *command = NULL;
-    int required_len = snprintf(NULL, 0, "%s/bin/tez-daemon.sh %s historyserver", tez_home, operation);
-    if (required_len < 0) {
-        FPRINTF(global_client_socket,  "Error formatting command string\n");
-        return false;
-    }
-
-    command = malloc(required_len + 1);
-    if (!command) {
-        FPRINTF(global_client_socket,  "Memory allocation failed for command\n");
-        return false;
-    }
-
-    snprintf(command, required_len + 1, "%s/bin/tez-daemon.sh %s historyserver", tez_home, operation);
-
-    int status = executeSystemCommand(command);
-    free(command);
-
-    if (WIFEXITED(status)) {
-        int exit_status = WEXITSTATUS(status);
-        if (exit_status != 0) {
-            FPRINTF(global_client_socket,  "Command failed with exit code: %d\n", exit_status);
-            return false;
-        }
-        return true;
-    }
-
-    FPRINTF(global_client_socket,  "Command terminated abnormally\n");
-    return false;
-}
-
 void tez_action(Action a) {
-    bool success = false;
-
-    switch(a) {
-    case START: {
-        //  PRINTF(global_client_socket, "Initializing Tez service startup...\n");
-        success = execute_tez_command("start");
-        break;
-    }
-    case STOP: {
-        //PRINTF(global_client_socket, "Initiating Tez service shutdown...\n");
-        success = execute_tez_command("stop");
-        break;
-    }
-    case RESTART: {
-        // PRINTF(global_client_socket, "Beginning Tez service restart...\n");
-        bool stop_success = execute_tez_command("stop");
-        if (!stop_success) {
-            FPRINTF(global_client_socket,  "Warning: Tez service stop encountered issues\n");
-        }
-
-        // Add brief delay to allow service shutdown
-        sleep(2);
-
-        bool start_success = execute_tez_command("start");
-        success = start_success;
-        break;
-    }
-    default: {
-        FPRINTF(global_client_socket,  "Invalid action requested: %d\n", a);
+    if (!is_tez_installed()) {
         return;
     }
-    }
 
-    if (success) {
-        PRINTF(global_client_socket, "Operation completed successfully\n");
-    } else {
-        FPRINTF(global_client_socket,  "Operation failed to complete\n");
+    switch (a) {
+        case START:
+            PRINTF(global_client_socket, "Tez does not have a daemon to start. No action taken.\n");
+            break;
+        case STOP:
+            PRINTF(global_client_socket, "Tez does not have a daemon to stop. No action taken.\n");
+            break;
+        case RESTART:
+            PRINTF(global_client_socket, "Tez does not have a daemon to restart. No action taken.\n");
+            break;
+        default:
+            FPRINTF(global_client_socket, "Invalid action requested: %d\n", a);
+            break;
     }
 }
 
@@ -1042,6 +966,7 @@ void kafka_action(Action action) {
     }
     PRINTF(global_client_socket, "Service operations completed successfully.\n");
 }
+
 void Solr_action(Action a) {
     const char *install_dir = NULL;
     char solr_script[512];
