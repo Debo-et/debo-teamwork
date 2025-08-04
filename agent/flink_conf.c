@@ -1,12 +1,12 @@
 /*
  * Copyright 2025 Surafel Temesgen
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -402,22 +402,24 @@ int find_flink_config(char *config_path, const char *config_filename) {
     return 0;
 }
 
-ConfigStatus update_flink_config(const char *param, const char *value , const char *filename) {
+ConfigStatus update_flink_config(const char *param, const char *value, const char *filename) {
     char config_path[PATH_MAX];
     if (!find_flink_config(config_path, filename)) {
-        return FILE_NOT_FOUND; // Config file not found
+        return FILE_NOT_FOUND;
     }
 
+    // Handle log4j properties separately
     if (strcmp(filename, "log4j-cli.properties") == 0 ||
         strcmp(filename, "log4j-console.properties") == 0 ||
         strcmp(filename, "log4j-session.properties") == 0 ||
-        strcmp(filename, "log4j.properties")) {
+        strcmp(filename, "log4j.properties") == 0) {
         configure_hadoop_property(config_path, param, value);
         return SUCCESS;
     }
+
     FILE *file = fopen(config_path, "r");
     if (!file) {
-        return FILE_READ_ERROR; // Failed to open file for reading
+        return FILE_READ_ERROR;
     }
 
     char **lines = NULL;
@@ -425,92 +427,101 @@ ConfigStatus update_flink_config(const char *param, const char *value , const ch
     char buffer[1024];
     int param_found = 0;
 
-    // Read and process lines
     while (fgets(buffer, sizeof(buffer), file) != NULL) {
-        trim_whitespace(buffer);
-        size_t param_len = strlen(param);
+        // Preserve leading whitespace for YAML structure
+        char *line_start = buffer;
+        while (isspace((unsigned char)*line_start)) line_start++;
 
-        // Check if line starts with the parameter and has a colon immediately after
-        if (strncmp(buffer, param, param_len) == 0 && buffer[param_len] == ':') {
+        // Skip comments and empty lines
+        if (*line_start == '#' || *line_start == '\n' || *line_start == '\0') {
+            goto keep_line;
+        }
+
+        size_t param_len = strlen(param);
+        if (strncmp(line_start, param, param_len) == 0 && line_start[param_len] == ':') {
+            // Only process top-level keys (no leading whitespace)
+            if (line_start != buffer) {
+                goto keep_line;
+            }
+
+            // Replace only the first occurrence found
+            if (param_found) {
+                goto keep_line;
+            }
+
             char new_line[1024];
             snprintf(new_line, sizeof(new_line), "%s: %s\n", param, value);
 
-            // Allocate space for new line
             char **temp = realloc(lines, (line_count + 1) * sizeof(char *));
-            if (!temp) {
-                fclose(file);
-                return SAVE_FAILED; // Memory allocation failed
-            }
+            if (!temp) goto alloc_error;
             lines = temp;
 
             lines[line_count] = strdup(new_line);
-            if (!lines[line_count]) {
-                fclose(file);
-                free(lines);
-                return SAVE_FAILED;
-            }
+            if (!lines[line_count]) goto strdup_error;
             line_count++;
             param_found = 1;
-        } else {
-            // Keep original line
-            char **temp = realloc(lines, (line_count + 1) * sizeof(char *));
-            if (!temp) {
-                fclose(file);
-                return SAVE_FAILED;
-            }
-            lines = temp;
-
-            lines[line_count] = strdup(buffer);
-            if (!lines[line_count]) {
-                fclose(file);
-                free(lines);
-                return SAVE_FAILED;
-            }
-            line_count++;
+            continue;
         }
+
+keep_line:
+        char **temp = realloc(lines, (line_count + 1) * sizeof(char *));
+        if (!temp) goto alloc_error;
+        lines = temp;
+
+        lines[line_count] = strdup(buffer);
+        if (!lines[line_count]) goto strdup_error;
+        line_count++;
     }
     fclose(file);
 
-    // Add new parameter if not found
+    // Add new parameter if not found (at end of file)
     if (!param_found) {
         char new_line[1024];
         snprintf(new_line, sizeof(new_line), "%s: %s\n", param, value);
 
         char **temp = realloc(lines, (line_count + 1) * sizeof(char *));
-        if (!temp) return SAVE_FAILED;
+        if (!temp) goto alloc_error;
         lines = temp;
 
         lines[line_count] = strdup(new_line);
-        if (!lines[line_count]) {
-            for (size_t i = 0; i < line_count; i++) free(lines[i]);
-            free(lines);
-            return SAVE_FAILED;
-        }
+        if (!lines[line_count]) goto strdup_error;
         line_count++;
     }
 
-    // Write to file
+    // Write updated content
     file = fopen(config_path, "w");
     if (!file) {
-        for (size_t i = 0; i < line_count; i++) free(lines[i]);
-        free(lines);
-        return FILE_WRITE_ERROR; // Failed to open for writing
+        goto write_error;
     }
 
     for (size_t i = 0; i < line_count; i++) {
         if (fputs(lines[i], file) == EOF) {
             fclose(file);
-            for (size_t j = 0; j < line_count; j++) free(lines[j]);
-            free(lines);
-            return FILE_WRITE_ERROR; // Write error
+            goto write_error;
         }
     }
+    fclose(file);
 
     // Cleanup
+    for (size_t i = 0; i < line_count; i++) free(lines[i]);
+    free(lines);
+    return SUCCESS;
+
+    // Error handling
+alloc_error:
     fclose(file);
     for (size_t i = 0; i < line_count; i++) free(lines[i]);
     free(lines);
+    return SAVE_FAILED;
 
-    return SUCCESS; // Success/
+strdup_error:
+    fclose(file);
+    for (size_t i = 0; i < line_count; i++) free(lines[i]);
+    free(lines);
+    return SAVE_FAILED;
+
+write_error:
+    for (size_t i = 0; i < line_count; i++) free(lines[i]);
+    free(lines);
+    return FILE_WRITE_ERROR;
 }
-

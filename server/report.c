@@ -1,12 +1,12 @@
 /*
  * Copyright 2025 Surafel Temesgen
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -118,7 +118,7 @@ char *report_hbase() {
 
     // Construct command using pipe instead of options
     char command[1024];
-    snprintf(command, sizeof(command), 
+    snprintf(command, sizeof(command),
              "echo \"status\" | %s/bin/hbase shell 2>&1", hbase_dir);
 
     FILE *fp = popen(command, "r");
@@ -1041,13 +1041,13 @@ char *report_spark() {
         }
     } else if (WIFSIGNALED(exit_status)) {
         int sig = WTERMSIG(exit_status);
-        if (asprintf(&error_msg, "Error: spark-shell killed by signal %d (%s)\nOutput:\n%s", 
+        if (asprintf(&error_msg, "Error: spark-shell killed by signal %d (%s)\nOutput:\n%s",
                      sig, strsignal(sig), output) == -1) {
             free(output);
             return strdup("Memory allocation error for error message.");
         }
     } else {
-        if (asprintf(&error_msg, "Error: spark-shell terminated abnormally (status: 0x%x)\nOutput:\n%s", 
+        if (asprintf(&error_msg, "Error: spark-shell terminated abnormally (status: 0x%x)\nOutput:\n%s",
                      exit_status, output) == -1) {
             free(output);
             return strdup("Memory allocation error for error message.");

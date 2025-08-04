@@ -55,14 +55,11 @@ extern char *password ;
 
 
 typedef enum {
-    // Flink components
     NONE,
     FLINK,
 
     // Hadoop components
     HDFS,
-    YARN,
-    // HBase components
     HBASE,
     // Hive components
     HIVE,
@@ -74,9 +71,7 @@ typedef enum {
     // Phoenix
     PHOENIX,
     STORM,
-    HUE,
     PIG,
-    OOZIE,
     PRESTO,
     ATLAS,
     // Ranger components
@@ -87,7 +82,6 @@ typedef enum {
     SPARK,
     // Tez
     TEZ,
-    HIVE_METASTORE,
     // Zeppelin
     ZEPPELIN,
 
@@ -171,24 +165,15 @@ static const char *HDFS_SERVICES[] = {
     "hadoop-hdfs-zkfc"
 };
 
-static const char *YARN_SERVICES[] = {
-    "hadoop-yarn-resourcemanager",
-    "hadoop-yarn-nodemanager",
-    "hadoop-yarn-proxyserver"
-};
 
 static const ComponentServices COMPONENT_SERVICES_MAP[] = {
     {HDFS,          HDFS_SERVICES,        sizeof(HDFS_SERVICES)/sizeof(HDFS_SERVICES[0])},
-    {YARN,          YARN_SERVICES,        sizeof(YARN_SERVICES)/sizeof(YARN_SERVICES[0])},
     {HBASE,         (const char*[]){"hbase-master", "hbase-regionserver"}, 2},
     {SPARK,         (const char*[]){"spark-master", "spark-worker"}, 2},
     {KAFKA,         (const char*[]){"kafka"}, 1},
     {ZOOKEEPER,     (const char*[]){"zookeeper-server"}, 1},
     {FLINK,         (const char*[]){"flink"}, 1},
     {STORM,         (const char*[]){"storm-nimbus", "storm-supervisor"}, 2},
-    {HIVE_METASTORE,(const char*[]){"hive-metastore"}, 1},
-    {HUE,           (const char*[]){"hue"}, 1},
-    {OOZIE,         (const char*[]){"oozie"}, 1},
     {PRESTO,        (const char*[]){"presto-coordinator", "presto-worker"}, 2},
     {ATLAS,         (const char*[]){"atlas"}, 1},
     {RANGER,        (const char*[]){"ranger-admin"}, 1},

@@ -31,7 +31,6 @@ ifeq ($(GSSAPI_EXISTS),)
 $(error "Kerberos GSSAPI (libgssapi_krb5) is missing or not found by the linker. Please install libkrb5-dev. This server requires GSSAPI to authenticate clients for the 'debo' service. Ensure KRB5_KTNAME is set to the correct keytab file (e.g., export KRB5_KTNAME=/etc/debo.keytab).")
 endif
 
-
 LIBSSH_CFLAGS = $(shell pkg-config --cflags libssh)
 LIBSSH_LDFLAGS = $(shell pkg-config --libs libssh)
 LIBXML2_CFLAGS = $(shell pkg-config --cflags libxml-2.0)
@@ -41,6 +40,7 @@ GSSAPI_LDFLAGS = -lgssapi_krb5
 
 # Build targets
 all: deboAgent
+	@echo "✅ Build completed successfully: deboAgent"
 
 deboAgent: $(OBJ)
 	$(CC) $(CFLAGS) $(LIBSSH_CFLAGS) $(LIBXML2_CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBSSH_LDFLAGS) $(LIBXML2_LDFLAGS) $(GSSAPI_LDFLAGS) $(LDLIBS)
@@ -55,15 +55,15 @@ installdirs:
 
 install: all installdirs
 	install -m 755 deboAgent $(bindir)
-	@echo "Installed deboAgent to $(bindir)"
+	@echo "✅ Installed deboAgent to $(bindir)"
 
 uninstall:
 	rm -f $(bindir)/deboAgent
-	@echo "Uninstalled deboAgent"
+	@echo "🗑️ Uninstalled deboAgent from $(bindir)"
 
 clean:
 	rm -f $(OBJ) deboAgent
-	@echo "Cleaned up build files"
+	@echo "🧹 Cleaned up build files and object files"
 
 .PHONY: all install uninstall clean installdirs
 

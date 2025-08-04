@@ -1,12 +1,12 @@
 /*
  * Copyright 2025 Surafel Temesgen
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -218,7 +218,7 @@ ConfigStatus set_presto_config(const char *param, const char *value, const char 
             "/usr/local/presto/etc",
             "/usr/local/presto/conf"
         };
-        
+
         for (size_t i = 0; i < sizeof(search_dirs)/sizeof(search_dirs[0]); i++) {
             snprintf(path, MAX_PATH_LEN, "%s/%s", search_dirs[i], config_file);
             if (access(path, F_OK) == 0) {
@@ -236,19 +236,19 @@ ConfigStatus set_presto_config(const char *param, const char *value, const char 
             "/usr/lib/presto/etc",
             "/opt/presto/conf"
         };
-        
+
         for (size_t i = 0; i < sizeof(create_dirs)/sizeof(create_dirs[0]); i++) {
             char dir_path[MAX_PATH_LEN];
             snprintf(dir_path, MAX_PATH_LEN, "%s/etc", create_dirs[i]);
-            
+
             // Create directory if needed
             if (mkdir(dir_path, 0755) != 0 && errno != EEXIST) {
                 continue;  // Try next location
             }
-            
+
             // Create config file path
             snprintf(path, MAX_PATH_LEN, "%s/%s", dir_path, config_file);
-            
+
             // Create empty file
             FILE *fp = fopen(path, "w");
             if (fp) {
@@ -266,7 +266,7 @@ ConfigStatus set_presto_config(const char *param, const char *value, const char 
 
     // Delegate to configure_hadoop_property for actual configuration
     ConfigStatus status = configure_hadoop_property(found_path, param, value);
-    
+
     free(found_path);
     return status;
 }

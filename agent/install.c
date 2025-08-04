@@ -1,12 +1,12 @@
 /*
  * Copyright 2025 Surafel Temesgen
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -329,10 +329,10 @@ void install_hadoop(const char *version, char *location) {
 
     //			 NameNode Configuration
     modify_hdfs_config("dfs.namenode.name.dir", nameNode, "hdfs-site.xml");
-  //  handle_result(status, "dfs.namenode.name.dir", nameNode, "hdfs-site.xml");
-        
+    //  handle_result(status, "dfs.namenode.name.dir", nameNode, "hdfs-site.xml");
+
     modify_hdfs_config("dfs.datanode.data.dir", dataNode, "hdfs-site.xml");
-   // handle_result(status, "dfs.datanode.data.dir", dataNode, "hdfs-site.xml");
+    // handle_result(status, "dfs.datanode.data.dir", dataNode, "hdfs-site.xml");
 
 
     PRINTF(global_client_socket, "Hadoop installed successfully to %s\n", install_dir);
@@ -613,14 +613,14 @@ void install_Storm(char *version, char *location) {
     snprintf(sudo_cmd, sizeof(sudo_cmd), "%s", is_root ? "" : "sudo ");
 
     // Create Storm data directory with proper permissions
-// Create Storm data directory with proper permissions (FIXED)
+    // Create Storm data directory with proper permissions (FIXED)
     //printf("Creating Storm data directory...\n");
     char mkdir_cmd[512];
-    snprintf(mkdir_cmd, sizeof(mkdir_cmd), 
-         "%smkdir -p /var/lib/storm-data && %schown -R %s:%s /var/lib/storm-data >/dev/null 2>&1",  // FIXED
-         is_root ? "" : "sudo ",
-         is_root ? "" : "sudo ",
-         pwd->pw_name, pwd->pw_name);  // Use current user's credentials
+    snprintf(mkdir_cmd, sizeof(mkdir_cmd),
+             "%smkdir -p /var/lib/storm-data && %schown -R %s:%s /var/lib/storm-data >/dev/null 2>&1",  // FIXED
+             is_root ? "" : "sudo ",
+             is_root ? "" : "sudo ",
+             pwd->pw_name, pwd->pw_name);  // Use current user's credentials
     if (!executeSystemCommand(mkdir_cmd)) {
         FPRINTF(global_client_socket,  "Failed to create Storm data directory. Check permissions.\n");
         return;
@@ -631,11 +631,12 @@ void install_Storm(char *version, char *location) {
     // PRINTF(global_client_socket, "Ensure user 'storm' exists and has proper permissions on data directory.\n");
 }
 
+
 void install_Ranger(char* version, char *location) {
     char url[512];
     char filename[256];
     char extracted_dir[256];
-    char command[2048];  // Increased buffer size
+    char command[4096];  // Increased buffer size for complex commands
     char* install_dir = NULL;
     const char* home = getenv("HOME");
     if (!home) {
@@ -645,64 +646,92 @@ void install_Ranger(char* version, char *location) {
 
     // Generate URL and filenames for source distribution
     const char* ranger_version = version ? version : "2.6.0";
-    snprintf(url, sizeof(url), "https://dlcdn.apache.org/ranger/%s/apache-ranger-%s-src.tar.gz", 
+    snprintf(url, sizeof(url), "https://dlcdn.apache.org/ranger/%s/apache-ranger-%s.tar.gz",
              ranger_version, ranger_version);
-    snprintf(filename, sizeof(filename), "apache-ranger-%s-src.tar.gz", ranger_version);
-    snprintf(extracted_dir, sizeof(extracted_dir), "apache-ranger-%s-src", ranger_version);
+    snprintf(filename, sizeof(filename), "apache-ranger-%s.tar.gz", ranger_version);
+    snprintf(extracted_dir, sizeof(extracted_dir), "apache-ranger-%s", ranger_version);
 
-    // Download the source archive
-    snprintf(command, sizeof(command), "wget -O %s %s", filename, url);
+    // Download with resume capability
+    snprintf(command, sizeof(command), "wget -c -O %s %s", filename, url);
     if (!executeSystemCommand(command)) {
-        FPRINTF(global_client_socket, "Failed to download Ranger source archive.\n");
+        FPRINTF(global_client_socket, "Failed to download Ranger source.\n");
         exit(EXIT_FAILURE);
     }
 
-    // Extract the source archive
+    // Verify archive integrity before extraction
+    snprintf(command, sizeof(command), "gzip -t %s", filename);
+    if (!executeSystemCommand(command)) {
+        FPRINTF(global_client_socket, "Downloaded archive is corrupt.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // Clean extraction directory if exists
+    snprintf(command, sizeof(command), "rm -rf %s", extracted_dir);
+    executeSystemCommand(command);
+
+    // Extract with verbose output
     snprintf(command, sizeof(command), "tar -xvzf %s", filename);
     if (!executeSystemCommand(command)) {
-        FPRINTF(global_client_socket, "Failed to extract the source archive.\n");
+        FPRINTF(global_client_socket, "Extraction failed.\n");
         exit(EXIT_FAILURE);
     }
 
     // Fix 1: Clean potentially corrupted JARs
     snprintf(command, sizeof(command), "rm -rf %s/.m2/repository/javax/activation", home);
-    executeSystemCommand(command);  // Non-critical
+    executeSystemCommand(command);
 
-    // Fix 2: Upgrade assembly plugin in pom.xml
-    char pom_path[512];
-    snprintf(pom_path, sizeof(pom_path), "%s/pom.xml", extracted_dir);
-    snprintf(command, sizeof(command),
-        "sed -i.bak "
-        "'s/<maven-assembly-plugin.version>2.6<\\/maven-assembly-plugin.version>/"
-        "<maven-assembly-plugin.version>3.6.0<\\/maven-assembly-plugin.version>/g' "
-        "%s",
-        pom_path
-    );
-    if (!executeSystemCommand(command)) {
-        FPRINTF(global_client_socket, "Warning: Failed to update assembly plugin version\n");
+    // Fix 2: Upgrade assembly plugin in ALL relevant POMs
+    const char* pom_files[] = {
+        "pom.xml",
+        "ranger-distro/pom.xml",
+        "ranger-plugins/pom.xml",
+        "security-admin/pom.xml"
+    };
+
+    for (int i = 0; i < sizeof(pom_files)/sizeof(pom_files[0]); i++) {
+        char pom_path[512];
+        snprintf(pom_path, sizeof(pom_path), "%s/%s", extracted_dir, pom_files[i]);
+
+        // Check if POM exists before modifying
+        snprintf(command, sizeof(command), "test -f %s", pom_path);
+        if (executeSystemCommand(command)) {
+            snprintf(command, sizeof(command),
+                     "sed -i.bak "
+                     "'s/<maven-assembly-plugin.version>\\([0-9]\\+\\.[0-9]\\+\\.[0-9]\\+\\)<\\/maven-assembly-plugin.version>/"
+                     "<maven-assembly-plugin.version>3.6.0<\\/maven-assembly-plugin.version>/g' "
+                     "%s",
+                     pom_path
+                    );
+            if (!executeSystemCommand(command)) {
+                FPRINTF(global_client_socket, "Warning: Failed to update %s\n", pom_files[i]);
+            }
+        }
     }
 
-    // Fix 3: Build with retry mechanism
+    // Fix 3: Enhanced build with robust retry
     snprintf(command, sizeof(command),
-        "cd %s && "
-        "export MAVEN_OPTS=\"-Xmx4096m -XX:MaxPermSize=1024m\" && "
-        "mvn clean compile package install assembly:assembly "
-        "-DskipTests -Denunciate.skip=true -Dmaven-assembly-plugin.version=3.6.0 || "
-        "{ "
-        "  echo 'First build failed, retrying failed module...' && "
-        "  mvn -rf :ranger-distro assembly:assembly -DskipTests; "
-        "}",
-        extracted_dir
-    );
+             "cd %s && "
+             "export MAVEN_OPTS=\"-Xmx6144m -XX:MaxPermSize=2048m\" && "
+             "mvn -B clean compile package install assembly:assembly "
+             "-DskipTests -Denunciate.skip=true "
+             "-Dmaven-assembly-plugin.version=3.6.0 || "
+             "{ "
+             "  echo 'Build failed, retrying...' && "
+             "  rm -rf ranger-distro/target && "
+             "  mvn -B -rf :ranger-distro assembly:assembly "
+             "    -DskipTests -Dmaven-assembly-plugin.version=3.6.0; "
+             "}",
+             extracted_dir
+            );
     if (!executeSystemCommand(command)) {
-        FPRINTF(global_client_socket, "Failed to build Ranger after retries.\n");
+        FPRINTF(global_client_socket, "Critical: Build failed after retries\n");
         exit(EXIT_FAILURE);
     }
 
     // Locate the built binary archive
     char built_filename[512];
-    snprintf(built_filename, sizeof(built_filename), 
-             "%s/target/apache-ranger-%s-bin.tar.gz", 
+    snprintf(built_filename, sizeof(built_filename),
+             "%s/target/apache-ranger-%s-bin.tar.gz",
              extracted_dir, ranger_version);
 
     // Check if the built archive exists
@@ -763,7 +792,7 @@ void install_Ranger(char* version, char *location) {
         FPRINTF(global_client_socket, "Could not determine current user\n");
         return;
     }
-    snprintf(command, sizeof(command), "sudo chown -R %s:%s %s", 
+    snprintf(command, sizeof(command), "sudo chown -R %s:%s %s",
              pwd->pw_name, pwd->pw_name, install_dir);
     if (!executeSystemCommand(command)) {
         FPRINTF(global_client_socket, "Failed to set ownership of %s\n", install_dir);
@@ -786,11 +815,12 @@ void install_Ranger(char* version, char *location) {
 
     // Finalize installation
     PRINTF(global_client_socket, "Ranger %s installed successfully at %s\n", ranger_version, install_dir);
-    
+
     if (sourceBashrc() != 0) {
         FPRINTF(global_client_socket, "Warning: Sourcing .bashrc failed\n");
     }
 }
+
 
 
 void install_phoenix(char *version, char *location) {
@@ -806,14 +836,14 @@ void install_phoenix(char *version, char *location) {
     if (hbase_home == NULL) {
         const char *paths[] = {"/usr/local/hbase", "/opt/hbase", "/usr/lib/hbase"};
         size_t num_paths = sizeof(paths) / sizeof(paths[0]);
-        
+
         for (size_t i = 0; i < num_paths; i++) {
             if (stat(paths[i], &buffer) == 0 && S_ISDIR(buffer.st_mode)) {
                 hbase_home = (char *)paths[i];
                 break;
             }
         }
-        
+
         if (!hbase_home) {
             FPRINTF(global_client_socket, "HBase installation not found. Set HBASE_HOME or install HBase.\n");
             exit(1);
@@ -882,15 +912,15 @@ void install_phoenix(char *version, char *location) {
 
     // Generate URL for Phoenix binary
     char url[512], filename[256], dirname[256];
-    snprintf(url, sizeof(url), 
+    snprintf(url, sizeof(url),
              "https://dlcdn.apache.org/phoenix/phoenix-%s/phoenix-hbase-%s-%s-bin.tar.gz",
-             version, 
+             version,
              hbase_compat,
              version);
-             
+
     snprintf(filename, sizeof(filename), "phoenix-%s-bin.tar.gz", version);
-    snprintf(dirname, sizeof(dirname), "phoenix-hbase-%s-%s-bin", 
-             hbase_compat, 
+    snprintf(dirname, sizeof(dirname), "phoenix-hbase-%s-%s-bin",
+             hbase_compat,
              version);
 
     // Download the binary archive
@@ -928,7 +958,7 @@ void install_phoenix(char *version, char *location) {
     } else {
         const char *default_dirs[] = {"/usr/local/phoenix", "/opt/phoenix"};
         size_t num_dirs = sizeof(default_dirs) / sizeof(default_dirs[0]);
-        
+
         for (size_t i = 0; i < num_dirs; i++) {
             if (stat(default_dirs[i], &buffer) == 0) {
                 strncpy(install_dir, default_dirs[i], sizeof(install_dir)-1);
@@ -965,7 +995,7 @@ void install_phoenix(char *version, char *location) {
     // Copy Phoenix server JAR to HBase's lib directory
     char pattern[PATH_MAX];
     snprintf(pattern, sizeof(pattern), "%s/phoenix-*-hbase-*-server.jar", install_dir);
-    
+
     glob_t glob_result;
     if (glob(pattern, 0, NULL, &glob_result) == 0) {
         if (glob_result.gl_pathc > 0) {
@@ -973,10 +1003,10 @@ void install_phoenix(char *version, char *location) {
             char *jar_name = strrchr(source_jar, '/');
             if (jar_name) jar_name++;
             else jar_name = source_jar;
-            
+
             char dest_jar[PATH_MAX];
             snprintf(dest_jar, sizeof(dest_jar), "%s/lib/%s", hbase_home, jar_name);
-            
+
             printf("Copying server JAR to HBase: %s\n", dest_jar);
             snprintf(command, sizeof(command), "cp '%s' '%s'", source_jar, dest_jar);
             if (!executeSystemCommand(command)) {
@@ -994,10 +1024,10 @@ void install_phoenix(char *version, char *location) {
     // Configure Phoenix in hbase-env.sh
     char hbase_env_path[PATH_MAX];
     snprintf(hbase_env_path, sizeof(hbase_env_path), "%s/conf/hbase-env.sh", hbase_home);
-    
+
     char classpath_entry[1024];
     snprintf(classpath_entry, sizeof(classpath_entry), "export HBASE_CLASSPATH=\"$HBASE_CLASSPATH:%s\"", install_dir);
-    
+
     // Check if entry already exists
     bool entry_exists = false;
     FILE *hbase_env = fopen(hbase_env_path, "r");
@@ -1031,13 +1061,13 @@ void install_phoenix(char *version, char *location) {
         FPRINTF(global_client_socket,  "Home directory not found.\n");
         exit(1);
     }
-    
+
     char bashrc_path[PATH_MAX];
     snprintf(bashrc_path, sizeof(bashrc_path), "%s/.bashrc", home);
-    
+
     char bashrc_entry[256];
     snprintf(bashrc_entry, sizeof(bashrc_entry), "export PHOENIX_HOME=%s", install_dir);
-    
+
     // Check if entry already exists
     entry_exists = false;
     FILE *bashrc = fopen(bashrc_path, "r");
@@ -1071,7 +1101,7 @@ void install_phoenix(char *version, char *location) {
         FPRINTF(global_client_socket, "Error: Could not determine current user\n");
         exit(1);
     }
-    
+
     snprintf(command, sizeof(command), "chown -R %s:%s %s", pwd->pw_name, pwd->pw_name, install_dir);
     if (!executeSystemCommand(command)) {
         FPRINTF(global_client_socket, "Error: Failed to set ownership of %s\n", install_dir);
@@ -2014,7 +2044,7 @@ void install_Presto(char* version, char *location) {
         FPRINTF(global_client_socket, "Error: Could not determine current user\n");
         exit(EXIT_FAILURE);
     }
-    snprintf(command, sizeof(command), "sudo chown -R %s:%s %s >/dev/null 2>&1", 
+    snprintf(command, sizeof(command), "sudo chown -R %s:%s %s >/dev/null 2>&1",
              pwd->pw_name, pwd->pw_name, install_dir);
     if (!executeSystemCommand(command)) {
         FPRINTF(global_client_socket,  "Error: Failed to set ownership of %s\n", install_dir);
@@ -2022,8 +2052,8 @@ void install_Presto(char* version, char *location) {
     }
 
     // Extract directly to installation directory
-    snprintf(command, sizeof(command), 
-             "tar -xvzf presto-server-%s.tar.gz --strip-components=1 -C %s >/dev/null 2>&1", 
+    snprintf(command, sizeof(command),
+             "tar -xvzf presto-server-%s.tar.gz --strip-components=1 -C %s >/dev/null 2>&1",
              actual_version, install_dir);
     if (!executeSystemCommand(command)) {
         FPRINTF(global_client_socket, "Extraction failed\n");
@@ -2037,7 +2067,7 @@ void install_Presto(char* version, char *location) {
     // Create configuration directories
     char config_dir[512];
     snprintf(config_dir, sizeof(config_dir), "%s/etc", install_dir);
-    
+
     char dir_cmd[1024];
     snprintf(dir_cmd, sizeof(dir_cmd), "mkdir -p %s/{catalog,data}", config_dir);
     if (!executeSystemCommand(dir_cmd)) {
@@ -2046,16 +2076,16 @@ void install_Presto(char* version, char *location) {
 
     // Create configuration files
     char node_props[512], jvm_config[512], presto_config[512], catalog_tpch[512];
-    
+
     snprintf(node_props, sizeof(node_props), "%s/node.properties", config_dir);
     create_properties_file(node_props, "node.properties");
-    
+
     snprintf(jvm_config, sizeof(jvm_config), "%s/jvm.config", config_dir);
     create_properties_file(jvm_config, "jvm.config");
-    
+
     snprintf(presto_config, sizeof(presto_config), "%s/config.properties", config_dir);
     create_properties_file(presto_config, "config.properties");
-    
+
     snprintf(catalog_tpch, sizeof(catalog_tpch), "%s/catalog/tpch.properties", config_dir);
     create_properties_file(catalog_tpch, "tpch.properties");
 
@@ -2071,7 +2101,7 @@ void install_Presto(char* version, char *location) {
 
     FILE* bashrc = fopen(bashrc_path, "a");
     if (bashrc) {
-        fprintf(bashrc, "\n# Presto configuration\nexport PRESTO_HOME=%s\nexport PATH=$PATH:$PRESTO_HOME/bin\n", 
+        fprintf(bashrc, "\n# Presto configuration\nexport PRESTO_HOME=%s\nexport PATH=$PATH:$PRESTO_HOME/bin\n",
                 install_dir);
         fclose(bashrc);
     }
@@ -2598,7 +2628,7 @@ void install_Livy(char* version, char *location) {
     snprintf(candidate_path, sizeof(candidate_path), "%s/conf", install_dir);
 
     //if (create_conf_file(candidate_path, "livy.conf") !=0)
-     //   FPRINTF(global_client_socket,   "Failed to create XML file\n");
+    //   FPRINTF(global_client_socket,   "Failed to create XML file\n");
 
     PRINTF(global_client_socket, "Livy  installed successfully to %s/livy\n", install_dir);
 }

@@ -1,12 +1,12 @@
 /*
  * Copyright 2025 Surafel Temesgen
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,7 +26,7 @@
 #include <glob.h>
 #include <errno.h>
 #include <pwd.h>
-#include <fcntl.h> 
+#include <fcntl.h>
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -153,7 +153,7 @@ static char* find_launcher(const char* base_dir) {
 
     char candidate[PATH_MAX];
     struct stat st;
-    
+
     // Check direct path first (new installation structure)
     snprintf(candidate, sizeof(candidate), "%s/bin/launcher", base_dir);
     if (stat(candidate, &st) == 0 && S_ISREG(st.st_mode)) {
@@ -163,7 +163,7 @@ static char* find_launcher(const char* base_dir) {
     // Fallback to old pattern (versioned directory)
     char pattern[PATH_MAX];
     snprintf(pattern, sizeof(pattern), "%s/presto-server-*/bin/launcher", base_dir);
-    
+
     glob_t glob_result;
     if (glob(pattern, GLOB_ERR, NULL, &glob_result) != 0 || glob_result.gl_pathc == 0) {
         globfree(&glob_result);
@@ -201,30 +201,30 @@ void Presto_action(Action action) {
     }
 
     switch(action) {
-        case START:
-            action_name = "start";
-            snprintf(command, sizeof(command), "%s start", launcher_path);
-            break;
+    case START:
+        action_name = "start";
+        snprintf(command, sizeof(command), "%s start", launcher_path);
+        break;
 
-        case STOP:
-            action_name = "stop";
-            snprintf(command, sizeof(command), "%s stop", launcher_path);
-            break;
+    case STOP:
+        action_name = "stop";
+        snprintf(command, sizeof(command), "%s stop", launcher_path);
+        break;
 
-        case RESTART:
-            action_name = "restart";
-            snprintf(command, sizeof(command), "%s restart", launcher_path);
-            break;
+    case RESTART:
+        action_name = "restart";
+        snprintf(command, sizeof(command), "%s restart", launcher_path);
+        break;
 
-        default:
-            fprintf(stderr, "Error: Invalid action\n");
-            free(launcher_path);
-            exit(EXIT_FAILURE);
+    default:
+        fprintf(stderr, "Error: Invalid action\n");
+        free(launcher_path);
+        exit(EXIT_FAILURE);
     }
 
     // Execute command with output redirection
     snprintf(command + strlen(command), sizeof(command) - strlen(command), " >/dev/null 2>&1");
-    
+
     if ((ret = executeSystemCommand(command)) == -1) {
         fprintf(stderr, "Error: Failed to %s Presto (%d)\n", action_name, ret);
         free(launcher_path);
@@ -342,12 +342,12 @@ static bool is_hive_running() {
 
     // Start non-blocking connection
     connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
-    
+
     fd_set fdset;
     FD_ZERO(&fdset);
     FD_SET(sock, &fdset);
     struct timeval tv = {.tv_sec = 1, .tv_usec = 0}; // 1s timeout
-    
+
     // Wait for connection or timeout
     if (select(sock + 1, NULL, &fdset, NULL, &tv) == 1) {
         int so_error;
@@ -422,8 +422,8 @@ void hive_action(Action a) {
     // Construct commands
     // Start command with proper backgrounding and logging
     snprintf(start_cmd, sizeof(start_cmd),
-         "\"%s/bin/hive\" --service hiveserver2 ",  // Fixed: add & and stderr
-         hive_path);
+             "\"%s/bin/hive\" --service hiveserver2 ",  // Fixed: add & and stderr
+             hive_path);
 
     snprintf(stop_cmd, sizeof(stop_cmd),
              "pkill -f '\"%s/bin/hive\" --service hiveserver2' ", hive_path);

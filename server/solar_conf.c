@@ -1,12 +1,12 @@
 /*
  * Copyright 2025 Surafel Temesgen
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -173,10 +173,10 @@ ConfigResult* validate_solr_parameter(const char *param_name, const char *param_
 // Helper function to create directories recursively
 static int mkdir_pm(const char *path, mode_t mode) {
     if (!path || *path == '\0') return -1;
-    
+
     char *copypath = strdup(path);
     if (!copypath) return -1;
-    
+
     size_t len = strlen(copypath);
     // Remove trailing slash
     if (len > 0 && copypath[len - 1] == '/') {
@@ -200,13 +200,13 @@ static int mkdir_pm(const char *path, mode_t mode) {
         *sep = '/';
         sep++;
     }
-    
+
     // Create final directory
     if (mkdir(copypath, mode) != 0 && errno != EEXIST) {
         free(copypath);
         return -1;
     }
-    
+
     free(copypath);
     return 0;
 }
@@ -261,7 +261,7 @@ ConfigStatus update_solr_config(const char *param_name, const char *param_value,
             free(config_path);
             return FILE_READ_ERROR;
         }
-        
+
         char *dir = dirname(dir_path);
         if (mkdir_pm(dir, 0755) != 0) {
             free(dir_path);
@@ -276,7 +276,7 @@ ConfigStatus update_solr_config(const char *param_name, const char *param_value,
         free(config_path);
         return SUCCESS;
     }
-    
+
     /* XML Processing */
     xmlDocPtr doc = NULL;
     xmlNodePtr root = NULL;

@@ -1,12 +1,12 @@
 /*
  * Copyright 2025 Surafel Temesgen
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -82,7 +82,6 @@ typedef struct {
 
 const ComponentPackage COMPONENT_PACKAGE_MAP[] = {
     {HDFS,          "hadoop-hdfs",          "hadoop-hdfs",          "hadoop"},
-    {YARN,          "hadoop-yarn",          "hadoop-yarn",          "hadoop"},
     {HBASE,         "hbase",                "hbase",                "hbase"},
     {SPARK,         "spark-core",           "spark",                "apache-spark"},
     {KAFKA,         "kafka",                "kafka",                "kafka"},
@@ -90,9 +89,7 @@ const ComponentPackage COMPONENT_PACKAGE_MAP[] = {
     {FLINK,         "flink",                "flink",                "apache-flink"},
     {STORM,         "storm",                "storm",                "apache-storm"},
     {HIVE,"hive-metastore",       "hive-metastore",       "hive"},
-    {HUE,           "hue",                  "hue",                  "hue"},
     {PIG,           "pig",                  "pig",                  "pig"},
-    {OOZIE,         "oozie",                "oozie",                "oozie"},
     {PRESTO,        "presto",               "presto",               "presto"},
     {TEZ,           "tez",                  "tez",                  "tez"},
     {ATLAS,         "atlas",                "atlas",                "atlas"},
@@ -106,8 +103,6 @@ const ComponentPackage COMPONENT_PACKAGE_MAP[] = {
 const ComponentInfo COMPONENT_INFO_MAP[] = {
     {HDFS,          "hadoop version 2>&1 | grep '^Hadoop' | awk '{print $2}'",
         "hadoop-hdfs", "hadoop-hdfs", "hadoop"},
-    {YARN,          "hadoop version 2>&1 | grep '^Hadoop' | awk '{print $2}'",
-        "hadoop-yarn", "hadoop-yarn", "hadoop"},
     {HBASE,         "hbase version 2>&1 | grep '^HBase' | awk '{print $2}'",
         "hbase", "hbase", "hbase"},
     {SPARK,         "spark-submit --version 2>&1 | grep '^version' | awk '{print $2}'",
@@ -122,12 +117,8 @@ const ComponentInfo COMPONENT_INFO_MAP[] = {
         "storm", "storm", "apache-storm"},
     {HIVE,"hive --version 2>&1 | grep 'Hive' | awk '{print $2}'",
         "hive-metastore", "hive-metastore", "hive"},
-    {HUE,           "hue version 2>&1 | awk '{print $3}'",
-        "hue", "hue", "hue"},
     {PIG,           "pig --version 2>&1 | grep 'Apache Pig' | awk '{print $3}'",
         "pig", "pig", "pig"},
-    {OOZIE,         "oozie version 2>&1 | grep 'Oozie' | awk '{print $2}'",
-        "oozie", "oozie", "oozie"},
     {PRESTO,        "presto --version 2>&1 | awk '{print $2}'",
         "presto", "presto", "presto"},
     {TEZ,           "hcat -h 2>&1 | grep 'Tez' | awk '{print $4}' | tr -d ','",
@@ -162,52 +153,52 @@ static void handle_remote_components(bool ALL, Component component, Action actio
 
 void validate_options(Action action, Component component, bool all, bool dependency) {
     switch (action) {
-        case START:
-        case STOP:
-        case RESTART:
-        case REPORT:
-        case INSTALL:
-        case UNINSTALL:
-            if (all) {
-                if (component != NONE) {
-                    fprintf(stderr, "Error: Cannot combine --all with individual components\n");
-                    exit(EXIT_FAILURE);
-                }
-                if (dependency) {
-                    fprintf(stderr, "Error: Cannot use --all with a dependency\n");
-                    exit(EXIT_FAILURE);
-                }
-            } else {
-                if (component == NONE) {
-                    fprintf(stderr, "Error: Must specify a component when not using --all\n");
-                    exit(EXIT_FAILURE);
-                }
-             //   if (!dependency) {
-               //     fprintf(stderr, "Error: Must specify a dependency when using a component for this action\n");
-                 //   exit(EXIT_FAILURE);
-                //}
-            }
-            break;
-
-        case CONFIGURE:
-        case VERSION_SWITCH:
-            if (all) {
-                fprintf(stderr, "Error: Cannot use --all with this action\n");
+    case START:
+    case STOP:
+    case RESTART:
+    case REPORT:
+    case INSTALL:
+    case UNINSTALL:
+        if (all) {
+            if (component != NONE) {
+                fprintf(stderr, "Error: Cannot combine --all with individual components\n");
                 exit(EXIT_FAILURE);
             }
             if (dependency) {
-                fprintf(stderr, "Error: Cannot use dependency with this action\n");
+                fprintf(stderr, "Error: Cannot use --all with a dependency\n");
                 exit(EXIT_FAILURE);
             }
+        } else {
             if (component == NONE) {
-                fprintf(stderr, "Error: Must specify a component for this action\n");
+                fprintf(stderr, "Error: Must specify a component when not using --all\n");
                 exit(EXIT_FAILURE);
             }
-            break;
+            //   if (!dependency) {
+            //     fprintf(stderr, "Error: Must specify a dependency when using a component for this action\n");
+            //   exit(EXIT_FAILURE);
+            //}
+        }
+        break;
 
-        default:
-         //   fprintf(stderr, "Error: Unsupported action type\n");
-           // exit(EXIT_FAILURE);
+    case CONFIGURE:
+    case VERSION_SWITCH:
+        if (all) {
+            fprintf(stderr, "Error: Cannot use --all with this action\n");
+            exit(EXIT_FAILURE);
+        }
+        if (dependency) {
+            fprintf(stderr, "Error: Cannot use dependency with this action\n");
+            exit(EXIT_FAILURE);
+        }
+        if (component == NONE) {
+            fprintf(stderr, "Error: Must specify a component for this action\n");
+            exit(EXIT_FAILURE);
+        }
+        break;
+
+    default:
+        //   fprintf(stderr, "Error: Unsupported action type\n");
+        // exit(EXIT_FAILURE);
     }
 }
 
@@ -228,7 +219,7 @@ main(int argc, char *argv[])
         {"uninstall", no_argument, NULL, 'u'},
         {"configure", required_argument, NULL, 'c'},
         {"hdfs", no_argument, NULL, 'h'},
-        {"yarn", no_argument, NULL, 'y'},
+        //  {"yarn", no_argument, NULL, 'y'},
         {"hbase", no_argument, NULL, 'b'},
         {"spark", no_argument, NULL, 's'},
         {"kafka", no_argument, NULL, 'k'},
@@ -307,9 +298,6 @@ main(int argc, char *argv[])
         case 'S':
             component = STORM;
             break;
-        case 'y':
-            component = YARN;
-            break;
         case 'k':
             component = KAFKA;
             break;
@@ -378,7 +366,7 @@ main(int argc, char *argv[])
             exit(EXIT_FAILURE);
         }
     }
-validate_options(action, component, all, dependency);
+    validate_options(action, component, all, dependency);
     // Validate connection options group
     if (port || host) {
         // Check all connection parameters are present
@@ -526,7 +514,6 @@ get_package_name(OS_TYPE os, Component comp)
 const char* get_env_variable(Component comp) {
     switch (comp) {
     case HDFS: return "HADOOP_HOME";
-    case YARN: return "HADOOP_HOME";
     case HBASE: return "HBASE_HOME";
     case SPARK: return "SPARK_HOME";
     case KAFKA: return "KAFKA_HOME";
@@ -965,18 +952,6 @@ void report(Component comp) {
         printTextBlock(report_hdfs(), CYAN, YELLOW);
         printBorder("└", "┘", YELLOW);
         break;
-    case YARN:
-        if (isComponentInstalled(comp))
-        {
-            printTextBlock("YARN status", BOLD GREEN, YELLOW);
-            execute_and_print("yarn node -list");
-        }
-        else
-        {
-            printTextBlock("YARN status", BOLD GREEN, YELLOW);
-            printTextBlock("YARN is not installed or started", BOLD GREEN, YELLOW);
-        }
-        break;
     case HBASE:
         printTextBlock("HBASE status", BOLD GREEN, YELLOW);
         printBorder("├", "┤", YELLOW);
@@ -1018,18 +993,6 @@ void report(Component comp) {
         printBorder("├", "┤", YELLOW);
         printTextBlock(report_hive(), CYAN, YELLOW);
         printBorder("└", "┘", YELLOW);
-        break;
-    case HUE:
-        if (isComponentInstalled(comp))
-        {
-            printTextBlock("HUE status", BOLD GREEN, YELLOW);
-            execute_and_print("sudo systemctl status hue");
-        }
-        else
-        {
-            printTextBlock("HUE status", BOLD GREEN, YELLOW);
-            printTextBlock("HUE is not installed or started", BOLD GREEN, YELLOW);
-        }
         break;
     case PIG:
         printTextBlock("PIG status", BOLD GREEN, YELLOW);
@@ -1205,8 +1168,8 @@ void perform(Component comp, Action action, char *version , char *config_param ,
         break;
     case INSTALL:
         if (isComponentInstalled(comp)) {
-        fprintf(stderr, "%s is  installed.\n", component_to_string(comp));
-        return;
+            fprintf(stderr, "%s is  installed.\n", component_to_string(comp));
+            return;
         }
         install_component(comp, version);
         break;
@@ -1440,9 +1403,9 @@ static void do_read(Conn *conn, int num_reads, Component comp, Action action) {
                 return;
             }
         } while (dataResult <= 0);
-        
+
         printTextBlock(conn->inBuffer + conn->inStart, BOLD GREEN, YELLOW);
-        
+
         if (break_on_success && check_installed_message(conn->inBuffer + conn->inStart)) {
             break;
         }
@@ -1452,28 +1415,28 @@ static void do_read(Conn *conn, int num_reads, Component comp, Action action) {
 // Helper function to handle dependency operations
 static void process_dependencies(Component component, Action action, Conn *conn, bool include_dependencies) {
     if (!include_dependencies) return;
-    
+
     int dep_count = 0;
     Component* dependencies = get_dependencies(component, &dep_count);
-    
+
     if (dep_count > 0) {
         printTextBlock("Processing dependencies...", BOLD CYAN, YELLOW);
     }
-    
+
     for (int i = 0; i < dep_count; i++) {
         Component dep = dependencies[i];
         const char* dep_name = component_to_string(dep);
-        
+
         // Print dependency header
         char dep_header[128];
         snprintf(dep_header, sizeof(dep_header), "Dependency: %s", dep_name);
         printBorder("├", "┤", YELLOW);
         printTextBlock(dep_header, CYAN, YELLOW);
         printTextBlock(action_to_string(action), CYAN, YELLOW);
-        
+
         // Send command and handle reads based on action
         SendComponentActionCommand(dep, action, NULL, NULL, NULL, conn);
-        
+
         if (action == INSTALL) {
             if (start_stdout_capture(dep) != 0) {
                 fprintf(stderr, "Failed to capture stdout for %s\n", dep_name);
@@ -1485,7 +1448,7 @@ static void process_dependencies(Component component, Action action, Conn *conn,
             // Special handling for version switch in dependencies
             SendComponentActionCommand(dep, UNINSTALL, NULL, NULL, NULL, conn);
             do_read(conn, 1, dep, UNINSTALL);
-            
+
             SendComponentActionCommand(dep, INSTALL, NULL, NULL, NULL, conn);
             do_read(conn, get_required_reads_for_install(dep), dep, INSTALL);
         } else {
@@ -1505,109 +1468,109 @@ static void handle_remote_components(bool ALL, Component component, Action actio
         fprintf(stderr, "Failed to connect to Debo\n");
 
     if (ALL) {
-    // Handle all components (skip NONE)
-    for (Component c = HDFS; c <= RANGER; c++) {
-        const char *comp_str = component_to_string(c);
-        if (!comp_str) continue; // Skip if component string is NULL
+        // Handle all components (skip NONE)
+        for (Component c = HDFS; c <= RANGER; c++) {
+            const char *comp_str = component_to_string(c);
+            if (!comp_str) continue; // Skip if component string is NULL
 
-        printBorder("┌", "┐", YELLOW);
-        printTextBlock(component_to_string(c), BOLD GREEN, YELLOW);
-        printBorder("├", "┤", YELLOW);
-        if (strcmp(action_to_string(action), "Installing...") == 0)
-            printTextBlock("Installing might take several minutes", BOLD GREEN, YELLOW);
-        printTextBlock(action_to_string(action), CYAN, YELLOW);
-        SendComponentActionCommand(c, action, version , config_param, value, conn);
-        
-        // Determine read strategy based on action type
-        int num_reads;
-        int check_early_exit = 0;  // Flag for install/version-switch early exit
+            printBorder("┌", "┐", YELLOW);
+            printTextBlock(component_to_string(c), BOLD GREEN, YELLOW);
+            printBorder("├", "┤", YELLOW);
+            if (strcmp(action_to_string(action), "Installing...") == 0)
+                printTextBlock("Installing might take several minutes", BOLD GREEN, YELLOW);
+            printTextBlock(action_to_string(action), CYAN, YELLOW);
+            SendComponentActionCommand(c, action, version , config_param, value, conn);
 
-        if (action == INSTALL) {
-            num_reads = get_required_reads_for_install(c);
-            check_early_exit = 1;
-            if (start_stdout_capture(c) != 0) exit(EXIT_FAILURE);
-        } 
-        else if (action == VERSION_SWITCH) {
-            num_reads = get_required_reads_for_install(c) + 1;
-            check_early_exit = 1;
-            if (start_stdout_capture(c) != 0) exit(EXIT_FAILURE);
-        } 
-        else {
-            num_reads = 1;  // Single read for other actions
-        }
+            // Determine read strategy based on action type
+            int num_reads;
+            int check_early_exit = 0;  // Flag for install/version-switch early exit
 
-        // Unified read handling for all actions
-        for (int i = 0; i < num_reads; i++) {
-            int dataResult;
-            reset_connection_buffers(conn);
-            do {
-                dataResult = ReadData(conn);
-                if (dataResult < 0) {
-                    fprintf(stderr, "Failed to read from socket\n");
+            if (action == INSTALL) {
+                num_reads = get_required_reads_for_install(c);
+                check_early_exit = 1;
+                if (start_stdout_capture(c) != 0) exit(EXIT_FAILURE);
+            }
+            else if (action == VERSION_SWITCH) {
+                num_reads = get_required_reads_for_install(c) + 1;
+                check_early_exit = 1;
+                if (start_stdout_capture(c) != 0) exit(EXIT_FAILURE);
+            }
+            else {
+                num_reads = 1;  // Single read for other actions
+            }
+
+            // Unified read handling for all actions
+            for (int i = 0; i < num_reads; i++) {
+                int dataResult;
+                reset_connection_buffers(conn);
+                do {
+                    dataResult = ReadData(conn);
+                    if (dataResult < 0) {
+                        fprintf(stderr, "Failed to read from socket\n");
+                        break;
+                    }
+                } while (dataResult <= 0);
+
+                printTextBlock(conn->inBuffer + conn->inStart, BOLD GREEN, YELLOW);
+
+                // Early exit check for install/version-switch
+                if (check_early_exit && check_installed_message(conn->inBuffer + conn->inStart)) {
                     break;
                 }
-            } while (dataResult <= 0);
-            
-            printTextBlock(conn->inBuffer + conn->inStart, BOLD GREEN, YELLOW);
-            
-            // Early exit check for install/version-switch
-            if (check_early_exit && check_installed_message(conn->inBuffer + conn->inStart)) {
-                break;
+            }
+
+            // Only stop capture if we started it
+            if (action == INSTALL || action == VERSION_SWITCH) {
+                stop_stdout_capture();
             }
         }
-        
-        // Only stop capture if we started it
-        if (action == INSTALL || action == VERSION_SWITCH) {
+        // Fixed component handling code
+    } else {
+        if (component == NONE) {
+            fprintf(stderr, "Component must be specified when ALL=false\n");
+            return;
+        }
+
+        const char* comp_name = component_to_string(component);
+        int dep_count = 0;
+
+        // Print main component header
+        printBorder("┌", "┐", YELLOW);
+        printTextBlock(comp_name, BOLD GREEN, YELLOW);
+        printBorder("├", "┤", YELLOW);
+
+        if (action == INSTALL) {
+            printTextBlock("Installation might take several minutes", BOLD GREEN, YELLOW);
+        }
+
+        printTextBlock(action_to_string(action), CYAN, YELLOW);
+
+        // Handle VERSION_SWITCH first (special case)
+        if (action == VERSION_SWITCH) {
+            // Process dependencies for version switch
+            process_dependencies(component, VERSION_SWITCH, conn, dependency);
+
+            // Handle main component version switch
+            SendComponentActionCommand(component, UNINSTALL, NULL, NULL, NULL, conn);
+            do_read(conn, 1, component, UNINSTALL);
+
+            SendComponentActionCommand(component, INSTALL, version, config_param, value, conn);
+            if (start_stdout_capture(component) != 0) {
+                fprintf(stderr, "Failed to capture stdout for %s\n", comp_name);
+                exit(EXIT_FAILURE);
+            }
+            do_read(conn, get_required_reads_for_install(component) + 1, component, INSTALL);
             stop_stdout_capture();
         }
-    }
-// Fixed component handling code
-    } else {
-    if (component == NONE) {
-        fprintf(stderr, "Component must be specified when ALL=false\n");
-        return;
-    }
+        // Handle all other actions
+        else {
+            // Process dependencies first (if specified)
+            process_dependencies(component, action, conn, dependency);
 
-    const char* comp_name = component_to_string(component);
-    int dep_count = 0;
+            // Now handle the main component
+            SendComponentActionCommand(component, action, version, config_param, value, conn);
 
-    // Print main component header
-    printBorder("┌", "┐", YELLOW);
-    printTextBlock(comp_name, BOLD GREEN, YELLOW);
-    printBorder("├", "┤", YELLOW);
-    
-    if (action == INSTALL) {
-        printTextBlock("Installation might take several minutes", BOLD GREEN, YELLOW);
-    }
-    
-    printTextBlock(action_to_string(action), CYAN, YELLOW);
-
-    // Handle VERSION_SWITCH first (special case)
-    if (action == VERSION_SWITCH) {
-        // Process dependencies for version switch
-        process_dependencies(component, VERSION_SWITCH, conn, dependency);
-        
-        // Handle main component version switch
-        SendComponentActionCommand(component, UNINSTALL, NULL, NULL, NULL, conn);
-        do_read(conn, 1, component, UNINSTALL);
-        
-        SendComponentActionCommand(component, INSTALL, version, config_param, value, conn);
-        if (start_stdout_capture(component) != 0) {
-            fprintf(stderr, "Failed to capture stdout for %s\n", comp_name);
-            exit(EXIT_FAILURE);
-        }
-        do_read(conn, get_required_reads_for_install(component) + 1, component, INSTALL);
-        stop_stdout_capture();
-    } 
-    // Handle all other actions
-    else {
-        // Process dependencies first (if specified)
-        process_dependencies(component, action, conn, dependency);
-        
-        // Now handle the main component
-        SendComponentActionCommand(component, action, version, config_param, value, conn);
-        
-        switch (action) {
+            switch (action) {
             case INSTALL:
                 if (start_stdout_capture(component) != 0) {
                     fprintf(stderr, "Failed to capture stdout for %s\n", comp_name);
@@ -1616,7 +1579,7 @@ static void handle_remote_components(bool ALL, Component component, Action actio
                 do_read(conn, get_required_reads_for_install(component), component, INSTALL);
                 stop_stdout_capture();
                 break;
-                
+
             case START:
             case STOP:
             case RESTART:
@@ -1625,24 +1588,24 @@ static void handle_remote_components(bool ALL, Component component, Action actio
                 // Single read for these actions
                 do_read(conn, 1, component, action);
                 break;
-                
+
             default:
                 // Handle other actions with single read
                 do_read(conn, 1, component, action);
                 break;
+            }
         }
-    }
 
-    // Send finish message
-    if (PutMsgStart(CliMsg_Finish, conn) < 0) {
-        fprintf(stderr, "Failed to send finish message\n");
-        return;
-    }
+        // Send finish message
+        if (PutMsgStart(CliMsg_Finish, conn) < 0) {
+            fprintf(stderr, "Failed to send finish message\n");
+            return;
+        }
 
-    PutMsgEnd(conn);
-    (void)Flush(conn);
-    
-    printBorder("└", "┘", YELLOW);
-    printf("\n");
-}
+        PutMsgEnd(conn);
+        (void)Flush(conn);
+
+        printBorder("└", "┘", YELLOW);
+        printf("\n");
+    }
 }

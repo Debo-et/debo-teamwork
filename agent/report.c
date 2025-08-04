@@ -1,12 +1,12 @@
 /*
  * Copyright 2025 Surafel Temesgen
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -116,7 +116,7 @@ char *report_hbase() {
 
     // Construct command using pipe instead of options
     char command[1024];
-    snprintf(command, sizeof(command), 
+    snprintf(command, sizeof(command),
              "echo \"status\" | %s/bin/hbase shell 2>&1", hbase_dir);
 
     FILE *fp = popen(command, "r");
@@ -486,20 +486,43 @@ char *report_flink() {
 
 char *report_storm() {
     const char *storm_home_env = getenv("STORM_HOME");
+    const char *home_env = getenv("HOME");
+
+    // Prepare buffers for home-related paths
+    char home_storm_path[1024] = {0};
+    char home_storm_hidden_path[1024] = {0};
+    char home_local_storm_path[1024] = {0};
+
+    if (home_env) {
+        snprintf(home_storm_path, sizeof(home_storm_path), "%s/storm", home_env);
+        snprintf(home_storm_hidden_path, sizeof(home_storm_hidden_path), "%s/.storm", home_env);
+        snprintf(home_local_storm_path, sizeof(home_local_storm_path), "%s/.local/storm", home_env);
+    }
+
+    // Expanded list of possible installation paths
     const char *possible_paths[] = {
         storm_home_env,
         "/opt/storm",
         "/usr/local/storm",
-        NULL  // Sentinel to mark end of array
+        "/usr/local/opt/storm",  // Homebrew (macOS)
+        "/opt/local/storm",      // MacPorts
+        "/usr/share/storm",      // Common Linux path
+        "/var/lib/storm",
+        home_storm_path,
+        home_storm_hidden_path,
+        home_local_storm_path,
+        NULL  // Sentinel
     };
+
     struct stat stat_buf;
     const char *storm_home = NULL;
 
     // Check each possible path in order
     for (int i = 0; possible_paths[i] != NULL; i++) {
-        // Skip if STORM_HOME is not set (i=0 and possible_paths[0] is NULL)
+        // Skip NULL entries (like unset STORM_HOME)
         if (possible_paths[i] == NULL) continue;
 
+        // Check if path exists and is a directory
         if (stat(possible_paths[i], &stat_buf) == 0 && S_ISDIR(stat_buf.st_mode)) {
             storm_home = possible_paths[i];
             break;
@@ -507,7 +530,16 @@ char *report_storm() {
     }
 
     if (storm_home == NULL) {
-        return strdup("Storm installation directory not found.");
+        return strdup("Storm installation directory not found. "
+                      "Set STORM_HOME or install in a standard location.");
+    }
+
+    // Verify bin/storm exists and is executable
+    char storm_bin_path[4096];
+    snprintf(storm_bin_path, sizeof(storm_bin_path), "%s/bin/storm", storm_home);
+
+    if (access(storm_bin_path, X_OK) != 0) {
+        return strdup("Found Storm directory but storm executable is missing or inaccessible.");
     }
 
     // Construct the storm list command with full path
@@ -516,25 +548,27 @@ char *report_storm() {
 
     FILE *fp = popen(command, "r");
     if (fp == NULL) {
-        return strdup("Storm is not started.");
+        return strdup("Failed to execute storm command.");
     }
 
     // Read command output into dynamically allocated buffer
-    char buffer[128];
+    char buffer[256];
     char *output = NULL;
     size_t output_size = 0;
+    size_t len;
 
     while (fgets(buffer, sizeof(buffer), fp) != NULL) {
-        size_t len = strlen(buffer);
+        len = strlen(buffer);
         char *temp = realloc(output, output_size + len + 1);
         if (temp == NULL) {
             pclose(fp);
             free(output);
-            return strdup("Storm is not started.");
+            return strdup("Memory allocation failed.");
         }
         output = temp;
-        strcpy(output + output_size, buffer);
+        memcpy(output + output_size, buffer, len);
         output_size += len;
+        output[output_size] = '\0';
     }
 
     // Check command exit status
@@ -542,18 +576,17 @@ char *report_storm() {
     if (WIFEXITED(status)) {
         int exit_code = WEXITSTATUS(status);
         if (exit_code == 0) {
-            // Command succeeded, return the output (handle empty case)
+            // Command succeeded, return output (handle empty case)
             if (output == NULL) {
                 return strdup("");
-            } else {
-                return output;
             }
+            return output;
         }
     }
 
-    // Command failed or did not exit normally
+    // Command failed or didn't exit normally
     free(output);
-    return strdup("Storm is not started.");
+    return strdup("Storm is not running or failed to respond.");
 }
 
 
@@ -1029,13 +1062,13 @@ char *report_spark() {
         }
     } else if (WIFSIGNALED(exit_status)) {
         int sig = WTERMSIG(exit_status);
-        if (asprintf(&error_msg, "Error: spark-shell killed by signal %d (%s)\nOutput:\n%s", 
+        if (asprintf(&error_msg, "Error: spark-shell killed by signal %d (%s)\nOutput:\n%s",
                      sig, strsignal(sig), output) == -1) {
             free(output);
             return strdup("Memory allocation error for error message.");
         }
     } else {
-        if (asprintf(&error_msg, "Error: spark-shell terminated abnormally (status: 0x%x)\nOutput:\n%s", 
+        if (asprintf(&error_msg, "Error: spark-shell terminated abnormally (status: 0x%x)\nOutput:\n%s",
                      exit_status, output) == -1) {
             free(output);
             return strdup("Memory allocation error for error message.");

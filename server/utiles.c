@@ -911,8 +911,6 @@ const char* component_to_string(Component comp) {
 
                 // Hive
     case HIVE: return "Hive";
-    case HIVE_METASTORE: return "hive-metastore";
-                         // Kafka
     case KAFKA: return "Kafka";
 
                 // Livy
@@ -1081,13 +1079,12 @@ Component* get_dependencies(Component comp, int *count) {
     static Component atlas_deps[] = {HBASE, KAFKA, SOLR};
     static Component pig_deps[] = {HDFS};
     static Component solr_deps[] = {ZOOKEEPER};
-    static Component yarn_deps[] = {HDFS};
     static Component flink_deps[] = {HDFS};
 
     switch (comp) {
     case HBASE: *count = 2; return hbase_deps;
     case KAFKA: *count = 1; return kafka_deps;
-    case HIVE: *count = 3; return hive_deps;          // Updated count
+    case HIVE: *count = 2; return hive_deps;          // Updated count
     case PHOENIX: *count = 1; return phoenix_deps;
     case STORM: *count = 1; return storm_deps;
     case SPARK: *count = 2; return spark_deps;        // Updated count
@@ -1098,7 +1095,6 @@ Component* get_dependencies(Component comp, int *count) {
     case ATLAS: *count = 3; return atlas_deps;
     case PIG: *count = 2; return pig_deps;
     case SOLR: *count = 1; return solr_deps;
-    case YARN: *count = 1; return yarn_deps;
     case FLINK: *count = 1; return flink_deps;
                 // Components with no dependencies
     case PRESTO:
@@ -1341,22 +1337,12 @@ static void get_component_info(Component comp, const char **env_var, const char 
 
     switch (comp) {
     case HDFS:
-    case YARN:
-        *env_var = "HADOOP_HOME";
-        *fallback_dir = "hadoop";
-        *conf_subdir = "etc/hadoop";
-        break;
     case HBASE:
         *env_var = "HBASE_HOME";
         *fallback_dir = "hbase";
         *conf_subdir = "conf";
         break;
     case HIVE:
-    case HIVE_METASTORE:
-        *env_var = "HIVE_HOME";
-        *fallback_dir = "hive";
-        *conf_subdir = "conf";
-        break;
     case KAFKA:
         *env_var = "KAFKA_HOME";
         *fallback_dir = "kafka";
@@ -1376,11 +1362,6 @@ static void get_component_info(Component comp, const char **env_var, const char 
         *env_var = "STORM_HOME";
         *fallback_dir = "storm";
         *conf_subdir = "conf";
-        break;
-    case HUE:
-        *env_var = "HUE_HOME";
-        *fallback_dir = "hue";
-        *conf_subdir = "desktop/conf";
         break;
     case PIG:
         *env_var = "PIG_HOME";
@@ -1464,14 +1445,12 @@ bool isComponentInstalled(Component comp) {
     switch (comp) {
     case FLINK:     env_var = "FLINK_HOME";     base_dir = "flink";     break;
     case HDFS:      env_var = "HADOOP_HOME";    base_dir = "hadoop";    break;
-    case YARN:      env_var = "HADOOP_HOME";    base_dir = "hadoop";    break;
     case HBASE:     env_var = "HBASE_HOME";     base_dir = "hbase";     break;
     case HIVE:      env_var = "HIVE_HOME";      base_dir = "hive";      break;
     case KAFKA:     env_var = "KAFKA_HOME";     base_dir = "kafka";     break;
     case LIVY:      env_var = "LIVY_HOME";      base_dir = "livy";      break;
-    case PHOENIX:   env_var = "PHOENIX_HOME";   base_dir = "apache-phoenix"; break; // FIXED
+    case PHOENIX:   env_var = "PHOENIX_HOME";   base_dir = "phoenix"; break; // FIXED
     case STORM:     env_var = "STORM_HOME";     base_dir = "storm";     break;
-    case HUE:       env_var = "HUE_HOME";       base_dir = "hue";       break;
     case PIG:       env_var = "PIG_HOME";       base_dir = "pig";       break;
     case OOZIE:     env_var = "OOZIE_HOME";     base_dir = "oozie";     break;
     case PRESTO:    env_var = "PRESTO_HOME";    base_dir = "presto-server"; break; // FIXED

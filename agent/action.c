@@ -1,12 +1,12 @@
 /*
  * Copyright 2025 Surafel Temesgen
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -147,7 +147,7 @@ static char* find_launcher(const char* base_dir) {
 
     char candidate[PATH_MAX];
     struct stat st;
-    
+
     // Check direct path first (new installation structure)
     snprintf(candidate, sizeof(candidate), "%s/bin/launcher", base_dir);
     if (stat(candidate, &st) == 0 && S_ISREG(st.st_mode)) {
@@ -157,7 +157,7 @@ static char* find_launcher(const char* base_dir) {
     // Fallback to old pattern (versioned directory)
     char pattern[PATH_MAX];
     snprintf(pattern, sizeof(pattern), "%s/presto-server-*/bin/launcher", base_dir);
-    
+
     glob_t glob_result;
     if (glob(pattern, GLOB_ERR, NULL, &glob_result) != 0 || glob_result.gl_pathc == 0) {
         globfree(&glob_result);
@@ -195,31 +195,31 @@ void Presto_action(Action action) {
     }
 
     switch(action) {
-        case START:
-            action_name = "start";
-            snprintf(command, sizeof(command), "%s start", launcher_path);
-            break;
+    case START:
+        action_name = "start";
+        snprintf(command, sizeof(command), "%s start", launcher_path);
+        break;
 
-        case STOP:
-            action_name = "stop";
-            snprintf(command, sizeof(command), "%s stop", launcher_path);
-            break;
+    case STOP:
+        action_name = "stop";
+        snprintf(command, sizeof(command), "%s stop", launcher_path);
+        break;
 
-        case RESTART:
-            action_name = "restart";
-            snprintf(command, sizeof(command), "%s restart", launcher_path);
-            break;
+    case RESTART:
+        action_name = "restart";
+        snprintf(command, sizeof(command), "%s restart", launcher_path);
+        break;
 
-        default:
-            FPRINTF(global_client_socket, "Error: Invalid action\n");
-            free(launcher_path);
-            exit(EXIT_FAILURE);
+    default:
+        FPRINTF(global_client_socket, "Error: Invalid action\n");
+        free(launcher_path);
+        exit(EXIT_FAILURE);
     }
 
     // Execute command with output redirection
-    snprintf(command + strlen(command), sizeof(command) - strlen(command), " >/dev/null 2>&1");
-    
-    if ((ret = executeSystemCommand(command)) != 0) {
+    // snprintf(command + strlen(command), sizeof(command) - strlen(command), " >/dev/null 2>&1");
+
+    if ((ret = executeSystemCommand(command)) == -1) {
         FPRINTF(global_client_socket, "Error: Failed to %s Presto (%d)\n", action_name, ret);
         free(launcher_path);
         exit(EXIT_FAILURE);
@@ -805,10 +805,10 @@ bool is_tez_installed() {
     const char *tez_home = get_tez_home();
     if (tez_home == NULL) {
         FPRINTF(global_client_socket,
-            "Tez is NOT installed. Checked:\n"
-            "- TEZ_HOME environment variable\n"
-            "- /opt/tez (Red Hat)\n"
-            "- /usr/local/tez (Debian)\n");
+                "Tez is NOT installed. Checked:\n"
+                "- TEZ_HOME environment variable\n"
+                "- /opt/tez (Red Hat)\n"
+                "- /usr/local/tez (Debian)\n");
         return false;
     }
 
@@ -822,150 +822,142 @@ void tez_action(Action a) {
     }
 
     switch (a) {
-        case START:
-            PRINTF(global_client_socket, "Tez does not have a daemon to start. No action taken.\n");
-            break;
-        case STOP:
-            PRINTF(global_client_socket, "Tez does not have a daemon to stop. No action taken.\n");
-            break;
-        case RESTART:
-            PRINTF(global_client_socket, "Tez does not have a daemon to restart. No action taken.\n");
-            break;
-        default:
-            FPRINTF(global_client_socket, "Invalid action requested: %d\n", a);
-            break;
+    case START:
+        PRINTF(global_client_socket, "Tez does not have a daemon to start. No action taken.\n");
+        break;
+    case STOP:
+        PRINTF(global_client_socket, "Tez does not have a daemon to stop. No action taken.\n");
+        break;
+    case RESTART:
+        PRINTF(global_client_socket, "Tez does not have a daemon to restart. No action taken.\n");
+        break;
+    default:
+        FPRINTF(global_client_socket, "Invalid action requested: %d\n", a);
+        break;
     }
 }
 
-void kafka_action(Action action) {
+/*
+ * kafka_action.c
+ *
+ * Provides functions to start, stop, and restart Kafka and ZooKeeper
+ * Returns 0 on success, negative on failure.
+ */
+/**
+ * Perform Kafka or ZooKeeper actions.
+ * @param action The action to perform (START, STOP, RESTART)
+ * @return 0 on success, -1 on error
+ */
+int kafka_action(Action action) {
     char kafka_home[PATH_MAX] = {0};
     char command[2048] = {0};
-    int result;
     struct stat st;
+    const char *env_kafka = getenv("KAFKA_HOME");
 
     // Determine Kafka installation directory
-    char* env_kafka = getenv("KAFKA_HOME");
     if (env_kafka) {
-        strncpy(kafka_home, env_kafka, sizeof(kafka_home)-1);
-        kafka_home[sizeof(kafka_home)-1] = '\0';
+        strncpy(kafka_home, env_kafka, sizeof(kafka_home) - 1);
+    } else if (access("/etc/debian_version", F_OK) == 0) {
+        strncpy(kafka_home, "/usr/local/kafka", sizeof(kafka_home) - 1);
+    } else if (access("/etc/redhat-release", F_OK) == 0) {
+        strncpy(kafka_home, "/opt/kafka", sizeof(kafka_home) - 1);
     } else {
-        if (access("/etc/debian_version", F_OK) == 0) {
-            strncpy(kafka_home, "/usr/local/kafka", sizeof(kafka_home)-1);
-        } else if (access("/etc/redhat-release", F_OK) == 0) {
-            strncpy(kafka_home, "/opt/kafka", sizeof(kafka_home)-1);
-        } else {
-            FPRINTF(global_client_socket,  "Unable to determine Kafka home\n");
-            exit(EXIT_FAILURE);
-        }
-        kafka_home[sizeof(kafka_home)-1] = '\0';
+        FPRINTF(global_client_socket, "Unable to determine Kafka home\n");
+        return -1;
     }
+    kafka_home[sizeof(kafka_home) - 1] = '\0';
 
     // Validate Kafka installation
-    if (stat(kafka_home, &st) == -1 || !S_ISDIR(st.st_mode)) {
-        FPRINTF(global_client_socket,  "Kafka not installed at %s\n", kafka_home);
-        exit(EXIT_FAILURE);
+    if (stat(kafka_home, &st) < 0 || !S_ISDIR(st.st_mode)) {
+        FPRINTF(global_client_socket, "Kafka not installed at %s: %s\n", kafka_home, strerror(errno));
+        return -1;
     }
 
-    // Construct script paths
-    char kafka_start[PATH_MAX], kafka_stop[PATH_MAX], kafka_config[PATH_MAX];
-    char zk_start[PATH_MAX], zk_stop[PATH_MAX], zk_config[PATH_MAX];
-
+    // Build paths
+    char kafka_start[PATH_MAX], kafka_stop[PATH_MAX], kafka_conf[PATH_MAX];
+    char zk_start[PATH_MAX], zk_stop[PATH_MAX], zk_conf[PATH_MAX];
     snprintf(kafka_start, sizeof(kafka_start), "%s/bin/kafka-server-start.sh", kafka_home);
-    snprintf(kafka_stop, sizeof(kafka_stop), "%s/bin/kafka-server-stop.sh", kafka_home);
-    snprintf(kafka_config, sizeof(kafka_config), "%s/config/server.properties", kafka_home);
-    snprintf(zk_start, sizeof(zk_start), "%s/bin/zookeeper-server-start.sh", kafka_home);
-    snprintf(zk_stop, sizeof(zk_stop), "%s/bin/zookeeper-server-stop.sh", kafka_home);
-    snprintf(zk_config, sizeof(zk_config), "%s/config/zookeeper.properties", kafka_home);
+    snprintf(kafka_stop,  sizeof(kafka_stop),  "%s/bin/kafka-server-stop.sh",  kafka_home);
+    snprintf(kafka_conf,  sizeof(kafka_conf),  "%s/config/server.properties", kafka_home);
+    snprintf(zk_start,    sizeof(zk_start),    "%s/bin/zookeeper-server-start.sh", kafka_home);
+    snprintf(zk_stop,     sizeof(zk_stop),     "%s/bin/zookeeper-server-stop.sh",  kafka_home);
+    snprintf(zk_conf,     sizeof(zk_conf),     "%s/config/zookeeper.properties", kafka_home);
 
-    // Verify required files
+    // Check executables
     int missing = 0;
-    if (access(zk_start, X_OK) != 0) { FPRINTF(global_client_socket,  "Missing Zookeeper start script\n"); missing = 1; }
-    if (access(zk_stop, X_OK) != 0) { FPRINTF(global_client_socket,  "Missing Zookeeper stop script\n"); missing = 1; }
-    if (access(kafka_start, X_OK) != 0) { FPRINTF(global_client_socket,  "Missing Kafka start script\n"); missing = 1; }
-    if (access(kafka_stop, X_OK) != 0) { FPRINTF(global_client_socket,  "Missing Kafka stop script\n"); missing = 1; }
-    if (missing) exit(EXIT_FAILURE);
+    if (access(zk_start, X_OK) != 0) { FPRINTF(global_client_socket, "Missing Zookeeper start script\n"); missing = 1; }
+    if (access(zk_stop,  X_OK) != 0) { FPRINTF(global_client_socket, "Missing Zookeeper stop script\n");  missing = 1; }
+    if (access(kafka_start, X_OK) != 0) { FPRINTF(global_client_socket, "Missing Kafka start script\n");   missing = 1; }
+    if (access(kafka_stop,  X_OK) != 0) { FPRINTF(global_client_socket, "Missing Kafka stop script\n");    missing = 1; }
+    if (missing) return -1;
 
-    switch(action) {
-    case START: {
-        size_t ret = snprintf(command, sizeof(command),
-                              "%s %s >/dev/null 2>&1 & echo $! > %s/zookeeper.pid; "
-                              "%s %s >/dev/null 2>&1 & echo $! > %s/kafka.pid",
-                              zk_start, zk_config, kafka_home,
-                              kafka_start, kafka_config, kafka_home
-                             );
-        if (ret >= sizeof(command)) {
-            FPRINTF(global_client_socket,  "Command buffer overflow\n");
-            exit(EXIT_FAILURE);
-        }
+    int ret;
+    switch (action) {
+    case START:
+        ret = snprintf(command, sizeof(command),
+                       "%s %s > %s/zookeeper.pid && %s %s > %s/kafka.pid",
+                       zk_start, zk_conf, kafka_home,
+                       kafka_start, kafka_conf, kafka_home);
         break;
-    }
 
-    case STOP: {
-        size_t ret = snprintf(command, sizeof(command),
-                              "%s; %s; "
-                              "rm -f %s/zookeeper.pid %s/kafka.pid 2>/dev/null",
-                              kafka_stop, zk_stop, kafka_home, kafka_home
-                             );
-        if (ret >= sizeof(command)) {
-            FPRINTF(global_client_socket,  "Command buffer overflow\n");
-            exit(EXIT_FAILURE);
-        }
+    case STOP:
+        ret = snprintf(command, sizeof(command),
+                       "%s && %s && rm -f %s/zookeeper.pid %s/kafka.pid",
+                       kafka_stop, zk_stop, kafka_home, kafka_home);
         break;
-    }
 
     case RESTART:
-        kafka_action(STOP);
+        if (kafka_action(STOP) < 0) return -1;
         sleep(3);
-        kafka_action(START);
-        return;
+        return kafka_action(START);
 
     default:
-        FPRINTF(global_client_socket,  "Invalid action\n");
-        exit(EXIT_FAILURE);
+        FPRINTF(global_client_socket, "Invalid action %d\n", action);
+        return -1;
+    }
+    if (ret < 0 || ret >= (int)sizeof(command)) {
+        FPRINTF(global_client_socket, "Command construction overflow\n");
+        return -1;
     }
 
-    // Execute command
-    if ((result = executeSystemCommand(command)) == -1) {
-        FPRINTF(global_client_socket,  "Action failed with code %d\n", result);
-        exit(EXIT_FAILURE);
+    // Execute action
+    int code = executeSystemCommand(command);
+    if (code < 0) {
+        FPRINTF(global_client_socket, "Command execution failed with code %d\n", code);
+        return code;
     }
 
-    // Verification command buffers
+    // Verify
     char verify_cmd[512];
-
-    // Verify execution
     if (action == START) {
         sleep(2);
-        // Check Zookeeper
-        snprintf(verify_cmd, sizeof(verify_cmd),
-                 "pgrep -F '%s/zookeeper.pid' >/dev/null", kafka_home);
-        int zk_up = executeSystemCommand(verify_cmd);
-        // Check Kafka
-        snprintf(verify_cmd, sizeof(verify_cmd),
-                 "pgrep -F '%s/kafka.pid' >/dev/null", kafka_home);
-        int kafka_up = executeSystemCommand(verify_cmd);
-
-        if (zk_up == -1 || kafka_up == -1) {
-            FPRINTF(global_client_socket,  "Startup verification failed\n");
-            exit(EXIT_FAILURE);
+        snprintf(verify_cmd, sizeof(verify_cmd), "pgrep -F '%s/zookeeper.pid'", kafka_home);
+        if (executeSystemCommand(verify_cmd) < 0) {
+            FPRINTF(global_client_socket, "Zookeeper failed to start\n");
+            return -1;
+        }
+        snprintf(verify_cmd, sizeof(verify_cmd), "pgrep -F '%s/kafka.pid'", kafka_home);
+        if (executeSystemCommand(verify_cmd) < 0) {
+            FPRINTF(global_client_socket, "Kafka failed to start\n");
+            return -1;
         }
     } else if (action == STOP) {
-        // Check Zookeeper
-        snprintf(verify_cmd, sizeof(verify_cmd),
-                 "pgrep -F '%s/zookeeper.pid' >/dev/null", kafka_home);
-        int zk_down = executeSystemCommand(verify_cmd);
-        // Check Kafka
-        snprintf(verify_cmd, sizeof(verify_cmd),
-                 "pgrep -F '%s/kafka.pid' >/dev/null", kafka_home);
-        int kafka_down = executeSystemCommand(verify_cmd);
-
-        if (zk_down == 0 || kafka_down == 0) {
-            FPRINTF(global_client_socket,  "Shutdown verification failed\n");
-            exit(EXIT_FAILURE);
+        snprintf(verify_cmd, sizeof(verify_cmd), "pgrep -F '%s/zookeeper.pid'", kafka_home);
+        if (executeSystemCommand(verify_cmd) == 0) {
+            FPRINTF(global_client_socket, "Zookeeper failed to stop\n");
+            return -1;
+        }
+        snprintf(verify_cmd, sizeof(verify_cmd), "pgrep -F '%s/kafka.pid'", kafka_home);
+        if (executeSystemCommand(verify_cmd) == 0) {
+            FPRINTF(global_client_socket, "Kafka failed to stop\n");
+            return -1;
         }
     }
+
     PRINTF(global_client_socket, "Service operations completed successfully.\n");
+    return 0;
 }
+
 
 void Solr_action(Action a) {
     const char *install_dir = NULL;

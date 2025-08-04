@@ -905,16 +905,13 @@ bool isComponentInstalled(Component comp) {
     switch (comp) {
     case FLINK:     env_var = "FLINK_HOME";     base_dir = "flink";     break;
     case HDFS:      env_var = "HADOOP_HOME";    base_dir = "hadoop";    break;
-    case YARN:      env_var = "HADOOP_HOME";    base_dir = "hadoop";    break;
     case HBASE:     env_var = "HBASE_HOME";     base_dir = "hbase";     break;
     case HIVE:      env_var = "HIVE_HOME";      base_dir = "hive";      break;
     case KAFKA:     env_var = "KAFKA_HOME";     base_dir = "kafka";     break;
     case LIVY:      env_var = "LIVY_HOME";      base_dir = "livy";      break;
     case PHOENIX:   env_var = "PHOENIX_HOME";   base_dir = "phoenix";   break;
     case STORM:     env_var = "STORM_HOME";     base_dir = "storm";     break;
-    case HUE:       env_var = "HUE_HOME";       base_dir = "hue";       break;
     case PIG:       env_var = "PIG_HOME";       base_dir = "pig";       break;
-    case OOZIE:     env_var = "OOZIE_HOME";     base_dir = "oozie";     break;
     case PRESTO:    env_var = "PRESTO_HOME";    base_dir = "presto";    break;
     case ATLAS:     env_var = "ATLAS_HOME";     base_dir = "atlas";     break;
     case RANGER:    env_var = "RANGER_HOME";    base_dir = "ranger";    break;

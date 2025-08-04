@@ -33,7 +33,6 @@ ifeq ($(GSSAPI_INSTALLED),)
 $(error "Kerberos GSSAPI (libgssapi_krb5) is not found by the linker. Ensure that libkrb5-dev is installed and that the library path is correct. This client requires GSSAPI support to connect to the 'debo' Kerberos service.")
 endif
 
-
 # Extract flags
 LIBSSH_CFLAGS = $(shell pkg-config --cflags libssh)
 LIBSSH_LDFLAGS = $(shell pkg-config --libs libssh)
@@ -46,6 +45,7 @@ LDLIBS += -lgssapi_krb5
 COMMON_HEADERS = getopt_long.h utiles.h configuration.h action.h uninstall.h report.h
 
 all: $(TARGET)
+	@echo "Build completed successfully: $(TARGET)"
 
 $(TARGET): $(OBJ)
 	$(CC) $(CFLAGS) $(LIBSSH_CFLAGS) $(LIBXML2_CFLAGS) -o $@ $^ \
@@ -63,20 +63,20 @@ installdirs:
 
 install: all installdirs
 	install -m 755 $(TARGET) $(bindir)
-	@echo "Installed $(TARGET) to $(bindir)"
+	@echo "✅ Installed $(TARGET) to $(bindir)"
 
 uninstall:
 	rm -f $(bindir)/$(TARGET)
-	@echo "Uninstalled $(TARGET)"
+	@echo "🗑️ Uninstalled $(TARGET) from $(bindir)"
 
 clean:
 	rm -f $(OBJ) $(TARGET) test_debo test_debo.o test_debo_remote test_debo_remote.o
-	@echo "Cleaned up build files and test artifacts"
+	@echo "🧹 Cleaned up build files and test artifacts"
 
 # Test compilation and execution
 TEST_TARGET = test_debo
 TEST_OBJ = test_debo.o
 
 $(TEST_TARGET): $(TEST_OBJ) $(LIB_OBJ)
-	$
+	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS)
 

@@ -1,19 +1,19 @@
 /*
  * Copyright 2025 Surafel Temesgen
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -378,7 +378,7 @@ fork_process(void)
     result = fork();
     if (result == 0)
     {
-       // printf("Child (PID: %d) continuing execution.\n", getpid());
+        // printf("Child (PID: %d) continuing execution.\n", getpid());
         //sleep(50);
         /* fork succeeded, in child */
         //MyProcPid = getpid();
@@ -1180,37 +1180,37 @@ static void handle_command(ClientSocket *client_socket) {
 
             /* =================== Phoenix Commands =================== */
         case CliMsg_Phoenix_Start:
-           // if (!isComponentInstalled(PHOENIX)){
-             //   FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PHOENIX));
-               // break;
+            // if (!isComponentInstalled(PHOENIX)){
+            //   FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PHOENIX));
+            // break;
             //}
             phoenix_action(START);
             break;
         case CliMsg_Phoenix_Stop:
             //if (!isComponentInstalled(PHOENIX)){
-              //  FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PHOENIX));
-                //break;
+            //  FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PHOENIX));
+            //break;
             //}
             phoenix_action(STOP);
             break;
         case CliMsg_Phoenix_Restart:
             //if (!isComponentInstalled(PHOENIX)){
-              //  FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PHOENIX));
-                //break;
+            //  FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PHOENIX));
+            //break;
             //}
             phoenix_action(RESTART);
             break;
         case CliMsg_Phoenix_Uninstall:
             //if (!isComponentInstalled(PHOENIX)){
-              //  FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PHOENIX));
-               // break;
+            //  FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PHOENIX));
+            // break;
             //}
             uninstall_phoenix();
             break;
         case CliMsg_Phoenix_Install_Version:
             //if (isComponentInstalled(PHOENIX)){
-              //  PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(PHOENIX));
-               // break;
+            //  PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(PHOENIX));
+            // break;
             //}
             install_phoenix(result[0],result[1]);
             configure_target_component(PHOENIX);
@@ -1218,16 +1218,16 @@ static void handle_command(ClientSocket *client_socket) {
             /* =================== Phoenix Commands =================== */
         case CliMsg_Phoenix_Install:
             //if (isComponentInstalled(PHOENIX)){
-             //   PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(PHOENIX));
-              //  break;
+            //   PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(PHOENIX));
+            //  break;
             //}
             install_phoenix(NULL, NULL);
             configure_target_component(PHOENIX);
             break;
         case CliMsg_Phoenix:
             //if (!isComponentInstalled(PHOENIX)){
-             //   FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PHOENIX));
-              //  break;
+            //   FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PHOENIX));
+            //  break;
             //}
             PRINTF(global_client_socket, report_phoenix());
             break;
@@ -1340,57 +1340,57 @@ static void handle_command(ClientSocket *client_socket) {
 
             /* =================== Zeppelin Commands ================== */
         case CliMsg_Presto_Stop:
-         //   if (!isComponentInstalled(PRESTO)){
-          //      FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PRESTO));
-           //     break;
+            //   if (!isComponentInstalled(PRESTO)){
+            //      FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PRESTO));
+            //     break;
             //}
             Presto_action(STOP);
             break;
         case CliMsg_Presto_Start:
-           // if (!isComponentInstalled(PRESTO)){
+            // if (!isComponentInstalled(PRESTO)){
             //    FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PRESTO));
-             //   break;
+            //   break;
             //}
             Presto_action(START);
             break;
         case CliMsg_Presto_Restart:
             //if (!isComponentInstalled(PRESTO)){
-             //   FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PRESTO));
-              //  break;
+            //   FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PRESTO));
+            //  break;
             //}
             Presto_action(RESTART);
             break;
         case CliMsg_Presto_Uninstall:
             //if (!isComponentInstalled(PRESTO)){
-             //   FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PRESTO));
-             //   break;
+            //   FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PRESTO));
+            //   break;
             //}
             uninstall_Presto();
             break;
         case CliMsg_Presto_Install_Version:
             //if (isComponentInstalled(PRESTO)){
-             //   PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(PRESTO));
-              //  break;
-           // }
+            //   PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(PRESTO));
+            //  break;
+            // }
             install_Presto(result[0],result[1]);
             configure_target_component(PRESTO);
             break;
         case CliMsg_Presto_Install:
             //if (isComponentInstalled(PRESTO)){
-             //   PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(PRESTO));
-              //  break;
+            //   PRINTF(global_client_socket, "%s is already installed.\n", component_to_string(PRESTO));
+            //  break;
             //}
             install_Presto(NULL, NULL);
             configure_target_component(PRESTO);
             break;
         case CliMsg_Presto:
             //if (!isComponentInstalled(PRESTO)){
-             //   FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PRESTO));
-              //  break;
-           // }
+            //   FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PRESTO));
+            //  break;
+            // }
             PRINTF(global_client_socket, report_presto());
             break;
-            
+
             /* ================= Configuration Commands =============== */
         case CliMsg_Hdfs_Configure:
             if (!isComponentInstalled(HDFS)){
@@ -1594,8 +1594,8 @@ static void handle_command(ClientSocket *client_socket) {
             handle_result(tezStatus, tezConf->canonical_name, tezConf->value, "tez-site.xml");
             break;
         case CliMsg_Presto_Configure:
-          //  if (!isComponentInstalled(PRESTO)){
-           //     FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PRESTO));
+            //  if (!isComponentInstalled(PRESTO)){
+            //     FPRINTF(global_client_socket, "%s is not installed.\n", component_to_string(PRESTO));
             //    break;
             //}
             ValidationResult validationPresto = validatePrestoConfigParam(result[0], result[1]);

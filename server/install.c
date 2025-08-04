@@ -1,12 +1,12 @@
 /*
  * Copyright 2025 Surafel Temesgen
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -335,7 +335,7 @@ void install_hadoop(const char *version, char *location) {
     ConfigStatus status;
     status = modify_hdfs_config("dfs.namenode.name.dir", nameNode, "hdfs-site.xml");
     handle_result(status, "dfs.namenode.name.dir", nameNode, "hdfs-site.xml");
-        
+
     status = modify_hdfs_config("dfs.datanode.data.dir", dataNode, "hdfs-site.xml");
     handle_result(status, "dfs.datanode.data.dir", dataNode, "hdfs-site.xml");
 
@@ -628,12 +628,12 @@ void install_Storm(char *version, char *location) {
     // Create Storm data directory with proper permissions (FIXED)
     printf("Creating Storm data directory...\n");
     char mkdir_cmd[512];
-    snprintf(mkdir_cmd, sizeof(mkdir_cmd), 
-         "%smkdir -p /var/lib/storm-data && %schown -R %s:%s /var/lib/storm-data >/dev/null 2>&1",  // FIXED
-         is_root ? "" : "sudo ",
-         is_root ? "" : "sudo ",
-         pwd->pw_name, pwd->pw_name);  // Use current user's credentials
-         
+    snprintf(mkdir_cmd, sizeof(mkdir_cmd),
+             "%smkdir -p /var/lib/storm-data && %schown -R %s:%s /var/lib/storm-data >/dev/null 2>&1",  // FIXED
+             is_root ? "" : "sudo ",
+             is_root ? "" : "sudo ",
+             pwd->pw_name, pwd->pw_name);  // Use current user's credentials
+
     if (!executeSystemCommand(mkdir_cmd)) {
         fprintf(stderr,   "Failed to create Storm data directory. Check permissions.\n");
         return;
@@ -801,14 +801,14 @@ void install_phoenix(char *version, char *location) {
     if (hbase_home == NULL) {
         const char *paths[] = {"/usr/local/hbase", "/opt/hbase", "/usr/lib/hbase"};
         size_t num_paths = sizeof(paths) / sizeof(paths[0]);
-        
+
         for (size_t i = 0; i < num_paths; i++) {
             if (stat(paths[i], &buffer) == 0 && S_ISDIR(buffer.st_mode)) {
                 hbase_home = (char *)paths[i];
                 break;
             }
         }
-        
+
         if (!hbase_home) {
             fprintf(stderr, "HBase installation not found. Set HBASE_HOME or install HBase.\n");
             exit(1);
@@ -877,15 +877,15 @@ void install_phoenix(char *version, char *location) {
 
     // Generate URL for Phoenix binary
     char url[512], filename[256], dirname[256];
-    snprintf(url, sizeof(url), 
+    snprintf(url, sizeof(url),
              "https://dlcdn.apache.org/phoenix/phoenix-%s/phoenix-hbase-%s-%s-bin.tar.gz",
-             version, 
+             version,
              hbase_compat,
              version);
-             
+
     snprintf(filename, sizeof(filename), "phoenix-%s-bin.tar.gz", version);
-    snprintf(dirname, sizeof(dirname), "phoenix-hbase-%s-%s-bin", 
-             hbase_compat, 
+    snprintf(dirname, sizeof(dirname), "phoenix-hbase-%s-%s-bin",
+             hbase_compat,
              version);
 
     // Download the binary archive
@@ -923,7 +923,7 @@ void install_phoenix(char *version, char *location) {
     } else {
         const char *default_dirs[] = {"/usr/local/phoenix", "/opt/phoenix"};
         size_t num_dirs = sizeof(default_dirs) / sizeof(default_dirs[0]);
-        
+
         for (size_t i = 0; i < num_dirs; i++) {
             if (stat(default_dirs[i], &buffer) == 0) {
                 strncpy(install_dir, default_dirs[i], sizeof(install_dir)-1);
@@ -960,7 +960,7 @@ void install_phoenix(char *version, char *location) {
     // Copy Phoenix server JAR to HBase's lib directory
     char pattern[PATH_MAX];
     snprintf(pattern, sizeof(pattern), "%s/phoenix-*-hbase-*-server.jar", install_dir);
-    
+
     glob_t glob_result;
     if (glob(pattern, 0, NULL, &glob_result) == 0) {
         if (glob_result.gl_pathc > 0) {
@@ -968,10 +968,10 @@ void install_phoenix(char *version, char *location) {
             char *jar_name = strrchr(source_jar, '/');
             if (jar_name) jar_name++;
             else jar_name = source_jar;
-            
+
             char dest_jar[PATH_MAX];
             snprintf(dest_jar, sizeof(dest_jar), "%s/lib/%s", hbase_home, jar_name);
-            
+
             printf("Copying server JAR to HBase: %s\n", dest_jar);
             snprintf(command, sizeof(command), "cp '%s' '%s'", source_jar, dest_jar);
             if (!executeSystemCommand(command)) {
@@ -989,10 +989,10 @@ void install_phoenix(char *version, char *location) {
     // Configure Phoenix in hbase-env.sh
     char hbase_env_path[PATH_MAX];
     snprintf(hbase_env_path, sizeof(hbase_env_path), "%s/conf/hbase-env.sh", hbase_home);
-    
+
     char classpath_entry[1024];
     snprintf(classpath_entry, sizeof(classpath_entry), "export HBASE_CLASSPATH=\"$HBASE_CLASSPATH:%s\"", install_dir);
-    
+
     // Check if entry already exists
     bool entry_exists = false;
     FILE *hbase_env = fopen(hbase_env_path, "r");
@@ -1026,13 +1026,13 @@ void install_phoenix(char *version, char *location) {
         fprintf(stderr, "Home directory not found.\n");
         exit(1);
     }
-    
+
     char bashrc_path[PATH_MAX];
     snprintf(bashrc_path, sizeof(bashrc_path), "%s/.bashrc", home);
-    
+
     char bashrc_entry[256];
     snprintf(bashrc_entry, sizeof(bashrc_entry), "export PHOENIX_HOME=%s", install_dir);
-    
+
     // Check if entry already exists
     entry_exists = false;
     FILE *bashrc = fopen(bashrc_path, "r");
@@ -1066,7 +1066,7 @@ void install_phoenix(char *version, char *location) {
         fprintf(stderr, "Error: Could not determine current user\n");
         exit(1);
     }
-    
+
     snprintf(command, sizeof(command), "chown -R %s:%s %s", pwd->pw_name, pwd->pw_name, install_dir);
     if (!executeSystemCommand(command)) {
         fprintf(stderr, "Error: Failed to set ownership of %s\n", install_dir);
@@ -2014,7 +2014,7 @@ void install_Presto(char* version, char *location) {
         fprintf(stderr, "Error: Could not determine current user\n");
         exit(EXIT_FAILURE);
     }
-    snprintf(command, sizeof(command), "sudo chown -R %s:%s %s >/dev/null 2>&1", 
+    snprintf(command, sizeof(command), "sudo chown -R %s:%s %s >/dev/null 2>&1",
              pwd->pw_name, pwd->pw_name, install_dir);
     if (!executeSystemCommand(command)) {
         fprintf(stderr, "Error: Failed to set ownership of %s\n", install_dir);
@@ -2022,8 +2022,8 @@ void install_Presto(char* version, char *location) {
     }
 
     // Extract directly to installation directory
-    snprintf(command, sizeof(command), 
-             "tar -xvzf presto-server-%s.tar.gz --strip-components=1 -C %s >/dev/null 2>&1", 
+    snprintf(command, sizeof(command),
+             "tar -xvzf presto-server-%s.tar.gz --strip-components=1 -C %s >/dev/null 2>&1",
              actual_version, install_dir);
     if (!executeSystemCommand(command)) {
         fprintf(stderr, "Extraction failed\n");
@@ -2037,7 +2037,7 @@ void install_Presto(char* version, char *location) {
     // Create configuration directories
     char config_dir[512];
     snprintf(config_dir, sizeof(config_dir), "%s/etc", install_dir);
-    
+
     char dir_cmd[1024];
     snprintf(dir_cmd, sizeof(dir_cmd), "mkdir -p %s/{catalog,data}", config_dir);
     if (!executeSystemCommand(dir_cmd)) {
@@ -2046,16 +2046,16 @@ void install_Presto(char* version, char *location) {
 
     // Create configuration files
     char node_props[512], jvm_config[512], presto_config[512], catalog_tpch[512];
-    
+
     snprintf(node_props, sizeof(node_props), "%s/node.properties", config_dir);
     create_properties_file(node_props, "node.properties");
-    
+
     snprintf(jvm_config, sizeof(jvm_config), "%s/jvm.config", config_dir);
     create_properties_file(jvm_config, "jvm.config");
-    
+
     snprintf(presto_config, sizeof(presto_config), "%s/config.properties", config_dir);
     create_properties_file(presto_config, "config.properties");
-    
+
     snprintf(catalog_tpch, sizeof(catalog_tpch), "%s/catalog/tpch.properties", config_dir);
     create_properties_file(catalog_tpch, "tpch.properties");
 
@@ -2071,7 +2071,7 @@ void install_Presto(char* version, char *location) {
 
     FILE* bashrc = fopen(bashrc_path, "a");
     if (bashrc) {
-        fprintf(bashrc, "\n# Presto configuration\nexport PRESTO_HOME=%s\nexport PATH=$PATH:$PRESTO_HOME/bin\n", 
+        fprintf(bashrc, "\n# Presto configuration\nexport PRESTO_HOME=%s\nexport PATH=$PATH:$PRESTO_HOME/bin\n",
                 install_dir);
         fclose(bashrc);
     }
@@ -2598,7 +2598,7 @@ void install_Livy(char* version, char *location) {
     char candidate_path[PATH_MAX];
     snprintf(candidate_path, sizeof(candidate_path), "%s/conf", install_dir);
 
-  //  if (create_conf_file(candidate_path, "livy.conf") !=0)
+    //  if (create_conf_file(candidate_path, "livy.conf") !=0)
     //    fprintf(stderr,   "Failed to create XML file\n");
 
     printf( "Livy  installed successfully to %s/livy\n", install_dir);
