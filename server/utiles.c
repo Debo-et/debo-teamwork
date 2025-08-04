@@ -1368,11 +1368,6 @@ static void get_component_info(Component comp, const char **env_var, const char 
         *fallback_dir = "pig";
         *conf_subdir = "conf";
         break;
-    case OOZIE:
-        *env_var = "OOZIE_HOME";
-        *fallback_dir = "oozie";
-        *conf_subdir = "conf";
-        break;
     case PRESTO:
         *env_var = "PRESTO_HOME";
         *fallback_dir = "presto";
@@ -1452,7 +1447,6 @@ bool isComponentInstalled(Component comp) {
     case PHOENIX:   env_var = "PHOENIX_HOME";   base_dir = "phoenix"; break; // FIXED
     case STORM:     env_var = "STORM_HOME";     base_dir = "storm";     break;
     case PIG:       env_var = "PIG_HOME";       base_dir = "pig";       break;
-    case OOZIE:     env_var = "OOZIE_HOME";     base_dir = "oozie";     break;
     case PRESTO:    env_var = "PRESTO_HOME";    base_dir = "presto-server"; break; // FIXED
     case ATLAS:     env_var = "ATLAS_HOME";     base_dir = "atlas";     break;
     case RANGER:    env_var = "RANGER_HOME";    base_dir = "ranger";    break;

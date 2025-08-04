@@ -1000,18 +1000,6 @@ void report(Component comp) {
         printTextBlock(report_pig(), CYAN, YELLOW);
         printBorder("└", "┘", YELLOW);
         break;
-    case OOZIE:
-        if (isComponentInstalled(comp))
-        {
-            printTextBlock("OOZIE status", BOLD GREEN, YELLOW);
-            execute_and_print("oozie admin -status");
-        }
-        else
-        {
-            printTextBlock("OOZIE status", BOLD GREEN, YELLOW);
-            printTextBlock("OOZIE is not installed or started", BOLD GREEN, YELLOW);
-        }
-        break;
     case PRESTO:
         printTextBlock("PRESTO status", BOLD GREEN, YELLOW);
         printBorder("├", "┤", YELLOW);
