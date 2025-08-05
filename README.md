@@ -12,7 +12,7 @@
 To get started with the CLI, we recommend reading the official user manual:
 
 - [Online Document Version (Google Docs)](https://docs.google.com/document/d/1f6aAdDYIo8IV4-KOuE9T5wYHQrArYjkqLgzj4ATo9Tg/edit?tab=t.0)
-- [Downloadable PDF Version (SmallPDF)](https://smallpdf.com/share-document#r=result&t=8859c22169663e1a8d9d8ce731964014&i=share)
+- [Downloadable PDF Version (PDF)](https://drive.google.com/file/d/1c8SzU6iZ3oulhuR5pnM5Kb-Toi0KhXSx/view)
 
 The guide includes setup instructions, usage examples, and available commands.
 
