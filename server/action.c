@@ -528,7 +528,7 @@ void Zeppelin_action(Action a) {
 
     switch(a) {
     case START:
-        snprintf(command, sizeof(command), "sudo %s start >/dev/null 2>&1", daemon_script);
+        snprintf(command, sizeof(command), "%s start >/dev/null 2>&1", daemon_script);
         //  printf( "Starting Zeppelin...\n");
         ret = executeSystemCommand(command);
         if (WEXITSTATUS(ret) != 0) {
@@ -539,7 +539,7 @@ void Zeppelin_action(Action a) {
         break;
 
     case STOP:
-        snprintf(command, sizeof(command), "sudo %s stop >/dev/null 2>&1", daemon_script);
+        snprintf(command, sizeof(command), "%s stop >/dev/null 2>&1", daemon_script);
         // printf( "Stopping Zeppelin...\n");
         ret = executeSystemCommand(command);
         if (WEXITSTATUS(ret) != 0) {
@@ -551,7 +551,7 @@ void Zeppelin_action(Action a) {
 
     case RESTART:
         // Execute stop followed by start
-        snprintf(command, sizeof(command), "sudo %s stop >/dev/null 2>&1", daemon_script);
+        snprintf(command, sizeof(command), "%s stop >/dev/null 2>&1", daemon_script);
         //  printf( "Initiating restart...\n");
         ret = executeSystemCommand(command);
         if (WEXITSTATUS(ret) != 0) {
@@ -560,7 +560,7 @@ void Zeppelin_action(Action a) {
             exit(EXIT_FAILURE);
         }
 
-        snprintf(command, sizeof(command), "sudo %s start >/dev/null 2>&1", daemon_script);
+        snprintf(command, sizeof(command), "%s start >/dev/null 2>&1", daemon_script);
         ret = executeSystemCommand(command);
         if (WEXITSTATUS(ret) != 0) {
             fprintf(stderr,  "Restart failed - start phase: %d\n",
@@ -580,10 +580,10 @@ void Zeppelin_action(Action a) {
 // Helper function to execute Livy commands
 static int execute_command(const char* script_path, const char* arg) {
     char command[PATH_MAX + 128]; // Increased buffer size
-    size_t len = snprintf(command, sizeof(command), "sudo %s %s >/dev/null 2>&1", script_path, arg);
+    size_t len = snprintf(command, sizeof(command), "%s %s >/dev/null 2>&1", script_path, arg);
 
     if (len >= sizeof(command)) {
-        fprintf(stderr,  "Command truncated: 'sudo %s %s'\n", script_path, arg);
+        fprintf(stderr,  "Command truncated: '%s %s'\n", script_path, arg);
         return -1;
     }
 

@@ -1208,21 +1208,21 @@ bool executeSystemCommand(const char *cmd) {
 
 
 
-static const char* hadoop_versions[] = {"2.10.2", "3.2.4", "3.3.5", "3.3.6", "3.4.0", "3.4.1", NULL};
+static const char* hadoop_versions[] = {"2.10.2", "3.2.4", "3.3.5", "3.3.6", "3.4.0", "3.4.1","3.4.2", NULL};
 static const char* presto_versions[] = {NULL};
 static const char* pig_versions[] = {"0.16.0", "0.17.0", NULL};
-static const char* hbase_versions[] = {"2.4.18", "2.5.11", "2.6.1", "2.6.2", NULL};
-static const char* hive_versions[] = {"4.0.1", NULL};
-static const char* flink_versions[] = {"1.17.2", "1.18.1", "1.19.0", "1.19.1", "1.19.2", "1.20.0", "1.20.1", NULL};
-static const char* livy_versions[] = {"0.7.1", NULL};
-static const char* tez_versions[] = {"0.10.1", "0.10.2", "0.10.3", "0.10.4", "0.9.2", NULL};
+static const char* hbase_versions[] = {"2.4.18", "2.5.11", "2.6.3", NULL};
+static const char* hive_versions[] = {"4.0.1","4.1.0", NULL};
+static const char* flink_versions[] = {"1.17.2", "1.18.1", "1.19.0", "1.19.1", "1.19.2", "1.20.0", "1.20.1" ,"1.20.2","2.0.0", "2.1.0", NULL};
+static const char* livy_versions[] = {"0.7.1","0.8.0","0.4.0","0.5.0","0.6.0","0.7.0",  NULL};
+static const char* tez_versions[] = {"0.10.1", "0.10.2", "0.10.3", "0.10.4", "0.10.5", "0.9.2", NULL};
 static const char* ranger_versions[] = {"0.6.3", "0.7.1", "1.0.0", "1.1.0", "1.2.0", "2.0.0", "2.1.0", "2.2.0", "2.3.0", "2.4.0", "2.5.0", "2.6.0", NULL};
 static const char* phoenix_versions[] = {"4.16.1", "5.1.2", "5.1.3", "5.2.0", "5.2.1", NULL};
-static const char* solr_versions[] = {"9.8.1", NULL};
-static const char* spark_versions[] = {"3.4.4", "4.0.0", NULL};
-static const char* zeppelin_versions[] = {"0.10.0", "0.10.1", "0.11.0", "0.11.1", "0.11.2", "0.12.0", "0.8.2", "0.9.0", NULL};
-static const char* kafka_versions[] = {"3.7.2", "3.8.0", "3.8.1", "3.9.0", NULL};
-static const char* zookeeper_versions[] = {"3.7.2", "3.8.4", "3.9.3", NULL};
+static const char* solr_versions[] = {"9.9.0", NULL};
+static const char* spark_versions[] = {"3.5.6", "4.0.0", NULL};
+static const char* zeppelin_versions[] = {"0.10.0", "0.10.1", "0.11.0", "0.11.1", "0.11.2", "0.12.0", NULL};
+static const char* kafka_versions[] = {"3.7.2", "3.8.0", "3.8.1", "3.9.0", "3.9.1","4.0.0","4.0.1", NULL};
+static const char* zookeeper_versions[] = {"3.7.2", "3.8.4", "3.9.3","3.9.4", NULL};
 
 bool isComponentVersionSupported(Component component, const char *version) {
     const char **supported_versions = NULL;

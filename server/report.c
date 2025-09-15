@@ -850,7 +850,7 @@ char *report_ranger() {
 
     // Execute status command
     char command[PATH_MAX];
-    snprintf(command, sizeof(command), "sudo %s/bin/ranger-admin status", install_dir);
+    snprintf(command, sizeof(command), "%s/bin/ranger-admin status", install_dir);
     FILE *fp = popen(command, "r");
     free(install_dir);
 

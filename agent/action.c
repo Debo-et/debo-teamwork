@@ -454,7 +454,7 @@ void Zeppelin_action(Action a) {
 
     switch(a) {
     case START:
-        snprintf(command, sizeof(command), "sudo %s start", daemon_script);
+        snprintf(command, sizeof(command), "%s start", daemon_script);
         //  PRINTF(global_client_socket, "Starting Zeppelin...\n");
         ret = executeSystemCommand(command);
         if (WEXITSTATUS(ret) != 0) {
@@ -465,7 +465,7 @@ void Zeppelin_action(Action a) {
         break;
 
     case STOP:
-        snprintf(command, sizeof(command), "sudo %s stop", daemon_script);
+        snprintf(command, sizeof(command), "%s stop", daemon_script);
         // PRINTF(global_client_socket, "Stopping Zeppelin...\n");
         ret = executeSystemCommand(command);
         if (WEXITSTATUS(ret) != 0) {
@@ -477,7 +477,7 @@ void Zeppelin_action(Action a) {
 
     case RESTART:
         // Execute stop followed by start
-        snprintf(command, sizeof(command), "sudo %s stop", daemon_script);
+        snprintf(command, sizeof(command), "%s stop", daemon_script);
         //  PRINTF(global_client_socket, "Initiating restart...\n");
         ret = executeSystemCommand(command);
         if (WEXITSTATUS(ret) != 0) {
@@ -486,7 +486,7 @@ void Zeppelin_action(Action a) {
             exit(EXIT_FAILURE);
         }
 
-        snprintf(command, sizeof(command), "sudo %s start", daemon_script);
+        snprintf(command, sizeof(command), "%s start", daemon_script);
         ret = executeSystemCommand(command);
         if (WEXITSTATUS(ret) != 0) {
             FPRINTF(global_client_socket,  "Restart failed - start phase: %d\n",
@@ -506,10 +506,10 @@ void Zeppelin_action(Action a) {
 // Helper function to execute Livy commands
 static int execute_command(const char* script_path, const char* arg) {
     char command[PATH_MAX + 128]; // Increased buffer size
-    size_t len = snprintf(command, sizeof(command), "sudo %s %s", script_path, arg);
+    size_t len = snprintf(command, sizeof(command), "%s %s", script_path, arg);
 
     if (len >= sizeof(command)) {
-        FPRINTF(global_client_socket,  "Command truncated: 'sudo %s %s'\n", script_path, arg);
+        FPRINTF(global_client_socket,  "Command truncated: '%s %s'\n", script_path, arg);
         return -1;
     }
 

@@ -664,4 +664,3 @@ ssize_t secure_open_gssapi(ClientSocket *client_sock)
 
     return 0;
 }
-
