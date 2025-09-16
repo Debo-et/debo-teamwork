@@ -65,77 +65,6 @@ const char *port = NULL;
 const char       *host = NULL;
 char       *value = NULL;
 
-typedef struct {
-    Component component;
-    const char *deb_pkg;
-    const char *rhel_pkg;
-    const char *mac_pkg;
-} ComponentPackage;
-
-typedef struct {
-    Component component;
-    const char *version_cmd;
-    const char *deb_pkg;
-    const char *rhel_pkg;
-    const char *mac_pkg;
-} ComponentInfo;
-
-const ComponentPackage COMPONENT_PACKAGE_MAP[] = {
-    {HDFS,          "hadoop-hdfs",          "hadoop-hdfs",          "hadoop"},
-    {HBASE,         "hbase",                "hbase",                "hbase"},
-    {SPARK,         "spark-core",           "spark",                "apache-spark"},
-    {KAFKA,         "kafka",                "kafka",                "kafka"},
-    {ZOOKEEPER,     "zookeeper",            "zookeeper",            "zookeeper"},
-    {FLINK,         "flink",                "flink",                "apache-flink"},
-    {STORM,         "storm",                "storm",                "apache-storm"},
-    {HIVE,"hive-metastore",       "hive-metastore",       "hive"},
-    {PIG,           "pig",                  "pig",                  "pig"},
-    {PRESTO,        "presto",               "presto",               "presto"},
-    {TEZ,           "tez",                  "tez",                  "tez"},
-    {ATLAS,         "atlas",                "atlas",                "atlas"},
-    {RANGER,        "ranger",               "ranger",               "ranger"},
-    {ZEPPELIN,      "zeppelin",             "zeppelin",             "zeppelin"},
-    {LIVY,          "livy",                 "livy-server",          "livy"},
-    {PHOENIX,       "phoenix",              "phoenix",              "phoenix"},
-    {SOLR,          "solr",                 "solr",                 "solr"}
-};
-
-const ComponentInfo COMPONENT_INFO_MAP[] = {
-    {HDFS,          "hadoop version 2>&1 | grep '^Hadoop' | awk '{print $2}'",
-        "hadoop-hdfs", "hadoop-hdfs", "hadoop"},
-    {HBASE,         "hbase version 2>&1 | grep '^HBase' | awk '{print $2}'",
-        "hbase", "hbase", "hbase"},
-    {SPARK,         "spark-submit --version 2>&1 | grep '^version' | awk '{print $2}'",
-        "spark-core", "spark", "apache-spark"},
-    {KAFKA,         "grep -oP 'version=\\K\\d+\\.\\d+\\.\\d+' $KAFKA_HOME/bin/kafka-run-class.sh",
-        "kafka", "kafka", "kafka"},
-    {ZOOKEEPER,     "echo stat | nc localhost 2181 2>/dev/null | grep 'Zookeeper version:' | awk '{print $3}'",
-        "zookeeper", "zookeeper", "zookeeper"},
-    {FLINK,         "flink --version 2>&1 | awk '{print $2}' | head -1",
-        "flink", "flink", "apache-flink"},
-    {STORM,         "storm version 2>&1 | grep 'Storm' | awk '{print $2}'",
-        "storm", "storm", "apache-storm"},
-    {HIVE,"hive --version 2>&1 | grep 'Hive' | awk '{print $2}'",
-        "hive-metastore", "hive-metastore", "hive"},
-    {PIG,           "pig --version 2>&1 | grep 'Apache Pig' | awk '{print $3}'",
-        "pig", "pig", "pig"},
-    {PRESTO,        "presto --version 2>&1 | awk '{print $2}'",
-        "presto", "presto", "presto"},
-    {TEZ,           "hcat -h 2>&1 | grep 'Tez' | awk '{print $4}' | tr -d ','",
-        "tez", "tez", "tez"},
-    {ATLAS,         "atlas_admin.py -status 2>&1 | grep 'version' | awk '{print $3}'",
-        "atlas", "atlas", "atlas"},
-    {RANGER,        "ranger-admin version 2>&1 | awk '{print $2}'",
-        "ranger", "ranger", "ranger"},
-    {ZEPPELIN,      "zeppelin-daemon.sh version 2>&1 | grep 'Zeppelin version' | awk '{print $3}'",
-        "zeppelin", "zeppelin", "zeppelin"},
-    {LIVY,          "livy-server --version 2>&1 | head -1 | awk '{print $2}'",
-        "livy", "livy-server", "livy"},
-    {PHOENIX,       "hbase org.apache.phoenix.util.PhoenixRuntime -version 2>&1 | grep 'Phoenix' | awk '{print $3}'",
-        "phoenix", "phoenix", "phoenix"},
-    {SOLR,          "solr version 2>&1 | tail -1",
-        "solr", "solr", "solr"}
-};
 
 static const char *progname = "apache";
 
@@ -487,51 +416,6 @@ help(const char *progname)
     printf("  Install Kafka:           %s --install --kafka\n", progname);
 }
 ///////////////////////////////////instalation//////////////////////////////
-/*
- * Retrieve the package name for a given component on a specific OS.
- */
-const char *
-get_package_name(OS_TYPE os, Component comp)
-{
-    for (size_t i = 0; i < sizeof(COMPONENT_PACKAGE_MAP)/sizeof(COMPONENT_PACKAGE_MAP[0]); i++) {
-        if (COMPONENT_PACKAGE_MAP[i].component == comp) {
-            switch (os) {
-            case OS_DEBIAN:
-                return COMPONENT_PACKAGE_MAP[i].deb_pkg;
-            case OS_REDHAT:
-                return COMPONENT_PACKAGE_MAP[i].rhel_pkg;
-            case OS_MACOS:
-                return COMPONENT_PACKAGE_MAP[i].mac_pkg;
-            default:
-                return NULL;
-            }
-        }
-    }
-    return NULL;
-}
-
-
-const char* get_env_variable(Component comp) {
-    switch (comp) {
-    case HDFS: return "HADOOP_HOME";
-    case HBASE: return "HBASE_HOME";
-    case SPARK: return "SPARK_HOME";
-    case KAFKA: return "KAFKA_HOME";
-    case FLINK: return "FLINK_HOME";
-    case ZOOKEEPER: return "ZOOKEEPER_HOME";
-    case STORM: return "STORM_HOME";
-    case HIVE: return "HIVE_HOME";
-    case LIVY: return "LIVY_HOME";
-    case PHOENIX: return "PHOENIX_HOME";
-    case SOLR: return "SOLR_HOME";
-    case ZEPPELIN: return "ZEPPELIN_HOME";
-    case RANGER: return "RANGER_HOME";
-    case ATLAS: return "ATLAS_HOME";
-    case TEZ: return "TEZ_HOME";
-    default: return NULL;
-    }
-}
-
 
 
 static void install_component(Component comp, char *version) {

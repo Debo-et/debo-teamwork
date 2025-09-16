@@ -30,10 +30,6 @@
 
 
 extern bool dependency;
-
-static char *
-simple_prompt_extended(const char *prompt, bool echo,
-                       PromptInterruptContext *prompt_ctx);
 char *
 apache_strdup(const char *in);
 void printBorder(const char *start, const char *end, const char *color);
@@ -155,178 +151,6 @@ strip_crlf(char *str)
         str[--len] = '\0';
 
     return len;
-}
-
-/*
- * simple_prompt
- *
- * Generalized function especially intended for reading in usernames and
- * passwords interactively.  Reads from /dev/tty or stdin/stderr.
- *
- * prompt:		The prompt to print, or NULL if none (automatically localized)
- * echo:		Set to false if you want to hide what is entered (for passwords)
- *
- * The input (without trailing newline) is returned as a malloc'd string.
- * Caller is responsible for freeing it when done.
- */
-char *
-simple_prompt(const char *prompt, bool echo)
-{
-    return simple_prompt_extended(prompt, echo, NULL);
-}
-
-/*
- * simple_prompt_extended
- *
- * This is the same as simple_prompt(), except that prompt_ctx can
- * optionally be provided to allow this function to be canceled via an
- * existing SIGINT signal handler that will longjmp to the specified place
- * only when *(prompt_ctx->enabled) is true.  If canceled, this function
- * returns an empty string, and prompt_ctx->canceled is set to true.
- */
-static char *
-simple_prompt_extended(const char *prompt, bool echo,
-                       PromptInterruptContext *prompt_ctx)
-{
-    char	   *result;
-    FILE	   *termin,
-               *termout;
-    size_t len = 0;
-    ssize_t nread;  // Use ssize_t (signed size_t)
-#if defined(HAVE_TERMIOS_H)
-    struct termios t_orig,
-                   t;
-#elif defined(WIN32)
-    HANDLE		t = NULL;
-    DWORD		t_orig = 0;
-#endif
-
-#ifdef WIN32
-
-    /*
-     * A Windows console has an "input code page" and an "output code page";
-     * these usually match each other, but they rarely match the "Windows ANSI
-     * code page" defined at system boot and expected of "char *" arguments to
-     * Windows API functions.  The Microsoft CRT write() implementation
-     * automatically converts text between these code pages when writing to a
-     * console.  To identify such file descriptors, it calls GetConsoleMode()
-     * on the underlying HANDLE, which in turn requires GENERIC_READ access on
-     * the HANDLE.  Opening termout in mode "w+" allows that detection to
-     * succeed.  Otherwise, write() would not recognize the descriptor as a
-     * console, and non-ASCII characters would display incorrectly.
-     *
-     * XXX fgets() still receives text in the console's input code page.  This
-     * makes non-ASCII credentials unportable.
-     *
-     * Unintuitively, we also open termin in mode "w+", even though we only
-     * read it; that's needed for SetConsoleMode() to succeed.
-     */
-    termin = fopen("CONIN$", "w+");
-    termout = fopen("CONOUT$", "w+");
-#else
-
-    /*
-     * Do not try to collapse these into one "w+" mode file. Doesn't work on
-     * some platforms (eg, HPUX 10.20).
-     */
-    termin = fopen("/dev/tty", "r");
-    termout = fopen("/dev/tty", "w");
-#endif
-    if (!termin || !termout
-#ifdef WIN32
-
-        /*
-         * Direct console I/O does not work from the MSYS 1.0.10 console.  Writes
-         * reach nowhere user-visible; reads block indefinitely.  XXX This affects
-         * most Windows terminal environments, including rxvt, mintty, Cygwin
-         * xterm, Cygwin sshd, and PowerShell ISE.  Switch to a more-generic test.
-         */
-        || (getenv("OSTYPE") && strcmp(getenv("OSTYPE"), "msys") == 0)
-#endif
-       )
-    {
-        if (termin)
-            fclose(termin);
-        if (termout)
-            fclose(termout);
-        termin = stdin;
-        termout = stderr;
-    }
-
-    if (!echo)
-    {
-#if defined(HAVE_TERMIOS_H)
-        /* disable echo via tcgetattr/tcsetattr */
-        tcgetattr(fileno(termin), &t);
-        t_orig = t;
-        t.c_lflag &= ~ECHO;
-        tcsetattr(fileno(termin), TCSAFLUSH, &t);
-#elif defined(WIN32)
-        /* need the file's HANDLE to turn echo off */
-        t = (HANDLE) _get_osfhandle(_fileno(termin));
-
-        /* save the old configuration first */
-        GetConsoleMode(t, &t_orig);
-
-        /* set to the new mode */
-        SetConsoleMode(t, ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT);
-#endif
-    }
-
-    if (prompt)
-    {
-        fputs((prompt), termout);
-        fflush(termout);
-    }
-
-    nread =  getline(&result, &len, termin);
-
-    if (nread == -1) {
-        // Handle error or EOF
-        if (ferror(termin)) { // Check for an error
-            perror("getline"); // Print error message
-                               // ... error handling ...
-        } else if (feof(termin)) { // Check for EOF
-                                   // ... handle EOF ...
-        }
-    }
-
-    //result = getline(termin, prompt_ctx);
-
-    /* If we failed to read anything, just return an empty string */
-    if (result == NULL)
-        result = apache_strdup("");
-
-    /* strip trailing newline, including \r in case we're on Windows */
-    (void) strip_crlf(result);
-
-    if (!echo)
-    {
-        /* restore previous echo behavior, then echo \n */
-#if defined(HAVE_TERMIOS_H)
-        tcsetattr(fileno(termin), TCSAFLUSH, &t_orig);
-        fputs("\n", termout);
-        fflush(termout);
-#elif defined(WIN32)
-        SetConsoleMode(t, t_orig);
-        fputs("\n", termout);
-        fflush(termout);
-#endif
-    }
-    else if (prompt_ctx && prompt_ctx->canceled)
-    {
-        /* also echo \n if prompt was canceled */
-        fputs("\n", termout);
-        fflush(termout);
-    }
-
-    if (termin != stdin)
-    {
-        fclose(termin);
-        fclose(termout);
-    }
-
-    return result;
 }
 
 void
@@ -629,45 +453,6 @@ char *concatenate_strings(const char *s1, const char *s2) {
     strcat(result, s2);
 
     return result;
-}
-
-int validate_file_path(const char* path) {
-    // Check for NULL pointer
-    if (path == NULL) {
-        return 0;
-    }
-
-    // Get string length and perform basic length checks
-    size_t len = strlen(path);
-    if (len == 0 || len >= PATH_MAX) {  // PATH_MAX includes null terminator
-        return 0;
-    }
-
-    size_t component_length = 0;
-
-    // Iterate through each character in the path
-    for (size_t i = 0; i < len; ++i) {
-        if (path[i] == '/') {
-            // Check component length when encountering a separator
-            if (component_length > NAME_MAX) {
-                return 0;
-            }
-            component_length = 0;
-        } else {
-            // Increment component length and check
-            if (++component_length > NAME_MAX) {
-                return 0;
-            }
-        }
-    }
-
-    // Check the final component after last separator
-    if (component_length > NAME_MAX) {
-        return 0;
-    }
-
-    // All checks passed
-    return 1;
 }
 
 
@@ -1298,37 +1083,6 @@ static bool is_directory(const char* path) {
 }
 
 
-static const char* get_default_base_path() {
-    FILE* f = fopen("/etc/os-release", "r");
-    if (f == NULL) return NULL;
-
-    char line[256];
-    const char* base_path = NULL;
-    while (fgets(line, sizeof(line), f) != NULL) {
-        if (strncmp(line, "ID=", 3) == 0) {
-            char* id_value = line + 3;
-            char* end = strchr(id_value, '\n');
-            if (end) *end = '\0';
-
-            if (*id_value == '"') {
-                memmove(id_value, id_value + 1, strlen(id_value));
-                end = strchr(id_value, '"');
-                if (end) *end = '\0';
-            }
-
-            if (strcmp(id_value, "ubuntu") == 0 || strcmp(id_value, "debian") == 0) {
-                base_path = "/usr/local";
-                break;
-            } else if (strcmp(id_value, "centos") == 0 || strcmp(id_value, "rhel") == 0 ||
-                       strcmp(id_value, "fedora") == 0 || strcmp(id_value, "rocky") == 0) {
-                base_path = "/opt";
-                break;
-            }
-        }
-    }
-    fclose(f);
-    return base_path;
-}
 
 static void get_component_info(Component comp, const char **env_var, const char **fallback_dir, const char **conf_subdir) {
     *env_var = NULL;
@@ -1484,54 +1238,6 @@ bool isComponentInstalled(Component comp) {
 }
 
 
-
-char* get_component_config_path(Component comp, const char* config_filename) {
-    if (comp == NONE || config_filename == NULL) return NULL;
-
-    const char *env_var = NULL;
-    const char *fallback_dir = NULL;
-    const char *conf_subdir = NULL;
-    get_component_info(comp, &env_var, &fallback_dir, &conf_subdir);
-
-    if (env_var == NULL || fallback_dir == NULL || conf_subdir == NULL) return NULL;
-
-    const char* env_value = getenv(env_var);
-    char* base_path = NULL;
-
-    if (env_value != NULL && is_directory(env_value)) {
-        base_path = strdup(env_value);
-    }
-
-    if (base_path == NULL) {
-        const char* default_base = get_default_base_path();
-        if (default_base == NULL) default_base = "/opt";
-
-        size_t len = strlen(default_base) + strlen(fallback_dir) + 2;
-        base_path = malloc(len);
-        if (base_path == NULL) return NULL;
-        snprintf(base_path, len, "%s/%s", default_base, fallback_dir);
-    }
-
-    size_t conf_dir_len = strlen(base_path) + strlen(conf_subdir) + 2;
-    char* conf_dir = malloc(conf_dir_len);
-    if (conf_dir == NULL) {
-        free(base_path);
-        return NULL;
-    }
-    snprintf(conf_dir, conf_dir_len, "%s/%s", base_path, conf_subdir);
-    free(base_path);
-
-    size_t full_len = strlen(conf_dir) + strlen(config_filename) + 2;
-    char* full_path = malloc(full_len);
-    if (full_path == NULL) {
-        free(conf_dir);
-        return NULL;
-    }
-    snprintf(full_path, full_len, "%s/%s", conf_dir, config_filename);
-    free(conf_dir);
-
-    return full_path;
-}
 
 
 void handle_result(ConfigStatus status, const char *config_param, const char *config_value, const char *config_file) {
