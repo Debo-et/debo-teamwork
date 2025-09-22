@@ -1,4 +1,5 @@
 /*
+
  * Copyright 2025 Surafel Temesgen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,8 +26,113 @@
 #include <glob.h>
 #include <errno.h>
 #include <pwd.h>
+#include <fcntl.h>
 
 #include "utiles.h"
+
+// Structure to capture command execution results
+typedef struct {
+    int exit_code;
+    char stdout_output[4096];
+    char stderr_output[4096];
+} CommandResult;
+
+// Execute command and capture output
+CommandResult executeCommand(const char* command) {
+    CommandResult result = {0};
+    int stdout_pipe[2], stderr_pipe[2];
+    pid_t pid;
+    
+    // Create pipes for stdout and stderr
+    if (pipe(stdout_pipe) < 0 || pipe(stderr_pipe) < 0) {
+        result.exit_code = -1;
+        return result;
+    }
+    
+    pid = fork();
+    if (pid < 0) {
+        result.exit_code = -1;
+        return result;
+    }
+    
+    if (pid == 0) {
+        // Child process
+        close(stdout_pipe[0]);
+        close(stderr_pipe[0]);
+        
+        // Redirect stdout and stderr to pipes
+        dup2(stdout_pipe[1], STDOUT_FILENO);
+        dup2(stderr_pipe[1], STDERR_FILENO);
+        close(stdout_pipe[1]);
+        close(stderr_pipe[1]);
+        
+        // Execute the command
+        execl("/bin/sh", "sh", "-c", command, NULL);
+        exit(127); // execl failed
+    } else {
+        // Parent process
+        close(stdout_pipe[1]);
+        close(stderr_pipe[1]);
+        
+        char buffer[256];
+        ssize_t count;
+        
+        // Read stdout
+        while ((count = read(stdout_pipe[0], buffer, sizeof(buffer)-1)) > 0) {
+            buffer[count] = '\0';
+            strncat(result.stdout_output, buffer, sizeof(result.stdout_output)-strlen(result.stdout_output)-1);
+        }
+        
+        // Read stderr
+        while ((count = read(stderr_pipe[0], buffer, sizeof(buffer)-1)) > 0) {
+            buffer[count] = '\0';
+            strncat(result.stderr_output, buffer, sizeof(result.stderr_output)-strlen(result.stderr_output)-1);
+        }
+        
+        close(stdout_pipe[0]);
+        close(stderr_pipe[0]);
+        
+        // Wait for process to complete and get exit status
+        int status;
+        waitpid(pid, &status, 0);
+        
+        if (WIFEXITED(status)) {
+            result.exit_code = WEXITSTATUS(status);
+        } else {
+            result.exit_code = -1;
+        }
+    }
+    
+    return result;
+}
+
+// Check if output indicates success
+int isSuccessOutput(const char* output, const char* service, Action action) {
+    const char* success_patterns[] = {
+        "started", "success", "running", "completed", "ready"
+    };
+    
+    const char* failure_patterns[] = {
+        "error", "fail", "not found", "cannot", "unable", "refused"
+    };
+    
+    // Check for failure patterns first
+    for (size_t i = 0; i < sizeof(failure_patterns)/sizeof(failure_patterns[0]); i++) {
+        if (strstr(output, failure_patterns[i]) != NULL) {
+            return 0;
+        }
+    }
+    
+    // Check for success patterns
+    for (size_t i = 0; i < sizeof(success_patterns)/sizeof(success_patterns[0]); i++) {
+        if (strstr(output, success_patterns[i]) != NULL) {
+            return 1;
+        }
+    }
+    
+    // Default to checking exit code only
+    return -1; // Unknown - rely on exit code
+}
 
 void hadoop_action(Action a) {
     const char *hadoop_home = NULL;
@@ -65,7 +171,8 @@ void hadoop_action(Action a) {
     }
 
     char cmd[4096];
-    int ret, len;
+    int len;
+    CommandResult result;
 
     switch (a) {
     case START:
@@ -74,12 +181,11 @@ void hadoop_action(Action a) {
             FPRINTF(global_client_socket,  "Command buffer overflow detected\n");
             return;
         }
-        ret = executeSystemCommand(cmd);
-        if (ret == -1) {
-            FPRINTF(global_client_socket,  "Start failed (Code: %d). Verify:\n"
-                    "- User permissions\n"
-                    "- Hadoop configuration\n"
-                    "- Cluster status\n", ret);
+        
+        result = executeCommand(cmd);
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Hadoop", START) == 0) {
+            FPRINTF(global_client_socket,  "Start failed (Code: %d). Output:\n%s\nError:\n%s\n", 
+                   result.exit_code, result.stdout_output, result.stderr_output);
         } else {
             PRINTF(global_client_socket, "All Hadoop services started successfully\n");
         }
@@ -91,12 +197,11 @@ void hadoop_action(Action a) {
             FPRINTF(global_client_socket,  "Command buffer overflow detected\n");
             return;
         }
-        ret = executeSystemCommand(cmd);
-        if (ret == -1) {
-            FPRINTF(global_client_socket,  "Stop failed (Code: %d). Possible causes:\n"
-                    "- Services already stopped\n"
-                    "- Permission issues\n"
-                    "- Node connectivity problems\n", ret);
+        
+        result = executeCommand(cmd);
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Hadoop", STOP) == 0) {
+            FPRINTF(global_client_socket,  "Stop failed (Code: %d). Output:\n%s\nError:\n%s\n", 
+                   result.exit_code, result.stdout_output, result.stderr_output);
         } else {
             PRINTF(global_client_socket, "All Hadoop services stopped successfully\n");
         }
@@ -109,12 +214,13 @@ void hadoop_action(Action a) {
             FPRINTF(global_client_socket,  "Command buffer overflow detected\n");
             return;
         }
-        ret = executeSystemCommand(cmd);
-        if (ret == -1) {
-            FPRINTF(global_client_socket,  "Restart aborted - stop phase failed (Code: %d)\n", ret);
+        
+        result = executeCommand(cmd);
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Hadoop", STOP) == 0) {
+            FPRINTF(global_client_socket,  "Restart aborted - stop phase failed (Code: %d)\nOutput:\n%s\nError:\n%s\n", 
+                   result.exit_code, result.stdout_output, result.stderr_output);
             return;
         }
-        //            PRINTF(global_client_socket, "Services stopped successfully, initiating restart...\n");
 
         // Add delay for service shutdown (adjust as needed)
         sleep(5);
@@ -125,10 +231,12 @@ void hadoop_action(Action a) {
             FPRINTF(global_client_socket,  "Command buffer overflow detected\n");
             return;
         }
-        ret = executeSystemCommand(cmd);
-        if (ret == -1) {
-            FPRINTF(global_client_socket,  "Restart incomplete - start phase failed (Code: %d)\n"
-                    "System may be in inconsistent state!\n", ret);
+        
+        result = executeCommand(cmd);
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Hadoop", START) == 0) {
+            FPRINTF(global_client_socket,  "Restart incomplete - start phase failed (Code: %d)\nOutput:\n%s\nError:\n%s\n"
+                    "System may be in inconsistent state!\n", 
+                   result.exit_code, result.stdout_output, result.stderr_output);
         } else {
             PRINTF(global_client_socket, "All services restarted successfully\n");
         }
@@ -174,7 +282,7 @@ void Presto_action(Action action) {
     char* launcher_path = NULL;
     char command[PATH_MAX * 2];
     const char* action_name = "";
-    int ret;
+    CommandResult result;
 
     // Check installation locations in priority order
     const char* candidates[] = {
@@ -216,11 +324,10 @@ void Presto_action(Action action) {
         exit(EXIT_FAILURE);
     }
 
-    // Execute command with output redirection
-    // snprintf(command + strlen(command), sizeof(command) - strlen(command), " >/dev/null 2>&1");
-
-    if ((ret = executeSystemCommand(command)) == -1) {
-        FPRINTF(global_client_socket, "Error: Failed to %s Presto (%d)\n", action_name, ret);
+    result = executeCommand(command);
+    if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Presto", action) == 0) {
+        FPRINTF(global_client_socket, "Error: Failed to %s Presto (%d)\nOutput:\n%s\nError:\n%s\n", 
+               action_name, result.exit_code, result.stdout_output, result.stderr_output);
         free(launcher_path);
         exit(EXIT_FAILURE);
     }
@@ -247,6 +354,7 @@ void spark_action(Action a) {
     char start_cmd[512];
     char stop_cmd[512];
     long unsigned int cmd_len;
+    CommandResult result;
 
     cmd_len = snprintf(start_cmd, sizeof(start_cmd),
                        "export SPARK_HOME=%s && %s/sbin/start-all.sh" ,
@@ -265,12 +373,12 @@ void spark_action(Action a) {
     }
 
     // Execute command with error handling
-    int execute_service_command(const char* command) {
-        //  PRINTF(global_client_socket, "Attempting to %s Spark service...\n", action);
-        int status = executeSystemCommand(command);
-
-        if (status == -1) {
-            PERROR(global_client_socket, "System command execution failed");
+    int execute_service_command(const char* command, Action action) {
+        result = executeCommand(command);
+        
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Spark", action) == 0) {
+            FPRINTF(global_client_socket, "Command execution failed. Output:\n%s\nError:\n%s\n", 
+                   result.stdout_output, result.stderr_output);
             return -1;
         }
         return 0;
@@ -279,35 +387,37 @@ void spark_action(Action a) {
     // Handle different actions
     switch(a) {
     case START:
-        if (execute_service_command(start_cmd) == -1) {
+        if (execute_service_command(start_cmd, START) == -1) {
             FPRINTF(global_client_socket,  "Spark service startup aborted\n");
+            return;
         }
-        PRINTF(global_client_socket, "Spark service Start successfully\n");
+        PRINTF(global_client_socket, "Spark service started successfully\n");
         break;
 
     case STOP:
-        if (execute_service_command(stop_cmd) == -1) {
+        if (execute_service_command(stop_cmd, STOP) == -1) {
             FPRINTF(global_client_socket,  "Spark service shutdown aborted\n");
+            return;
         }
-        PRINTF(global_client_socket, "Spark service Stop successfully\n");
+        PRINTF(global_client_socket, "Spark service stopped successfully\n");
         break;
 
     case RESTART:
         // Stop phase
-        if (execute_service_command(stop_cmd) == -1) {
+        if (execute_service_command(stop_cmd, STOP) == -1) {
             FPRINTF(global_client_socket,  "Restart aborted due to stop failure\n");
             return;
         }
 
         // Add delay for service shutdown
-        //  PRINTF(global_client_socket, "Waiting for services to stop...\n");
         sleep(3);
 
         // Start phase
-        if (execute_service_command(start_cmd) == -1) {
+        if (execute_service_command(start_cmd, START) == -1) {
             FPRINTF(global_client_socket,  "Spark service restart aborted\n");
+            return;
         }
-        PRINTF(global_client_socket, "Spark service restart successfully\n");
+        PRINTF(global_client_socket, "Spark service restarted successfully\n");
         break;
 
     default:
@@ -320,6 +430,7 @@ void hive_action(Action a) {
     const char *hive_path = NULL;
     const char *hive_home = getenv("HIVE_HOME");
     const char *default_paths[] = { "/opt/hive", "/usr/local/hive" };
+    CommandResult result;
 
     // Try HIVE_HOME first
     if (hive_home != NULL) {
@@ -358,20 +469,20 @@ void hive_action(Action a) {
 
     char start_cmd[PATH_MAX * 2];
     char stop_cmd[PATH_MAX * 2];
-    int ret;
 
     // Construct commands with proper shell escaping
     snprintf(start_cmd, sizeof(start_cmd),
-             "\"%s/bin/hive\" --service hiveserver2 > /dev/null ", hive_path);
+             "\"%s/bin/hive\" --service hiveserver2", hive_path);
 
     snprintf(stop_cmd, sizeof(stop_cmd),
              "pkill -f '\"%s/bin/hive\" --service hiveserver2'", hive_path);
 
     switch (a) {
     case START: {
-        ret = executeSystemCommand(start_cmd);
-        if (ret == -1) {
-            PERROR(global_client_socket, "Failed to execute start command");
+        result = executeCommand(start_cmd);
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Hive", START) == 0) {
+            FPRINTF(global_client_socket, "Failed to start Hive. Output:\n%s\nError:\n%s\n", 
+                   result.stdout_output, result.stderr_output);
             exit(EXIT_FAILURE);
         }
 
@@ -380,9 +491,10 @@ void hive_action(Action a) {
     }
 
     case STOP: {
-        ret = executeSystemCommand(stop_cmd);
-        if (ret == -1) {
-            PERROR(global_client_socket, "Failed to execute stop command");
+        result = executeCommand(stop_cmd);
+        if (result.exit_code != 0) {
+            FPRINTF(global_client_socket, "Failed to stop Hive. Output:\n%s\nError:\n%s\n", 
+                   result.stdout_output, result.stderr_output);
             exit(EXIT_FAILURE);
         }
 
@@ -392,16 +504,19 @@ void hive_action(Action a) {
 
     case RESTART: {
         // Stop phase
-        ret = executeSystemCommand(stop_cmd);
-        if (ret == -1) {
-            PERROR(global_client_socket, "Failed to stop during restart");
+        result = executeCommand(stop_cmd);
+        if (result.exit_code != 0) {
+
+            FPRINTF(global_client_socket, "Failed to stop Hive during restart. Output:\n%s\nError:\n%s\n", 
+                   result.stdout_output, result.stderr_output);
             exit(EXIT_FAILURE);
         }
 
         // Start phase
-        ret = executeSystemCommand(start_cmd);
-        if (ret == -1) {
-            PERROR(global_client_socket, "Failed to start during restart");
+        result = executeCommand(start_cmd);
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Hive", START) == 0) {
+            FPRINTF(global_client_socket, "Failed to start Hive during restart. Output:\n%s\nError:\n%s\n", 
+                   result.stdout_output, result.stderr_output);
             exit(EXIT_FAILURE);
         }
 
@@ -414,10 +529,12 @@ void hive_action(Action a) {
         exit(EXIT_FAILURE);
     }
 }
+
 void Zeppelin_action(Action a) {
     // Determine Zeppelin installation path
     const char *zeppelin_home = getenv("ZEPPELIN_HOME");
     char detected_path[PATH_MAX] = {0};
+    CommandResult result;
 
     // Fallback path detection if environment variable not set
     if (!zeppelin_home) {
@@ -450,50 +567,48 @@ void Zeppelin_action(Action a) {
 
     // Construct base command
     char command[PATH_MAX + 20];
-    int ret;
 
     switch(a) {
     case START:
         snprintf(command, sizeof(command), "%s start", daemon_script);
-        //  PRINTF(global_client_socket, "Starting Zeppelin...\n");
-        ret = executeSystemCommand(command);
-        if (WEXITSTATUS(ret) != 0) {
-            FPRINTF(global_client_socket,  "Start failed with exit code: %d\n", WEXITSTATUS(ret));
+        result = executeCommand(command);
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Zeppelin", START) == 0) {
+            FPRINTF(global_client_socket,  "Start failed. Output:\n%s\nError:\n%s\n", 
+                   result.stdout_output, result.stderr_output);
             exit(EXIT_FAILURE);
         }
-        PRINTF(global_client_socket, "Zeppelin Started completed successfully\n");
+        PRINTF(global_client_socket, "Zeppelin started successfully\n");
         break;
 
     case STOP:
         snprintf(command, sizeof(command), "%s stop", daemon_script);
-        // PRINTF(global_client_socket, "Stopping Zeppelin...\n");
-        ret = executeSystemCommand(command);
-        if (WEXITSTATUS(ret) != 0) {
-            FPRINTF(global_client_socket,  "Stop failed with exit code: %d\n", WEXITSTATUS(ret));
+        result = executeCommand(command);
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Zeppelin", STOP) == 0) {
+            FPRINTF(global_client_socket,  "Stop failed. Output:\n%s\nError:\n%s\n", 
+                   result.stdout_output, result.stderr_output);
             exit(EXIT_FAILURE);
         }
-        PRINTF(global_client_socket, "Zeppelin Stopped completed successfully\n");
+        PRINTF(global_client_socket, "Zeppelin stopped successfully\n");
         break;
 
     case RESTART:
         // Execute stop followed by start
         snprintf(command, sizeof(command), "%s stop", daemon_script);
-        //  PRINTF(global_client_socket, "Initiating restart...\n");
-        ret = executeSystemCommand(command);
-        if (WEXITSTATUS(ret) != 0) {
-            FPRINTF(global_client_socket,  "Restart aborted - stop phase failed: %d\n",
-                    WEXITSTATUS(ret));
+        result = executeCommand(command);
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Zeppelin", STOP) == 0) {
+            FPRINTF(global_client_socket,  "Restart aborted - stop phase failed. Output:\n%s\nError:\n%s\n",
+                    result.stdout_output, result.stderr_output);
             exit(EXIT_FAILURE);
         }
 
         snprintf(command, sizeof(command), "%s start", daemon_script);
-        ret = executeSystemCommand(command);
-        if (WEXITSTATUS(ret) != 0) {
-            FPRINTF(global_client_socket,  "Restart failed - start phase: %d\n",
-                    WEXITSTATUS(ret));
+        result = executeCommand(command);
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Zeppelin", START) == 0) {
+            FPRINTF(global_client_socket,  "Restart failed - start phase. Output:\n%s\nError:\n%s\n",
+                    result.stdout_output, result.stderr_output);
             exit(EXIT_FAILURE);
         }
-        PRINTF(global_client_socket, "Zeppelin Restarted successfully\n");
+        PRINTF(global_client_socket, "Zeppelin restarted successfully\n");
         break;
 
     default:
@@ -502,35 +617,10 @@ void Zeppelin_action(Action a) {
     }
 }
 
-
-// Helper function to execute Livy commands
-static int execute_command(const char* script_path, const char* arg) {
-    char command[PATH_MAX + 128]; // Increased buffer size
-    size_t len = snprintf(command, sizeof(command), "%s %s", script_path, arg);
-
-    if (len >= sizeof(command)) {
-        FPRINTF(global_client_socket,  "Command truncated: '%s %s'\n", script_path, arg);
-        return -1;
-    }
-
-    int status = executeSystemCommand(command);
-    if (status == -1) {
-        PERROR(global_client_socket, "system() failed");
-        return -1;
-    }
-
-    if (WIFEXITED(status)) {
-        int exit_status = WEXITSTATUS(status);
-        if (exit_status != 0) {
-            FPRINTF(global_client_socket,  "Command failed with exit code %d: %s\n", exit_status, command);
-            return -1;
-        }
-    }
-    return 0;
-}
-
 void livy_action(Action a) {
     const char *livy_home = NULL;
+    CommandResult result;
+    
     // Detect OS distribution
     if (access("/etc/debian_version", F_OK) == 0) {
         livy_home = "/usr/local/livy";
@@ -541,6 +631,7 @@ void livy_action(Action a) {
         FPRINTF(global_client_socket,  "Error: Unsupported Linux distribution\n");
         return;
     }
+    
     // Construct and validate server script path
     char script_path[PATH_MAX];
     size_t path_len = snprintf(script_path, sizeof(script_path), "%s/bin/livy-server", livy_home);
@@ -558,35 +649,51 @@ void livy_action(Action a) {
     // Execute the requested action
     switch(a) {
     case START: {
-        int rc = execute_command(script_path, "start");
-        if (rc == 0) {
-            PRINTF(global_client_socket, "Successfully started Livy service\n");
+        char command[PATH_MAX + 10];
+        snprintf(command, sizeof(command), "%s start", script_path);
+        result = executeCommand(command);
+        
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Livy", START) == 0) {
+            FPRINTF(global_client_socket,  "Start failed. Output:\n%s\nError:\n%s\n", 
+                   result.stdout_output, result.stderr_output);
         } else {
-            FPRINTF(global_client_socket,  "Start failed with exit code: %d\n", rc);
+            PRINTF(global_client_socket, "Successfully started Livy service\n");
         }
         break;
     }
     case STOP: {
-        int rc = execute_command(script_path, "stop");
-        if (rc == 0) {
-            PRINTF(global_client_socket, "Successfully stopped Livy service\n");
+        char command[PATH_MAX + 10];
+        snprintf(command, sizeof(command), "%s stop", script_path);
+        result = executeCommand(command);
+        
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Livy", STOP) == 0) {
+            FPRINTF(global_client_socket,  "Stop failed. Output:\n%s\nError:\n%s\n", 
+                   result.stdout_output, result.stderr_output);
         } else {
-            FPRINTF(global_client_socket,  "Stop failed with exit code: %d\n", rc);
+            PRINTF(global_client_socket, "Successfully stopped Livy service\n");
         }
         break;
     }
     case RESTART: {
-        int stop_rc = execute_command(script_path, "stop");
-        if (stop_rc != 0) {
-            FPRINTF(global_client_socket,  "Restart aborted - stop failed with code: %d\n", stop_rc);
+        char stop_command[PATH_MAX + 10];
+        snprintf(stop_command, sizeof(stop_command), "%s stop", script_path);
+        result = executeCommand(stop_command);
+        
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Livy", STOP) == 0) {
+            FPRINTF(global_client_socket,  "Restart aborted - stop failed. Output:\n%s\nError:\n%s\n", 
+                   result.stdout_output, result.stderr_output);
             return;
         }
-        //   PRINTF(global_client_socket, "Service stopped. Attempting restart...\n");
-        int start_rc = execute_command(script_path, "start");
-        if (start_rc == 0) {
-            PRINTF(global_client_socket, "Successfully restarted Livy service\n");
+        
+        char start_command[PATH_MAX + 10];
+        snprintf(start_command, sizeof(start_command), "%s start", script_path);
+        result = executeCommand(start_command);
+        
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Livy", START) == 0) {
+            FPRINTF(global_client_socket,  "Restart failed - start failed. Output:\n%s\nError:\n%s\n", 
+                   result.stdout_output, result.stderr_output);
         } else {
-            FPRINTF(global_client_socket,  "Restart failed - start failed with code: %d\n", start_rc);
+            PRINTF(global_client_socket, "Successfully restarted Livy service\n");
         }
         break;
     }
@@ -595,7 +702,6 @@ void livy_action(Action a) {
         break;
     }
 }
-
 
 const char *find_pig_home() {
     const char *locations[] = {
@@ -619,9 +725,10 @@ const char *find_pig_home() {
     return NULL;
 }
 
-
 void pig_action(Action a) {
     const char *pig_home = find_pig_home();
+    CommandResult result;
+    
     if (!pig_home) {
         FPRINTF(global_client_socket,  "Error: Pig installation not found. Checked:\n"
                 "1. PIG_HOME environment variable\n"
@@ -631,23 +738,24 @@ void pig_action(Action a) {
     }
 
     char command[512];
-    int ret, len;
+    int len;
 
     switch (a) {
     case START: {
         len = snprintf(command, sizeof(command),
-                       "%s/bin/pig -x local > /dev/null 2>&1 &", pig_home);
+                       "%s/bin/pig -x local", pig_home);
         if (len < 0 || len >= (int)sizeof(command)) {
             FPRINTF(global_client_socket,  "Command construction error\n");
             exit(EXIT_FAILURE);
         }
 
-        ret = executeSystemCommand(command);
-        if (ret == -1) {
-            FPRINTF(global_client_socket,  "Failed to start Pig. Error: %d\n"
-                    "Verify Pig is installed at: %s\n", ret, pig_home);
+        result = executeCommand(command);
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Pig", START) == 0) {
+            FPRINTF(global_client_socket,  "Failed to start Pig. Error: %d\nOutput:\n%s\nError:\n%s\n",
+                   result.exit_code, result.stdout_output, result.stderr_output);
             exit(EXIT_FAILURE);
         }
+        PRINTF(global_client_socket, "Pig started successfully\n");
         break;
     }
 
@@ -659,36 +767,38 @@ void pig_action(Action a) {
             exit(EXIT_FAILURE);
         }
 
-        ret = executeSystemCommand(command);
-        if (ret == -1) {
-            if (ret == 1) {
+        result = executeCommand(command);
+        if (result.exit_code != 0) {
+            if (result.exit_code == 1) {
                 PRINTF(global_client_socket, "No running Pig processes found\n");
             } else {
-                FPRINTF(global_client_socket,  "Failed to stop Pig. Error: %d\n", ret);
+                FPRINTF(global_client_socket,  "Failed to stop Pig. Error: %d\nOutput:\n%s\nError:\n%s\n", 
+                       result.exit_code, result.stdout_output, result.stderr_output);
                 exit(EXIT_FAILURE);
             }
+        } else {
+            PRINTF(global_client_socket, "Pig stopped successfully\n");
         }
         break;
     }
 
     case RESTART:
-        // PRINTF(global_client_socket, "Restarting Pig...\n");
         pig_action(STOP);
         sleep(2);  // Allow processes to terminate
         pig_action(START);
+        PRINTF(global_client_socket, "Pig restarted successfully\n");
         break;
 
     default:
         FPRINTF(global_client_socket,  "Invalid action. Use START, STOP, or RESTART\n");
         exit(EXIT_FAILURE);
-        PRINTF(global_client_socket, "Pig Service action performed successfully\n");
-
     }
 }
 
 void HBase_action(Action a) {
     char hbase_home[256];
     int os_found = 0;
+    CommandResult result;
 
     // Determine installation directory
     if (access("/etc/debian_version", F_OK) == 0) {
@@ -733,26 +843,42 @@ void HBase_action(Action a) {
 
     switch(a) {
     case START:
-        if (!executeSystemCommand(start_cmd)) {
-            FPRINTF(global_client_socket,  "Failed to start HBase\n");
+        result = executeCommand(start_cmd);
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "HBase", START) == 0) {
+            FPRINTF(global_client_socket,  "Failed to start HBase. Output:\n%s\nError:\n%s\n", 
+                   result.stdout_output, result.stderr_output);
             exit(EXIT_FAILURE);
         }
-        FPRINTF(global_client_socket,  "Hbase start successfully \n");
+        PRINTF(global_client_socket, "HBase started successfully\n");
         break;
+        
     case STOP:
-        if (!executeSystemCommand(stop_cmd)) {
-            FPRINTF(global_client_socket,  "Failed to stop HBase\n");
+        result = executeCommand(stop_cmd);
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "HBase", STOP) == 0) {
+            FPRINTF(global_client_socket,  "Failed to stop HBase. Output:\n%s\nError:\n%s\n", 
+                   result.stdout_output, result.stderr_output);
             exit(EXIT_FAILURE);
         }
-        FPRINTF(global_client_socket,  "Hbase stop successfully \n");
+        PRINTF(global_client_socket, "HBase stopped successfully\n");
         break;
+        
     case RESTART:
-        if (!executeSystemCommand(stop_cmd) || !executeSystemCommand(start_cmd)) {
-            FPRINTF(global_client_socket,  "Restart failed\n");
+        result = executeCommand(stop_cmd);
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "HBase", STOP) == 0) {
+            FPRINTF(global_client_socket,  "Restart failed - stop phase. Output:\n%s\nError:\n%s\n", 
+                   result.stdout_output, result.stderr_output);
             exit(EXIT_FAILURE);
         }
-        FPRINTF(global_client_socket,  "Hbase restart successfully \n");
+        
+        result = executeCommand(start_cmd);
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "HBase", START) == 0) {
+            FPRINTF(global_client_socket,  "Restart failed - start phase. Output:\n%s\nError:\n%s\n", 
+                   result.stdout_output, result.stderr_output);
+            exit(EXIT_FAILURE);
+        }
+        PRINTF(global_client_socket, "HBase restarted successfully\n");
         break;
+        
     default:
         FPRINTF(global_client_socket,  "Invalid action\n");
         exit(EXIT_FAILURE);
@@ -761,16 +887,18 @@ void HBase_action(Action a) {
     // Verify service state
     char verify_cmd[512];
     snprintf(verify_cmd, sizeof(verify_cmd),
-             "sh -c 'jps | grep HMaster >/dev/null && jps | grep HRegionServer >/dev/null'");
+             "jps | grep HMaster >/dev/null && jps | grep HRegionServer >/dev/null");
 
     if (a == START || a == RESTART) {
-        if (!executeSystemCommand(verify_cmd)) {
+        result = executeCommand(verify_cmd);
+        if (result.exit_code != 0) {
             FPRINTF(global_client_socket,  "Service verification failed after %s\n",
                     (a == RESTART) ? "restart" : "start");
             exit(EXIT_FAILURE);
         }
     } else if (a == STOP) {
-        if (executeSystemCommand(verify_cmd)) {
+        result = executeCommand(verify_cmd);
+        if (result.exit_code == 0) {
             FPRINTF(global_client_socket,  "HBase processes still running after stop\n");
             exit(EXIT_FAILURE);
         }
@@ -837,22 +965,12 @@ void tez_action(Action a) {
     }
 }
 
-/*
- * kafka_action.c
- *
- * Provides functions to start, stop, and restart Kafka and ZooKeeper
- * Returns 0 on success, negative on failure.
- */
-/**
- * Perform Kafka or ZooKeeper actions.
- * @param action The action to perform (START, STOP, RESTART)
- * @return 0 on success, -1 on error
- */
 int kafka_action(Action action) {
     char kafka_home[PATH_MAX] = {0};
     char command[2048] = {0};
     struct stat st;
     const char *env_kafka = getenv("KAFKA_HOME");
+    CommandResult result;
 
     // Determine Kafka installation directory
     if (env_kafka) {
@@ -895,15 +1013,15 @@ int kafka_action(Action action) {
     switch (action) {
     case START:
         ret = snprintf(command, sizeof(command),
-                       "%s %s > %s/zookeeper.pid && %s %s > %s/kafka.pid",
-                       zk_start, zk_conf, kafka_home,
-                       kafka_start, kafka_conf, kafka_home);
+                       "%s %s && %s %s",
+                       zk_start, zk_conf,
+                       kafka_start, kafka_conf);
         break;
 
     case STOP:
         ret = snprintf(command, sizeof(command),
-                       "%s && %s && rm -f %s/zookeeper.pid %s/kafka.pid",
-                       kafka_stop, zk_stop, kafka_home, kafka_home);
+                       "%s && %s",
+                       kafka_stop, zk_stop);
         break;
 
     case RESTART:
@@ -915,41 +1033,37 @@ int kafka_action(Action action) {
         FPRINTF(global_client_socket, "Invalid action %d\n", action);
         return -1;
     }
+    
     if (ret < 0 || ret >= (int)sizeof(command)) {
         FPRINTF(global_client_socket, "Command construction overflow\n");
         return -1;
     }
 
     // Execute action
-    int code = executeSystemCommand(command);
-    if (code < 0) {
-        FPRINTF(global_client_socket, "Command execution failed with code %d\n", code);
-        return code;
+    result = executeCommand(command);
+    if (result.exit_code < 0) {
+        FPRINTF(global_client_socket, "Command execution failed. Output:\n%s\nError:\n%s\n", 
+               result.stdout_output, result.stderr_output);
+        return result.exit_code;
     }
 
     // Verify
     char verify_cmd[512];
     if (action == START) {
         sleep(2);
-        snprintf(verify_cmd, sizeof(verify_cmd), "pgrep -F '%s/zookeeper.pid'", kafka_home);
-        if (executeSystemCommand(verify_cmd) < 0) {
-            FPRINTF(global_client_socket, "Zookeeper failed to start\n");
-            return -1;
-        }
-        snprintf(verify_cmd, sizeof(verify_cmd), "pgrep -F '%s/kafka.pid'", kafka_home);
-        if (executeSystemCommand(verify_cmd) < 0) {
-            FPRINTF(global_client_socket, "Kafka failed to start\n");
+        snprintf(verify_cmd, sizeof(verify_cmd), "jps | grep -E '(QuorumPeerMain|Kafka)'");
+        result = executeCommand(verify_cmd);
+        if (result.exit_code != 0) {
+            FPRINTF(global_client_socket, "Kafka/Zookeeper failed to start. Output:\n%s\nError:\n%s\n", 
+                   result.stdout_output, result.stderr_output);
             return -1;
         }
     } else if (action == STOP) {
-        snprintf(verify_cmd, sizeof(verify_cmd), "pgrep -F '%s/zookeeper.pid'", kafka_home);
-        if (executeSystemCommand(verify_cmd) == 0) {
-            FPRINTF(global_client_socket, "Zookeeper failed to stop\n");
-            return -1;
-        }
-        snprintf(verify_cmd, sizeof(verify_cmd), "pgrep -F '%s/kafka.pid'", kafka_home);
-        if (executeSystemCommand(verify_cmd) == 0) {
-            FPRINTF(global_client_socket, "Kafka failed to stop\n");
+        snprintf(verify_cmd, sizeof(verify_cmd), "jps | grep -E '(QuorumPeerMain|Kafka)'");
+        result = executeCommand(verify_cmd);
+        if (result.exit_code == 0) {
+            FPRINTF(global_client_socket, "Kafka/Zookeeper failed to stop. Output:\n%s\n", 
+                   result.stdout_output);
             return -1;
         }
     }
@@ -958,11 +1072,10 @@ int kafka_action(Action action) {
     return 0;
 }
 
-
 void Solr_action(Action a) {
     const char *install_dir = NULL;
     char solr_script[512];
-    int status;
+    CommandResult result;
 
     // Determine installation directory
     if (access("/etc/debian_version", F_OK) == 0) {
@@ -985,56 +1098,46 @@ void Solr_action(Action a) {
     // Execute requested action
     switch(a) {
     case START: {
-        //PRINTF(global_client_socket, "Starting Solr service...\n");
-        pid_t pid = fork();
-        if (pid == 0) {
-            execl(solr_script, solr_script, "start", (char *)NULL);
-            _exit(EXIT_FAILURE);
-        } else if (pid > 0) {
-            waitpid(pid, &status, 0);
-            if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
-                PRINTF(global_client_socket, "Solr started successfully\n");
-            } else {
-                FPRINTF(global_client_socket,  "Failed to start Solr (exit code: %d)\n", WEXITSTATUS(status));
-            }
+        char command[PATH_MAX + 10];
+        snprintf(command, sizeof(command), "%s start", solr_script);
+        result = executeCommand(command);
+        
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Solr", START) == 0) {
+            FPRINTF(global_client_socket,  "Failed to start Solr. Output:\n%s\nError:\n%s\n", 
+                   result.stdout_output, result.stderr_output);
+        } else {
+            PRINTF(global_client_socket, "Solr started successfully\n");
         }
         break;
     }
 
     case STOP: {
-        // PRINTF(global_client_socket, "Stopping Solr service...\n");
-        pid_t pid = fork();
-        if (pid == 0) {
-            execl(solr_script, solr_script, "stop", (char *)NULL);
-            _exit(EXIT_FAILURE);
-        } else if (pid > 0) {
-            waitpid(pid, &status, 0);
-            if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
-                PRINTF(global_client_socket, "Solr stopped successfully\n");
-            } else {
-                FPRINTF(global_client_socket,  "Failed to stop Solr (exit code: %d)\n", WEXITSTATUS(status));
-            }
+        char command[PATH_MAX + 10];
+        snprintf(command, sizeof(command), "%s stop", solr_script);
+        result = executeCommand(command);
+        
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Solr", STOP) == 0) {
+            FPRINTF(global_client_socket,  "Failed to stop Solr. Output:\n%s\nError:\n%s\n", 
+                   result.stdout_output, result.stderr_output);
+        } else {
+            PRINTF(global_client_socket, "Solr stopped successfully\n");
         }
         break;
     }
 
     case RESTART: {
-        //   PRINTF(global_client_socket, "Restarting Solr service...\n");
-        pid_t pid = fork();
-        if (pid == 0) {
-            execl(solr_script, solr_script, "restart", (char *)NULL);
-            _exit(EXIT_FAILURE);
-        } else if (pid > 0) {
-            waitpid(pid, &status, 0);
-            if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
-                PRINTF(global_client_socket, "Solr restarted successfully\n");
-            } else {
-                FPRINTF(global_client_socket,  "Failed to restart Solr (exit code: %d)\n", WEXITSTATUS(status));
-                // Fallback to stop/start sequence
-                //PRINTF(global_client_socket, "Attempting stop/start sequence...\n");
-                Solr_action(STOP);
-                Solr_action(START);
-            }
+        char command[PATH_MAX + 10];
+        snprintf(command, sizeof(command), "%s restart", solr_script);
+        result = executeCommand(command);
+        
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Solr", RESTART) == 0) {
+            FPRINTF(global_client_socket,  "Failed to restart Solr. Output:\n%s\nError:\n%s\n", 
+                   result.stdout_output, result.stderr_output);
+            // Fallback to stop/start sequence
+            Solr_action(STOP);
+            Solr_action(START);
+        } else {
+            PRINTF(global_client_socket, "Solr restarted successfully\n");
         }
         break;
     }
@@ -1050,17 +1153,23 @@ void Solr_action(Action a) {
 static int execute_script_action(const char *script_path, const char *action) {
     char command[MAX_CMD_LEN];
     int ret = snprintf(command, sizeof(command), "%s %s", script_path, action);
+    CommandResult result;
 
     if (ret < 0 || ret >= (int)sizeof(command)) {
         FPRINTF(global_client_socket,  "Command buffer overflow for action: %s\n", action);
         return -1;
     }
 
-    int exit_code = executeSystemCommand(command);
-    if (exit_code != 0) {
-        FPRINTF(global_client_socket,  "Action '%s' failed with exit code: %d\n", action, exit_code);
+    result = executeCommand(command);
+    if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Phoenix", 
+            (strcmp(action, "start") == 0) ? START : 
+            (strcmp(action, "stop") == 0) ? STOP : RESTART) == 0) {
+        FPRINTF(global_client_socket,  "Action '%s' failed. Output:\n%s\nError:\n%s\n", 
+               action, result.stdout_output, result.stderr_output);
+        return -1;
     }
-    return exit_code;
+    
+    return 0;
 }
 
 void phoenix_action(Action a) {
@@ -1120,9 +1229,9 @@ void phoenix_action(Action a) {
         // Try to stop, but continue even if it fails
         int stop_status = execute_script_action(script_path, "stop");
         if (stop_status == 0) {
-            //  PRINTF(global_client_socket, "Phoenix service stopped successfully.\n");
+            // Stop was successful
         } else {
-            // PRINTF(global_client_socket, "Attempting restart despite stop failure (exit code: %d)\n", stop_status);
+            FPRINTF(global_client_socket, "Stop phase failed (exit code: %d), attempting start anyway\n", stop_status);
         }
 
         if (execute_script_action(script_path, "start") != 0) {
@@ -1143,6 +1252,7 @@ void ranger_action(Action a) {
     const char *ranger_home = NULL;
     const char *env_home = getenv("RANGER_HOME");
     const char *candidates[] = {env_home, "/opt/ranger", "/usr/local/ranger", NULL};
+    CommandResult result;
 
     // Search for valid Ranger installation by checking embeddedwebserver/scripts directory
     for (int i = 0; candidates[i] != NULL; i++) {
@@ -1187,12 +1297,12 @@ void ranger_action(Action a) {
             return -1;
         }
 
-        int status = executeSystemCommand(command);
-        if (status == -1) {
+        result = executeCommand(command);
+        if (result.exit_code == -1) {
             FPRINTF(global_client_socket,  "Command execution failed: %s\n", strerror(errno));
             return -1;
         }
-        return status;
+        return result.exit_code;
     }
 
     void handle_command_result(int status, const char *action, const char *context) {
@@ -1290,28 +1400,18 @@ char *get_atlas_home() {
     return NULL; // No valid installation found
 }
 
-int execute_script(const char *script_path) {
-    pid_t pid = fork();
-    if (pid == -1) {
-        PERROR(global_client_socket, "fork");
+int execute_atlas_script(const char *script_path) {
+    CommandResult result = executeCommand(script_path);
+    if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Atlas", 
+            (strstr(script_path, "start") != NULL) ? START : STOP) == 0) {
+        FPRINTF(global_client_socket, "Script execution failed. Output:\n%s\nError:\n%s\n", 
+               result.stdout_output, result.stderr_output);
         return -1;
-    } else if (pid == 0) {
-        execlp(script_path, script_path, (char *)NULL);
-        PERROR(global_client_socket, "execlp");
-        exit(EXIT_FAILURE);
     }
-
-    int status;
-    waitpid(pid, &status, 0);
-    return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+    return 0;
 }
 
 int atlas_action(Action a) {
-    //if (geteuid() != 0) {
-    //  FPRINTF(global_client_socket,  "Error: Requires root privileges. Use sudo.\n");
-    //return -1;
-    //}
-
     char *atlas_home = get_atlas_home();
     if (!atlas_home) {
         FPRINTF(global_client_socket,  "Error: Atlas installation not found.\n");
@@ -1324,20 +1424,26 @@ int atlas_action(Action a) {
     switch(a) {
     case START:
         snprintf(script_path, sizeof(script_path), "%s/bin/atlas_start.py", atlas_home);
-        // PRINTF(global_client_socket, "Starting Apache Atlas...\n");
-        result = execute_script(script_path);
+        result = execute_atlas_script(script_path);
+        if (result == 0) {
+            PRINTF(global_client_socket, "Apache Atlas started successfully\n");
+        }
         break;
 
     case STOP:
         snprintf(script_path, sizeof(script_path), "%s/bin/atlas_stop.py", atlas_home);
-        // PRINTF(global_client_socket, "Stopping Apache Atlas...\n");
-        result = execute_script(script_path);
+        result = execute_atlas_script(script_path);
+        if (result == 0) {
+            PRINTF(global_client_socket, "Apache Atlas stopped successfully\n");
+        }
         break;
 
     case RESTART:
-        // PRINTF(global_client_socket, "Restarting Apache Atlas...\n");
         if ((result = atlas_action(STOP)) == 0) {
             result = atlas_action(START);
+            if (result == 0) {
+                PRINTF(global_client_socket, "Apache Atlas restarted successfully\n");
+            }
         }
         break;
 
@@ -1353,12 +1459,10 @@ int atlas_action(Action a) {
     return result;
 }
 
-// Helper to iterate through services (C11 compatible)
-//static const char* services[] = {"nimbus", "supervisor", "ui"};
-//#define for_each_service(i) for (size_t i = 0; i < sizeof(services)/sizeof(services[0]); i++)
-
 static int stop_services(const char *storm_cmd, const char **services, size_t num_services) {
     int all_stopped = 1;
+    CommandResult result;
+    
     for (size_t i = 0; i < num_services; i++) {
         char cmd[PATH_MAX * 2];
         int ret = snprintf(cmd, sizeof(cmd), "pkill -f '%s %s'", storm_cmd, services[i]);
@@ -1368,19 +1472,14 @@ static int stop_services(const char *storm_cmd, const char **services, size_t nu
             continue;
         }
 
-        int status = executeSystemCommand(cmd);
-        if (WIFEXITED(status)) {
-            int exit_code = WEXITSTATUS(status);
-            if (exit_code == 0) {
-                PRINTF(global_client_socket, "Successfully stopped %s\n", services[i]);
-            } else if (exit_code == 1) {
-                PRINTF(global_client_socket, "%s was not running\n", services[i]);
-            } else {
-                FPRINTF(global_client_socket,  "Error stopping %s (code %d)\n", services[i], exit_code);
-                all_stopped = 0;
-            }
+        result = executeCommand(cmd);
+        if (result.exit_code == 0) {
+            PRINTF(global_client_socket, "Successfully stopped %s\n", services[i]);
+        } else if (result.exit_code == 1) {
+            PRINTF(global_client_socket, "%s was not running\n", services[i]);
         } else {
-            FPRINTF(global_client_socket,  "Process termination error for %s\n", services[i]);
+            FPRINTF(global_client_socket,  "Error stopping %s. Output:\n%s\nError:\n%s\n", 
+                   services[i], result.stdout_output, result.stderr_output);
             all_stopped = 0;
         }
     }
@@ -1389,58 +1488,29 @@ static int stop_services(const char *storm_cmd, const char **services, size_t nu
 
 static int start_services(const char *storm_cmd, const char **services, size_t num_services) {
     int all_started = 1;
+    CommandResult result;
+    
     for (size_t i = 0; i < num_services; i++) {
         char cmd[PATH_MAX * 2];
-        // Include stderr redirection to capture all output
-        int ret = snprintf(cmd, sizeof(cmd), "%s %s 2>&1", storm_cmd, services[i]);
+        int ret = snprintf(cmd, sizeof(cmd), "%s %s", storm_cmd, services[i]);
         if (ret >= (int)sizeof(cmd)) {
             FPRINTF(global_client_socket, "Command buffer overflow for service %s\n", services[i]);
             all_started = 0;
             continue;
         }
 
-        FILE *fp = popen(cmd, "r");
-        if (!fp) {
-            FPRINTF(global_client_socket, "Failed to run command for service %s\n", services[i]);
+        result = executeCommand(cmd);
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Storm", START) == 0) {
+            FPRINTF(global_client_socket, "Failed to start %s. Output:\n%s\nError:\n%s\n", 
+                   services[i], result.stdout_output, result.stderr_output);
             all_started = 0;
-            continue;
-        }
-
-        char buffer[256];
-        int found_python_error = 0;
-
-        // Read and process command output line by line
-        while (fgets(buffer, sizeof(buffer), fp) != NULL) {
-            // Display command output to user
-            PRINTF(global_client_socket, "%s", buffer);
-
-            // Check for Python version requirement message
-            if (strstr(buffer, "Need python version > 2.6") != NULL) {
-                found_python_error = 1;
-            }
-        }
-
-        int status = pclose(fp);
-        if (WIFEXITED(status)) {
-            int exit_code = WEXITSTATUS(status);
-            if (exit_code == 0) {
-                if (found_python_error) {
-                    FPRINTF(global_client_socket, "Failed to start %s: Python version > 2.6 is required.\n", services[i]);
-                    all_started = 0;
-                } else {
-                    PRINTF(global_client_socket, "Successfully started %s\n", services[i]);
-                }
-            } else {
-                FPRINTF(global_client_socket, "Failed to start %s (exit code %d)\n", services[i], exit_code);
-                all_started = 0;
-            }
         } else {
-            FPRINTF(global_client_socket, "Process termination error for %s\n", services[i]);
-            all_started = 0;
+            PRINTF(global_client_socket, "Successfully started %s\n", services[i]);
         }
     }
     return all_started;
 }
+
 void storm_action(Action a) {
     const char *services[] = {"nimbus", "supervisor", "ui"};
     size_t num_services = sizeof(services) / sizeof(services[0]);
@@ -1541,7 +1611,7 @@ void storm_action(Action a) {
 void flink_action(Action action) {
     const char* flink_home = getenv("FLINK_HOME");
     struct stat dir_info;
-    int ret;
+    CommandResult result;
 
     // Determine FLINK_HOME if not set in environment
     if (!flink_home) {
@@ -1575,38 +1645,43 @@ void flink_action(Action action) {
     // Execute requested action
     switch(action) {
     case START:
-        ret = executeSystemCommand(start_script);
-        if (WEXITSTATUS(ret) == -1) {
-            FPRINTF(global_client_socket,  "Start failed with exit code %d\n", WEXITSTATUS(ret));
+        result = executeCommand(start_script);
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Flink", START) == 0) {
+            FPRINTF(global_client_socket,  "Start failed. Output:\n%s\nError:\n%s\n", 
+                   result.stdout_output, result.stderr_output);
             exit(EXIT_FAILURE);
         }
+        PRINTF(global_client_socket, "Flink started successfully\n");
         break;
 
     case STOP: {
-        ret = executeSystemCommand(stop_script);
-        if (WEXITSTATUS(ret) == -1) {
-            FPRINTF(global_client_socket,  "Stop failed with exit code %d\n", WEXITSTATUS(ret));
+        result = executeCommand(stop_script);
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Flink", STOP) == 0) {
+            FPRINTF(global_client_socket,  "Stop failed. Output:\n%s\nError:\n%s\n", 
+                   result.stdout_output, result.stderr_output);
             exit(EXIT_FAILURE);
         }
+        PRINTF(global_client_socket, "Flink stopped successfully\n");
         break;
     }
 
     case RESTART: {
-        //PRINTF(global_client_socket, "Initiating Flink restart...\n");
-
         // Stop phase
-        ret = executeSystemCommand(stop_script);
-        if (WEXITSTATUS(ret) == -1) {
-            FPRINTF(global_client_socket,  "Restart aborted - stop failed with code %d\n", WEXITSTATUS(ret));
+        result = executeCommand(stop_script);
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Flink", STOP) == 0) {
+            FPRINTF(global_client_socket,  "Restart aborted - stop failed. Output:\n%s\nError:\n%s\n", 
+                   result.stdout_output, result.stderr_output);
             exit(EXIT_FAILURE);
         }
 
         // Start phase
-        ret = executeSystemCommand(start_script);
-        if (WEXITSTATUS(ret) == -1) {
-            FPRINTF(global_client_socket,  "Restart incomplete - start failed with code %d\n", WEXITSTATUS(ret));
+        result = executeCommand(start_script);
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Flink", START) == 0) {
+            FPRINTF(global_client_socket,  "Restart incomplete - start failed. Output:\n%s\nError:\n%s\n", 
+                   result.stdout_output, result.stderr_output);
             exit(EXIT_FAILURE);
         }
+        PRINTF(global_client_socket, "Flink restarted successfully\n");
         break;
     }
 
@@ -1614,17 +1689,14 @@ void flink_action(Action action) {
         FPRINTF(global_client_socket,  "Invalid action specified\n");
         exit(EXIT_FAILURE);
     }
-
-    PRINTF(global_client_socket, "Operation completed successfully\n");
 }
-
 
 void zookeeper_action(Action a) {
     char *zk_home = getenv("ZOOKEEPER_HOME");
     int isDebian, isRedHat;
     char zk_script[PATH_MAX];
     char command[1024];
-    int ret;
+    CommandResult result;
 
     // Determine ZOOKEEPER_HOME if not set
     if (zk_home == NULL) {
@@ -1666,11 +1738,13 @@ void zookeeper_action(Action a) {
         if (ret3 >= sizeof(command)) {
             FPRINTF(global_client_socket,  "Error: command buffer overflow.\n");
         }
-        ret = executeSystemCommand(command);
-        if (ret == -1) {
-            FPRINTF(global_client_socket,  "Failed to start Zookeeper. Exit code: %d\n", ret);
+        result = executeCommand(command);
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Zookeeper", START) == 0) {
+            FPRINTF(global_client_socket,  "Failed to start Zookeeper. Output:\n%s\nError:\n%s\n", 
+                   result.stdout_output, result.stderr_output);
+        } else {
+            PRINTF(global_client_socket, "Zookeeper started successfully\n");
         }
-        PRINTF(global_client_socket, "Zookeeper started successfully\n");
         break;
     }
     case STOP: {
@@ -1678,11 +1752,13 @@ void zookeeper_action(Action a) {
         if (ret4 >= sizeof(command)) {
             FPRINTF(global_client_socket,  "Error: command buffer overflow.\n");
         }
-        ret = executeSystemCommand(command);
-        if (ret == -1) {
-            FPRINTF(global_client_socket,  "Failed to stop Zookeeper. Exit code: %d\n", ret);
+        result = executeCommand(command);
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Zookeeper", STOP) == 0) {
+            FPRINTF(global_client_socket,  "Failed to stop Zookeeper. Output:\n%s\nError:\n%s\n", 
+                   result.stdout_output, result.stderr_output);
+        } else {
+            PRINTF(global_client_socket, "Zookeeper stopped successfully\n");
         }
-        PRINTF(global_client_socket, "Zookeeper stopped  successfully\n");
         break;
     }
     case RESTART: {
@@ -1691,20 +1767,24 @@ void zookeeper_action(Action a) {
         if (ret5 >= sizeof(command)) {
             FPRINTF(global_client_socket,  "Error: command buffer overflow.\n");
         }
-        ret = executeSystemCommand(command);
-        if (ret == -1) {
-            FPRINTF(global_client_socket,  "Failed to stop Zookeeper during restart. Exit code: %d\n", ret);
+        result = executeCommand(command);
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Zookeeper", STOP) == 0) {
+            FPRINTF(global_client_socket,  "Failed to stop Zookeeper during restart. Output:\n%s\nError:\n%s\n", 
+                   result.stdout_output, result.stderr_output);
         }
+
         // Start the service
         long unsigned int ret9 = snprintf(command, sizeof(command), "\"%s\" start", zk_script);
         if (ret9 >= sizeof(command)) {
             FPRINTF(global_client_socket,  "Error: command buffer overflow.\n");
         }
-        ret = executeSystemCommand(command);
-        if (ret == -1) {
-            FPRINTF(global_client_socket,  "Failed to start Zookeeper during restart. Exit code: %d\n", ret);
+        result = executeCommand(command);
+        if (result.exit_code != 0 || isSuccessOutput(result.stdout_output, "Zookeeper", START) == 0) {
+            FPRINTF(global_client_socket,  "Failed to start Zookeeper during restart. Output:\n%s\nError:\n%s\n", 
+                   result.stdout_output, result.stderr_output);
+        } else {
+            PRINTF(global_client_socket, "Zookeeper restarted successfully\n");
         }
-        PRINTF(global_client_socket, "Zookeeper restarted successfully\n");
         break;
     }
     default:
@@ -1712,4 +1792,3 @@ void zookeeper_action(Action a) {
         break;
     }
 }
-
