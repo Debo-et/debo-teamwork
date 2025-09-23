@@ -247,30 +247,56 @@ void Presto_action(Action action) {
 
 void spark_action(Action a) {
     const char* install_path = NULL;
+    char output[1024];
+    int status;
 
-    // Detect OS distribution
-    if (access("/etc/debian_version", F_OK) == 0) {
-        install_path = "/usr/local/spark";
-    } else if (access("/etc/redhat-release", F_OK) == 0 ||
-               access("/etc/system-release", F_OK) == 0) {
-        install_path = "/opt/spark";
-    } else {
-        fprintf(stderr,  "Error: Unsupported Linux distribution\n");
+    // Check SPARK_HOME environment variable first
+    const char* spark_home = getenv("SPARK_HOME");
+    if (spark_home != NULL) {
+        char spark_bin[PATH_MAX];
+        snprintf(spark_bin, sizeof(spark_bin), "%s/sbin/start-all.sh", spark_home);
+        if (access(spark_bin, X_OK) == 0) {
+            install_path = spark_home;
+        } else {
+            fprintf(stderr, "Warning: SPARK_HOME set but start script not found at %s\n", spark_bin);
+        }
+    }
+
+    // If SPARK_HOME not set or invalid, fall back to OS detection
+    if (install_path == NULL) {
+        if (access("/etc/debian_version", F_OK) == 0) {
+            install_path = "/usr/local/spark";
+        } else if (access("/etc/redhat-release", F_OK) == 0 ||
+                   access("/etc/system-release", F_OK) == 0) {
+            install_path = "/opt/spark";
+        } else {
+            fprintf(stderr, "Error: Unsupported Linux distribution and SPARK_HOME not set\n");
+            return;
+        }
+    }
+
+    // Verify installation
+    char start_script[PATH_MAX];
+    snprintf(start_script, sizeof(start_script), "%s/sbin/start-all.sh", install_path);
+    if (access(start_script, X_OK) != 0) {
+        fprintf(stderr, "Error: Spark installation not found at %s\n", install_path);
+        fprintf(stderr, "Checked locations:\n");
+        if (spark_home) fprintf(stderr, "- SPARK_HOME: %s\n", spark_home);
+        fprintf(stderr, "- /usr/local/spark (Debian/Ubuntu)\n");
+        fprintf(stderr, "- /opt/spark (Red Hat/CentOS)\n");
         return;
     }
 
     // Construct base commands with environment configuration
     char start_cmd[512];
     char stop_cmd[512];
-    long unsigned int cmd_len;
-    char output[1024];
-    int status;
+    size_t cmd_len;
 
     cmd_len = snprintf(start_cmd, sizeof(start_cmd),
                        "export SPARK_HOME=%s && %s/sbin/start-all.sh",
                        install_path, install_path);
     if (cmd_len >= sizeof(start_cmd)) {
-        fprintf(stderr,  "Error: Start command buffer overflow\n");
+        fprintf(stderr, "Error: Start command buffer overflow\n");
         return;
     }
 
@@ -278,7 +304,7 @@ void spark_action(Action a) {
                        "export SPARK_HOME=%s && %s/sbin/stop-all.sh",
                        install_path, install_path);
     if (cmd_len >= sizeof(stop_cmd)) {
-        fprintf(stderr,  "Error: Stop command buffer overflow\n");
+        fprintf(stderr, "Error: Stop command buffer overflow\n");
         return;
     }
 
@@ -296,24 +322,24 @@ void spark_action(Action a) {
     switch(a) {
     case START:
         if (execute_service_command(start_cmd, output) == -1) {
-            fprintf(stderr,  "Spark service startup aborted\n");
+            fprintf(stderr, "Spark service startup aborted\n");
             return;
         }
-        printf( "Spark service started successfully\n");
+        printf("Spark service started successfully\n");
         break;
 
     case STOP:
         if (execute_service_command(stop_cmd, output) == -1) {
-            fprintf(stderr,  "Spark service shutdown aborted\n");
+            fprintf(stderr, "Spark service shutdown aborted\n");
             return;
         }
-        printf( "Spark service stopped successfully\n");
+        printf("Spark service stopped successfully\n");
         break;
 
     case RESTART:
         // Stop phase
         if (execute_service_command(stop_cmd, output) == -1) {
-            fprintf(stderr,  "Restart aborted due to stop failure\n");
+            fprintf(stderr, "Restart aborted due to stop failure\n");
             return;
         }
 
@@ -322,14 +348,14 @@ void spark_action(Action a) {
 
         // Start phase
         if (execute_service_command(start_cmd, output) == -1) {
-            fprintf(stderr,  "Spark service restart aborted\n");
+            fprintf(stderr, "Spark service restart aborted\n");
             return;
         }
-        printf( "Spark service restarted successfully\n");
+        printf("Spark service restarted successfully\n");
         break;
 
     default:
-        fprintf(stderr,  "Error: Invalid action specified\n");
+        fprintf(stderr, "Error: Invalid action specified\n");
         break;
     }
 }
@@ -610,29 +636,48 @@ static int execute_command(const char* script_path, const char* arg, char* outpu
 
 void livy_action(Action a) {
     const char *livy_home = NULL;
-    // Detect OS distribution
-    if (access("/etc/debian_version", F_OK) == 0) {
-        livy_home = "/usr/local/livy";
-    } else if (access("/etc/redhat-release", F_OK) == 0 ||
-               access("/etc/system-release", F_OK) == 0) {
-        livy_home = "/opt/livy";
-    } else {
-        fprintf(stderr,  "Error: Unsupported Linux distribution\n");
-        return;
+    char output[1024];
+
+    // Check LIVY_HOME environment variable first
+    const char* env_livy_home = getenv("LIVY_HOME");
+    if (env_livy_home != NULL) {
+        char livy_script[PATH_MAX];
+        snprintf(livy_script, sizeof(livy_script), "%s/bin/livy-server", env_livy_home);
+        if (access(livy_script, X_OK) == 0) {
+            livy_home = env_livy_home;
+        } else {
+            fprintf(stderr, "Warning: LIVY_HOME set but livy-server script not found at %s\n", livy_script);
+        }
+    }
+
+    // If LIVY_HOME not set or invalid, fall back to OS detection
+    if (livy_home == NULL) {
+        if (access("/etc/debian_version", F_OK) == 0) {
+            livy_home = "/usr/local/livy";
+        } else if (access("/etc/redhat-release", F_OK) == 0 ||
+                   access("/etc/system-release", F_OK) == 0) {
+            livy_home = "/opt/livy";
+        } else {
+            fprintf(stderr, "Error: Unsupported Linux distribution and LIVY_HOME not set\n");
+            return;
+        }
     }
 
     // Construct and validate server script path
     char script_path[PATH_MAX];
     size_t path_len = snprintf(script_path, sizeof(script_path), "%s/bin/livy-server", livy_home);
-    char output[1024];
 
     if (path_len >= sizeof(script_path)) {
-        fprintf(stderr,  "Path construction failed: Maximum length exceeded\n");
+        fprintf(stderr, "Path construction failed: Maximum length exceeded\n");
         return;
     }
 
     if (access(script_path, X_OK) != 0) {
-        fprintf(stderr,  "Livy server script not found or not executable: %s\n", script_path);
+        fprintf(stderr, "Livy server script not found or not executable: %s\n", script_path);
+        fprintf(stderr, "Checked locations:\n");
+        if (env_livy_home) fprintf(stderr, "- LIVY_HOME: %s\n", env_livy_home);
+        fprintf(stderr, "- /usr/local/livy (Debian/Ubuntu)\n");
+        fprintf(stderr, "- /opt/livy (Red Hat/CentOS)\n");
         return;
     }
 
@@ -641,38 +686,38 @@ void livy_action(Action a) {
     case START: {
         int rc = execute_command(script_path, "start", output, sizeof(output));
         if (rc == 0 && strstr(output, "error") == NULL && strstr(output, "ERROR") == NULL) {
-            printf( "Successfully started Livy service\n");
+            printf("Successfully started Livy service\n");
         } else {
-            fprintf(stderr,  "Start failed. Output: %s\n", output);
+            fprintf(stderr, "Start failed. Output: %s\n", output);
         }
         break;
     }
     case STOP: {
         int rc = execute_command(script_path, "stop", output, sizeof(output));
         if (rc == 0 && strstr(output, "error") == NULL && strstr(output, "ERROR") == NULL) {
-            printf( "Successfully stopped Livy service\n");
+            printf("Successfully stopped Livy service\n");
         } else {
-            fprintf(stderr,  "Stop failed. Output: %s\n", output);
+            fprintf(stderr, "Stop failed. Output: %s\n", output);
         }
         break;
     }
     case RESTART: {
         int stop_rc = execute_command(script_path, "stop", output, sizeof(output));
         if (stop_rc != 0 || strstr(output, "error") != NULL || strstr(output, "ERROR") != NULL) {
-            fprintf(stderr,  "Restart aborted - stop failed. Output: %s\n", output);
+            fprintf(stderr, "Restart aborted - stop failed. Output: %s\n", output);
             return;
         }
         
         int start_rc = execute_command(script_path, "start", output, sizeof(output));
         if (start_rc == 0 && strstr(output, "error") == NULL && strstr(output, "ERROR") == NULL) {
-            printf( "Successfully restarted Livy service\n");
+            printf("Successfully restarted Livy service\n");
         } else {
-            fprintf(stderr,  "Restart failed - start failed. Output: %s\n", output);
+            fprintf(stderr, "Restart failed - start failed. Output: %s\n", output);
         }
         break;
     }
     default:
-        fprintf(stderr,  "Invalid action requested\n");
+        fprintf(stderr, "Invalid action requested\n");
         break;
     }
 }
@@ -767,27 +812,46 @@ void pig_action(Action a) {
 }
 
 void HBase_action(Action a) {
-    char hbase_home[256];
+    char hbase_home[PATH_MAX] = {0};
     int os_found = 0;
     char output[1024];
 
-    // Determine installation directory
-    if (access("/etc/debian_version", F_OK) == 0) {
-        strncpy(hbase_home, "/usr/local/hbase", sizeof(hbase_home));
-        os_found = 1;
-    } else if (access("/etc/redhat-release", F_OK) == 0) {
-        strncpy(hbase_home, "/opt/hbase", sizeof(hbase_home));
-        os_found = 1;
+    // Check HBASE_HOME environment variable first
+    const char* env_hbase_home = getenv("HBASE_HOME");
+    if (env_hbase_home != NULL) {
+        char hbase_bin[PATH_MAX];
+        snprintf(hbase_bin, sizeof(hbase_bin), "%s/bin/start-hbase.sh", env_hbase_home);
+        if (access(hbase_bin, X_OK) == 0) {
+            strncpy(hbase_home, env_hbase_home, sizeof(hbase_home)-1);
+            os_found = 1;
+        } else {
+            fprintf(stderr, "Warning: HBASE_HOME set but start script not found at %s\n", hbase_bin);
+        }
+    }
+
+    // If HBASE_HOME not set or invalid, fall back to OS detection
+    if (!os_found) {
+        if (access("/etc/debian_version", F_OK) == 0) {
+            strncpy(hbase_home, "/usr/local/hbase", sizeof(hbase_home)-1);
+            os_found = 1;
+        } else if (access("/etc/redhat-release", F_OK) == 0) {
+            strncpy(hbase_home, "/opt/hbase", sizeof(hbase_home)-1);
+            os_found = 1;
+        }
     }
 
     if (!os_found) {
-        fprintf(stderr,  "Error: Unsupported OS\n");
+        fprintf(stderr, "Error: Unsupported OS and HBASE_HOME not set\n");
         exit(EXIT_FAILURE);
     }
 
     // Verify HBase installation directory
     if (access(hbase_home, F_OK) != 0) {
-        fprintf(stderr,  "Error: HBase not found at %s\n", hbase_home);
+        fprintf(stderr, "Error: HBase not found at %s\n", hbase_home);
+        fprintf(stderr, "Checked locations:\n");
+        if (env_hbase_home) fprintf(stderr, "- HBASE_HOME: %s\n", env_hbase_home);
+        fprintf(stderr, "- /usr/local/hbase (Debian/Ubuntu)\n");
+        fprintf(stderr, "- /opt/hbase (Red Hat/CentOS)\n");
         exit(EXIT_FAILURE);
     }
 
@@ -795,7 +859,7 @@ void HBase_action(Action a) {
     char conf_dir[512];
     snprintf(conf_dir, sizeof(conf_dir), "%s/conf", hbase_home);
     if (access(conf_dir, F_OK) != 0) {
-        fprintf(stderr,  "Missing configuration directory: %s\n", conf_dir);
+        fprintf(stderr, "Missing configuration directory: %s\n", conf_dir);
         exit(EXIT_FAILURE);
     }
 
@@ -803,7 +867,7 @@ void HBase_action(Action a) {
     char regionservers_path[512];
     snprintf(regionservers_path, sizeof(regionservers_path), "%s/conf/regionservers", hbase_home);
     if (access(regionservers_path, F_OK) != 0) {
-        fprintf(stderr,  "Missing regionservers file at %s\n", regionservers_path);
+        fprintf(stderr, "Missing regionservers file at %s\n", regionservers_path);
         exit(EXIT_FAILURE);
     }
 
@@ -816,35 +880,35 @@ void HBase_action(Action a) {
     case START:
         if (executeCommandWithOutput(start_cmd, output, sizeof(output)) != 0 || 
             strstr(output, "error") != NULL || strstr(output, "ERROR") != NULL) {
-            fprintf(stderr,  "Failed to start HBase. Output: %s\n", output);
+            fprintf(stderr, "Failed to start HBase. Output: %s\n", output);
             exit(EXIT_FAILURE);
         }
-        printf( "HBase started successfully\n");
+        printf("HBase started successfully\n");
         break;
     case STOP:
         if (executeCommandWithOutput(stop_cmd, output, sizeof(output)) != 0 || 
             strstr(output, "error") != NULL || strstr(output, "ERROR") != NULL) {
-            fprintf(stderr,  "Failed to stop HBase. Output: %s\n", output);
+            fprintf(stderr, "Failed to stop HBase. Output: %s\n", output);
             exit(EXIT_FAILURE);
         }
-        printf( "HBase stopped successfully\n");
+        printf("HBase stopped successfully\n");
         break;
     case RESTART:
         if (executeCommandWithOutput(stop_cmd, output, sizeof(output)) != 0 || 
             strstr(output, "error") != NULL || strstr(output, "ERROR") != NULL) {
-            fprintf(stderr,  "Restart failed at stop phase. Output: %s\n", output);
+            fprintf(stderr, "Restart failed at stop phase. Output: %s\n", output);
             exit(EXIT_FAILURE);
         }
         
         if (executeCommandWithOutput(start_cmd, output, sizeof(output)) != 0 || 
             strstr(output, "error") != NULL || strstr(output, "ERROR") != NULL) {
-            fprintf(stderr,  "Restart failed at start phase. Output: %s\n", output);
+            fprintf(stderr, "Restart failed at start phase. Output: %s\n", output);
             exit(EXIT_FAILURE);
         }
-        printf( "HBase restarted successfully\n");
+        printf("HBase restarted successfully\n");
         break;
     default:
-        fprintf(stderr,  "Invalid action\n");
+        fprintf(stderr, "Invalid action\n");
         exit(EXIT_FAILURE);
     }
 
@@ -855,13 +919,13 @@ void HBase_action(Action a) {
 
     if (a == START || a == RESTART) {
         if (executeSystemCommand(verify_cmd) != 0) {
-            fprintf(stderr,  "Service verification failed after %s\n",
+            fprintf(stderr, "Service verification failed after %s\n",
                     (a == RESTART) ? "restart" : "start");
             exit(EXIT_FAILURE);
         }
     } else if (a == STOP) {
         if (executeSystemCommand(verify_cmd) == 0) {
-            fprintf(stderr,  "HBase processes still running after stop\n");
+            fprintf(stderr, "HBase processes still running after stop\n");
             exit(EXIT_FAILURE);
         }
     }
@@ -1132,21 +1196,39 @@ void Solr_action(Action a) {
     int status;
     char output[1024];
 
-    // Determine installation directory
-    if (access("/etc/debian_version", F_OK) == 0) {
-        install_dir = "/usr/local/solr";
-    } else if (access("/etc/redhat-release", F_OK) == 0) {
-        install_dir = "/opt/solr";
-    } else {
-        fprintf(stderr,  "Error: Unsupported Linux distribution\n");
-        return;
+    // Check SOLR_HOME environment variable first
+    const char* solr_home = getenv("SOLR_HOME");
+    if (solr_home != NULL) {
+        char solr_bin[PATH_MAX];
+        snprintf(solr_bin, sizeof(solr_bin), "%s/bin/solr", solr_home);
+        if (access(solr_bin, X_OK) == 0) {
+            install_dir = solr_home;
+        } else {
+            fprintf(stderr, "Warning: SOLR_HOME set but solr binary not found at %s\n", solr_bin);
+        }
+    }
+
+    // If SOLR_HOME not set or invalid, fall back to OS detection
+    if (install_dir == NULL) {
+        if (access("/etc/debian_version", F_OK) == 0) {
+            install_dir = "/usr/local/solr";
+        } else if (access("/etc/redhat-release", F_OK) == 0) {
+            install_dir = "/opt/solr";
+        } else {
+            fprintf(stderr, "Error: Unsupported Linux distribution and SOLR_HOME not set\n");
+            return;
+        }
     }
 
     // Verify Solr installation
     snprintf(solr_script, sizeof(solr_script), "%s/bin/solr", install_dir);
     if (access(solr_script, X_OK) != 0) {
-        fprintf(stderr,  "Error: Solr not found at %s\n", solr_script);
-        fprintf(stderr,  "Run install_Solr first or check permissions\n");
+        fprintf(stderr, "Error: Solr not found at %s\n", solr_script);
+        fprintf(stderr, "Checked locations:\n");
+        if (solr_home) fprintf(stderr, "- SOLR_HOME: %s\n", solr_home);
+        fprintf(stderr, "- /usr/local/solr (Debian/Ubuntu)\n");
+        fprintf(stderr, "- /opt/solr (Red Hat/CentOS)\n");
+        fprintf(stderr, "Run install_Solr first or check permissions\n");
         return;
     }
 
@@ -1157,9 +1239,9 @@ void Solr_action(Action a) {
         snprintf(command, sizeof(command), "%s start", solr_script);
         status = executeCommandWithOutput(command, output, sizeof(output));
         if (status != 0 || strstr(output, "error") != NULL || strstr(output, "ERROR") != NULL) {
-            fprintf(stderr,  "Failed to start Solr. Exit code: %d, Output: %s\n", status, output);
+            fprintf(stderr, "Failed to start Solr. Exit code: %d, Output: %s\n", status, output);
         } else {
-            printf( "Solr started successfully\n");
+            printf("Solr started successfully\n");
         }
         break;
     }
@@ -1169,9 +1251,9 @@ void Solr_action(Action a) {
         snprintf(command, sizeof(command), "%s stop", solr_script);
         status = executeCommandWithOutput(command, output, sizeof(output));
         if (status != 0 || strstr(output, "error") != NULL || strstr(output, "ERROR") != NULL) {
-            fprintf(stderr,  "Failed to stop Solr. Exit code: %d, Output: %s\n", status, output);
+            fprintf(stderr, "Failed to stop Solr. Exit code: %d, Output: %s\n", status, output);
         } else {
-            printf( "Solr stopped successfully\n");
+            printf("Solr stopped successfully\n");
         }
         break;
     }
@@ -1181,18 +1263,18 @@ void Solr_action(Action a) {
         snprintf(command, sizeof(command), "%s restart", solr_script);
         status = executeCommandWithOutput(command, output, sizeof(output));
         if (status != 0 || strstr(output, "error") != NULL || strstr(output, "ERROR") != NULL) {
-            fprintf(stderr,  "Failed to restart Solr. Exit code: %d, Output: %s\n", status, output);
+            fprintf(stderr, "Failed to restart Solr. Exit code: %d, Output: %s\n", status, output);
             // Fallback to stop/start sequence
             Solr_action(STOP);
             Solr_action(START);
         } else {
-            printf( "Solr restarted successfully\n");
+            printf("Solr restarted successfully\n");
         }
         break;
     }
 
     default:
-        fprintf(stderr,  "Error: Invalid action specified\n");
+        fprintf(stderr, "Error: Invalid action specified\n");
         break;
     }
 }

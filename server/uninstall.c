@@ -145,31 +145,53 @@ void uninstall_Presto() {
     const char* install_dir = NULL;
     struct stat st = {0};
 
-    // 1. Stop Presto service if running
-    //printf("Stopping Presto service...\n");
+    // 1. Check PRESTO_HOME environment variable first
+    const char* presto_home = getenv("PRESTO_HOME");
+    if (presto_home != NULL && access(presto_home, F_OK) == 0) {
+        char presto_bin[PATH_MAX];
+        snprintf(presto_bin, sizeof(presto_bin), "%s/bin/launcher", presto_home);
+        if (access(presto_bin, X_OK) == 0) {
+            install_dir = presto_home;
+        } else {
+            fprintf(stderr, "Warning: PRESTO_HOME set but launcher not found at %s\n", presto_bin);
+        }
+    }
+
+    // 2. If PRESTO_HOME not set or invalid, fall back to OS detection
+    if (install_dir == NULL) {
+        if (access("/etc/debian_version", F_OK) == 0) {
+            install_dir = "/usr/local/presto";
+        } else if (access("/etc/redhat-release", F_OK) == 0) {
+            install_dir = "/opt/presto";
+        } else {
+            fprintf(stderr, "Warning: Unknown distribution - trying default locations\n");
+            install_dir = "/usr/local/presto"; // Fallback
+        }
+    }
+
+    // 3. Validate installation directory exists
+    if (access(install_dir, F_OK) != 0) {
+        fprintf(stderr, "Error: Presto installation not found\n");
+        fprintf(stderr, "Checked locations:\n");
+        if (presto_home) fprintf(stderr, "- PRESTO_HOME: %s\n", presto_home);
+        fprintf(stderr, "- /usr/local/presto (Debian/Ubuntu)\n");
+        fprintf(stderr, "- /opt/presto (Red Hat/CentOS)\n");
+        return;
+    }
+
+    // 4. Stop Presto service if running
     int result = executeSystemCommand("pkill -f presto-server || true >/dev/null 2>&1");
     if (result != 0) {
         printf("Command failed with return code %d\n", result);
     }
 
-    // 2. Determine installation location
-    if (access("/etc/debian_version", F_OK) == 0) {
-        install_dir = "/usr/local/presto";
-    } else if (access("/etc/redhat-release", F_OK) == 0) {
-        install_dir = "/opt/presto";
-    } else {
-        fprintf(stderr, "Warning: Unknown distribution - trying default locations\n");
-        install_dir = "/usr/local/presto"; // Fallback
-    }
-
-    // 3. Remove installation directory
-    //printf("Removing installation directory...\n");
+    // 5. Remove installation directory
     snprintf(command, sizeof(command), "rm -rf %s >/dev/null 2>&1", install_dir);
     if ((ret = !executeSystemCommand(command))) {
         fprintf(stderr, "Warning: Failed to remove %s (error %d)\n", install_dir, ret);
     }
 
-    // 4. Remove data directories
+    // 6. Remove data directories
     const char *data_dirs[] = {
         "/var/lib/presto",
         "/var/log/presto",
@@ -179,7 +201,6 @@ void uninstall_Presto() {
 
     for (size_t i = 0; i < sizeof(data_dirs)/sizeof(data_dirs[0]); i++) {
         if (stat(data_dirs[i], &st) == 0) {
-            //printf("Removing data directory: %s\n", data_dirs[i]);
             snprintf(command, sizeof(command), "rm -rf %s >/dev/null 2>&1", data_dirs[i]);
             if (!executeSystemCommand(command)) {
                 fprintf(stderr, "Warning: Failed to remove %s\n", data_dirs[i]);
@@ -187,7 +208,7 @@ void uninstall_Presto() {
         }
     }
 
-    // 5. Clean environment variables
+    // 7. Clean environment variables
     printf("Cleaning environment configuration...\n");
     char* home = getenv("HOME");
     if (home) {
@@ -211,9 +232,8 @@ void uninstall_Presto() {
         }
     }
 
-    // 6. Remove systemd service if exists
+    // 8. Remove systemd service if exists
     if (stat("/etc/systemd/system/presto.service", &st) == 0) {
-        //printf("Removing systemd service...\n");
         int resultStart = executeSystemCommand("systemctl stop presto.service >/dev/null 2>&1");
         if (resultStart != 0) {
             printf("Command failed with return code %d\n", resultStart);
@@ -228,7 +248,7 @@ void uninstall_Presto() {
         }
     }
 
-    // 7. Clean package manager artifacts
+    // 9. Clean package manager artifacts
     if (access("/etc/debian_version", F_OK) == 0) {
         int resultPurg = executeSystemCommand("apt-get purge presto -y 2>/dev/null || true");
         if (resultPurg != 0) {
@@ -241,20 +261,19 @@ void uninstall_Presto() {
         }
     }
 
-    // 8. Remove temporary files
+    // 10. Remove temporary files
     int resultRm = executeSystemCommand("rm -rf /tmp/presto* >/dev/null 2>&1");
     if (resultRm != 0) {
         printf("Command failed with return code %d\n", resultRm);
     }
 
-    // 9. Remove cron entries
+    // 11. Remove cron entries
     int resultCron = executeSystemCommand("crontab -l | grep -v presto | crontab - >/dev/null 2>&1");
     if (resultCron != 0) {
         printf("Command failed with return code %d\n", resultCron);
     }
 
     printf("\nPresto uninstallation complete.\n");
-    //printf("Note: Some user-specific files may need manual removal.\n");
 }
 
 
@@ -1275,48 +1294,71 @@ void uninstall_Solr() {
     char temp_file[] = "/tmp/bashrc_temp_XXXXXX";
     int found_solr_vars = 0;
 
-    // 1. Determine installation directory
-    if (access("/etc/debian_version", F_OK) == 0) {
-        install_dir = "/usr/local/solr";
-    } else if (access("/etc/redhat-release", F_OK) == 0) {
-        install_dir = "/opt/solr";
-    } else {
-        fprintf(stderr, "Error: Unsupported Linux distribution\n");
+    // 1. Check SOLR_HOME environment variable first
+    const char* solr_home = getenv("SOLR_HOME");
+    if (solr_home != NULL && access(solr_home, F_OK) == 0) {
+        char solr_bin[PATH_MAX];
+        snprintf(solr_bin, sizeof(solr_bin), "%s/bin/solr", solr_home);
+        if (access(solr_bin, X_OK) == 0) {
+            install_dir = solr_home;
+        } else {
+            fprintf(stderr, "Warning: SOLR_HOME set but solr binary not found at %s\n", solr_bin);
+        }
+    }
+
+    // 2. If SOLR_HOME not set or invalid, fall back to OS detection
+    if (install_dir == NULL) {
+        if (access("/etc/debian_version", F_OK) == 0) {
+            install_dir = "/usr/local/solr";
+        } else if (access("/etc/redhat-release", F_OK) == 0) {
+            install_dir = "/opt/solr";
+        } else {
+            fprintf(stderr, "Error: Unsupported Linux distribution and SOLR_HOME not set\n");
+            return;
+        }
+    }
+
+    // 3. Validate Solr installation
+    char solr_script[512];
+    snprintf(solr_script, sizeof(solr_script), "%s/bin/solr", install_dir);
+    if (access(solr_script, X_OK) != 0) {
+        fprintf(stderr, "Error: Solr not found at %s\n", solr_script);
+        fprintf(stderr, "Checked locations:\n");
+        if (solr_home) fprintf(stderr, "- SOLR_HOME: %s\n", solr_home);
+        fprintf(stderr, "- /usr/local/solr (Debian/Ubuntu)\n");
+        fprintf(stderr, "- /opt/solr (Red Hat/CentOS)\n");
+        fprintf(stderr, "Run install_Solr first or check permissions\n");
         return;
     }
 
-    // 2. Stop Solr service
-    //printf("Stopping Solr service...\n");
+    // 4. Stop Solr service
     Solr_action(STOP);
 
-    // 3. Remove installation directory
+    // 5. Remove installation directory
     if (access(install_dir, F_OK) == 0) {
-        //printf("Removing installation directory: %s\n", install_dir);
         snprintf(command, sizeof(command), "rm -rf %s >/dev/null 2>&1", install_dir);
         if (!executeSystemCommand(command)) {
             fprintf(stderr, "Failed to remove installation directory\n");
         }
     }
 
-    // 4. Remove data directory
+    // 6. Remove data directory
     if (access(data_dir, F_OK) == 0) {
-        //printf("Removing data directory: %s\n", data_dir);
         snprintf(command, sizeof(command), "rm -rf %s >/dev/null 2>&1", data_dir);
         if (!executeSystemCommand(command)) {
             fprintf(stderr, "Failed to remove data directory\n");
         }
     }
 
-    // 5. Remove log directory
+    // 7. Remove log directory
     if (access(log_dir, F_OK) == 0) {
-        //printf("Removing log directory: %s\n", log_dir);
         snprintf(command, sizeof(command), "rm -rf %s >/dev/null 2>&1", log_dir);
         if (!executeSystemCommand(command)) {
             fprintf(stderr, "Failed to remove log directory\n");
         }
     }
 
-    // 6. Clean environment variables from .bashrc
+    // 8. Clean environment variables from .bashrc
     const char *home = getenv("HOME");
     if (home) {
         snprintf(bashrc_path, sizeof(bashrc_path), "%s/.bashrc", home);
@@ -1349,14 +1391,13 @@ void uninstall_Solr() {
                 if (result != 0) {
                     printf("Command failed with return code %d\n", result);
                 }
-                //printf("Removed Solr environment variables from .bashrc\n");
             } else {
                 remove(temp_file);
             }
         }
     }
 
-    // 7. Final verification
+    // 9. Final verification
     printf("\nUninstallation completed with the following residual components:\n");
     int residual = 0;
 
@@ -1376,7 +1417,7 @@ void uninstall_Solr() {
     }
 
     if (!residual) {
-        //printf("No residual components found\n");
+        printf("No residual components found\n");
     }
 
     printf("Solr uninstallation process completed\n");

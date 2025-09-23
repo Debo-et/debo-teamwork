@@ -145,6 +145,31 @@ void uninstall_Presto() {
     const char* install_dir = NULL;
     struct stat st = {0};
 
+    // Enhanced: Check PRESTO_HOME environment variable first
+    const char* presto_home = getenv("PRESTO_HOME");
+    if (presto_home && access(presto_home, F_OK) == 0) {
+        install_dir = presto_home;
+    } else {
+        // Fall back to OS detection
+        if (access("/etc/debian_version", F_OK) == 0) {
+            install_dir = "/usr/local/presto";
+        } else if (access("/etc/redhat-release", F_OK) == 0) {
+            install_dir = "/opt/presto";
+        } else {
+            FPRINTF(global_client_socket, "Warning: Unknown distribution and PRESTO_HOME not set\n");
+            install_dir = "/usr/local/presto"; // Fallback
+        }
+    }
+
+    // Verify Presto installation exists
+    if (access(install_dir, F_OK) != 0) {
+        FPRINTF(global_client_socket, "Error: Presto installation not found at %s\n", install_dir);
+        if (presto_home) {
+            FPRINTF(global_client_socket, "PRESTO_HOME is set to: %s\n", presto_home);
+        }
+        return;
+    }
+
     // 1. Stop Presto service if running
     //PRINTF(global_client_socket,"Stopping Presto service...\n");
     int result = executeSystemCommand("pkill -f presto-server || true");
@@ -152,24 +177,14 @@ void uninstall_Presto() {
         PRINTF(global_client_socket,"Command failed with return code %d\n", result);
     }
 
-    // 2. Determine installation location
-    if (access("/etc/debian_version", F_OK) == 0) {
-        install_dir = "/usr/local/presto";
-    } else if (access("/etc/redhat-release", F_OK) == 0) {
-        install_dir = "/opt/presto";
-    } else {
-        FPRINTF(global_client_socket, "Warning: Unknown distribution - trying default locations\n");
-        install_dir = "/usr/local/presto"; // Fallback
-    }
-
-    // 3. Remove installation directory
+    // 2. Remove installation directory
     //PRINTF(global_client_socket,"Removing installation directory...\n");
     snprintf(command, sizeof(command), "rm -rf %s", install_dir);
     if ((ret = !executeSystemCommand(command))) {
         FPRINTF(global_client_socket, "Warning: Failed to remove %s (error %d)\n", install_dir, ret);
     }
 
-    // 4. Remove data directories
+    // 3. Remove data directories
     const char *data_dirs[] = {
         "/var/lib/presto",
         "/var/log/presto",
@@ -187,7 +202,7 @@ void uninstall_Presto() {
         }
     }
 
-    // 5. Clean environment variables
+    // 4. Clean environment variables
     //PRINTF(global_client_socket,"Cleaning environment configuration...\n");
     char* home = getenv("HOME");
     if (home) {
@@ -211,7 +226,7 @@ void uninstall_Presto() {
         }
     }
 
-    // 6. Remove systemd service if exists
+    // 5. Remove systemd service if exists
     if (stat("/etc/systemd/system/presto.service", &st) == 0) {
         //PRINTF(global_client_socket,"Removing systemd service...\n");
         int resultStart = executeSystemCommand("systemctl stop presto.service");
@@ -228,7 +243,7 @@ void uninstall_Presto() {
         }
     }
 
-    // 7. Clean package manager artifacts
+    // 6. Clean package manager artifacts
     if (access("/etc/debian_version", F_OK) == 0) {
         int resultPurg = executeSystemCommand("apt-get purge presto -y 2>/dev/null || true");
         if (resultPurg != 0) {
@@ -241,13 +256,13 @@ void uninstall_Presto() {
         }
     }
 
-    // 8. Remove temporary files
+    // 7. Remove temporary files
     int resultRm = executeSystemCommand("rm -rf /tmp/presto*");
     if (resultRm != 0) {
         PRINTF(global_client_socket,"Command failed with return code %d\n", resultRm);
     }
 
-    // 9. Remove cron entries
+    // 8. Remove cron entries
     int resultCron = executeSystemCommand("crontab -l | grep -v presto |  crontab -");
     if (resultCron != 0) {
         PRINTF(global_client_socket,"Command failed with return code %d\n", resultCron);
@@ -1251,6 +1266,7 @@ void uninstall_kafka() {
 
     PRINTF(global_client_socket, "Kafka uninstallation completed: Removed installation directory and cleaned environment variables\n");
 }
+
 void uninstall_Solr() {
     char command[512];
     const char *install_dir = NULL;
@@ -1261,13 +1277,28 @@ void uninstall_Solr() {
     char temp_file[] = "/tmp/bashrc_temp_XXXXXX";
     int found_solr_vars = 0;
 
-    // 1. Determine installation directory
-    if (access("/etc/debian_version", F_OK) == 0) {
-        install_dir = "/usr/local/solr";
-    } else if (access("/etc/redhat-release", F_OK) == 0) {
-        install_dir = "/opt/solr";
+    // Enhanced: Check SOLR_HOME environment variable first
+    const char* solr_home = getenv("SOLR_HOME");
+    if (solr_home && access(solr_home, F_OK) == 0) {
+        install_dir = solr_home;
     } else {
-        FPRINTF(global_client_socket, "Error: Unsupported Linux distribution\n");
+        // Fall back to OS detection
+        if (access("/etc/debian_version", F_OK) == 0) {
+            install_dir = "/usr/local/solr";
+        } else if (access("/etc/redhat-release", F_OK) == 0) {
+            install_dir = "/opt/solr";
+        } else {
+            FPRINTF(global_client_socket, "Error: Unsupported Linux distribution and SOLR_HOME not set\n");
+            return;
+        }
+    }
+
+    // Verify Solr installation exists
+    if (access(install_dir, F_OK) != 0) {
+        FPRINTF(global_client_socket, "Error: Solr installation not found at %s\n", install_dir);
+        if (solr_home) {
+            FPRINTF(global_client_socket, "SOLR_HOME is set to: %s\n", solr_home);
+        }
         return;
     }
 
@@ -1768,6 +1799,68 @@ void uninstall_Atlas() {
     char *env_home = getenv("ATLAS_HOME");
     int total_errors = 0;
 
+    // Enhanced: Check ATLAS_HOME with better validation
+    if (env_home && access(env_home, F_OK) == 0) {
+        // Validate it's actually an Atlas installation
+        char bin_path[MAX_PATH];
+        snprintf(bin_path, sizeof(bin_path), "%s/bin/atlas_start.py", env_home);
+        if (access(bin_path, F_OK) == 0) {
+            strncpy(atlas_home, env_home, MAX_PATH-1);
+        } else {
+            FPRINTF(global_client_socket, "Warning: ATLAS_HOME set but not a valid Atlas installation: %s\n", env_home);
+        }
+    }
+
+    if (atlas_home[0] == '\0') {
+        // Check common installation locations with better pattern matching
+        const char *locations[] = {
+            "/usr/local/atlas",
+            "/opt/atlas", 
+            "/usr/local/atlas-*",
+            "/opt/atlas-*",
+            NULL
+        };
+
+        for (int i = 0; locations[i] != NULL; i++) {
+            if (strstr(locations[i], "*")) {
+                // Handle glob patterns
+                glob_t glob_result;
+                if (glob(locations[i], GLOB_ERR, NULL, &glob_result) == 0) {
+                    for (size_t j = 0; j < glob_result.gl_pathc; j++) {
+                        char bin_path[MAX_PATH];
+                        snprintf(bin_path, sizeof(bin_path), "%s/bin/atlas_start.py", glob_result.gl_pathv[j]);
+                        if (access(bin_path, F_OK) == 0) {
+                            strncpy(atlas_home, glob_result.gl_pathv[j], MAX_PATH-1);
+                            globfree(&glob_result);
+                            break;
+                        }
+                    }
+                    globfree(&glob_result);
+                }
+            } else {
+                // Check specific directory
+                char bin_path[MAX_PATH];
+                snprintf(bin_path, sizeof(bin_path), "%s/bin/atlas_start.py", locations[i]);
+                if (access(bin_path, F_OK) == 0) {
+                    strncpy(atlas_home, locations[i], MAX_PATH-1);
+                    break;
+                }
+            }
+            if (atlas_home[0] != '\0') break;
+        }
+    }
+
+    if (atlas_home[0] == '\0') {
+        FPRINTF(global_client_socket, "Error: Atlas installation not found\n");
+        if (env_home) {
+            FPRINTF(global_client_socket, "ATLAS_HOME is set to: %s\n", env_home);
+        }
+        return;
+    }
+
+    // Rest of the function remains the same...
+    // [Keep the existing implementation from here]
+    
     // 1. Stop running services
     //PRINTF(global_client_socket,"Stopping Atlas services...\n");
     int result = executeSystemCommand("atlas_action STOP 2>/dev/null");
@@ -1776,34 +1869,11 @@ void uninstall_Atlas() {
     }
 
     // 2. Remove installation directory
-    if (env_home) {
-        strncpy(atlas_home, env_home, MAX_PATH-1);
-    } else {
-        // Check common installation locations
-        const char *locations[] = {
-            "/usr/local/atlas-*",
-            "/opt/atlas-*",
-            getenv("HOME") ? strcat(getenv("HOME"), "/atlas-*") : NULL
-        };
-
-        for (size_t i = 0; i < sizeof(locations)/sizeof(locations[0]); i++) {
-            if (locations[i]) {
-                DIR *dir = opendir(locations[i]);
-                if (dir) {
-                    closedir(dir);
-                    strncpy(atlas_home, locations[i], MAX_PATH-1);
-                    break;
-                }
-            }
-        }
-    }
-
     if (atlas_home[0]) {
         //PRINTF(global_client_socket,"Removing installation at: %s\n", atlas_home);
         snprintf(command, MAX_PATH, "rm -rf \"%s\"", atlas_home);
         total_errors += execute_cleanup_command(command);
     }
-
     // 3. Remove downloaded archives
     //PRINTF(global_client_socket,"Cleaning up downloaded packages...\n");
     int resultFind = executeSystemCommand("find . -maxdepth 1 -name 'apache-atlas-*-bin.tar.gz' -exec rm -f {} \\;");
@@ -1996,22 +2066,35 @@ void uninstall_Storm() {
         storm_home
     };
 
-    // Phase 1: Locate installation
+    // Phase 1: Locate installation with enhanced environment variable checking
     char install_path[PATH_MAX] = {0};
-    for (int i = 0; i < MAX_PATHS; i++) {
-        if (!search_paths[i]) continue;
+    int installation_found = 0;
+    
+    // Check STORM_HOME first with validation
+    if (storm_home && access(storm_home, F_OK) == 0 && validate_storm_home(storm_home)) {
+        strncpy(install_path, storm_home, sizeof(install_path)-1);
+        installation_found = 1;
+    } else {
+        // Fall back to standard paths
+        for (int i = 0; i < MAX_PATHS; i++) {
+            if (!search_paths[i]) continue;
 
-        struct stat st;
-        if (stat(search_paths[i], &st) == 0 && S_ISDIR(st.st_mode)) {
-            if (validate_storm_home(search_paths[i])) {
-                strncpy(install_path, search_paths[i], sizeof(install_path)-1);
-                break;
+            struct stat st;
+            if (stat(search_paths[i], &st) == 0 && S_ISDIR(st.st_mode)) {
+                if (validate_storm_home(search_paths[i])) {
+                    strncpy(install_path, search_paths[i], sizeof(install_path)-1);
+                    installation_found = 1;
+                    break;
+                }
             }
         }
     }
 
-    if (!install_path[0]) {
-        FPRINTF(global_client_socket, "No valid Storm installation found\n");
+    if (!installation_found) {
+        FPRINTF(global_client_socket, "No valid Storm installation found.\n");
+        if (storm_home) {
+            FPRINTF(global_client_socket, "STORM_HOME is set to: %s\n", storm_home);
+        }
         return;
     }
 
@@ -2039,13 +2122,6 @@ void uninstall_Storm() {
             //PRINTF(global_client_socket,"Remove manually with: sudo rm -rf %s\n", residual_paths[i]);
         }
     }
-
-    // Phase 5: Dependency check
-    //PRINTF(global_client_socket,"\nPotential dependencies to review:\n");
-    //PRINTF(global_client_socket,"- Java Runtime Environment\n");
-    //PRINTF(global_client_socket,"- ZooKeeper\n");
-    // PRINTF(global_client_socket,"- Python (for storm CLI)\n");
-    //   PRINTF(global_client_socket,"- Any installed Storm topologies\n");
 
     PRINTF(global_client_socket,"\nUninstallation complete. Some elements may require manual cleanup.\n");
 }

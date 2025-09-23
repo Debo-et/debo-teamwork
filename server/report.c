@@ -419,7 +419,7 @@ char *report_phoenix() {
 
 char *report_flink() {
     const char *install_dir = NULL;
-    const char *flink_home = getenv("flink_HOME");
+    const char *flink_home = getenv("FLINK_HOME");
 
     // Check flink_HOME first
     if (flink_home != NULL && dir_exists(flink_home)) {
@@ -637,7 +637,7 @@ char *report_pig() {
 
 
 char* report_presto() {
-    const char* presto_home = getenv("presto_HOME");
+    const char* presto_home = getenv("PRESTO_HOME");
     struct stat st;
     char* install_dir = NULL;
 
@@ -711,7 +711,7 @@ char* report_presto() {
 
 
 char *report_atlas() {
-    const char *env_path = getenv("atlas_HOME");
+    const char *env_path = getenv("ATLAS_HOME");
     const char *paths[] = {"/opt/atlas", "/usr/local/atlas"};
     const char *found_path = NULL;
     struct stat st;

@@ -338,26 +338,43 @@ void Presto_action(Action action) {
 
 void spark_action(Action a) {
     const char* install_path = NULL;
-
-    // Detect OS distribution
-    if (access("/etc/debian_version", F_OK) == 0) {
-        install_path = "/usr/local/spark";
-    } else if (access("/etc/redhat-release", F_OK) == 0 ||
-               access("/etc/system-release", F_OK) == 0) {
-        install_path = "/opt/spark";
+    
+    // Enhanced: Check SPARK_HOME environment variable first
+    const char* spark_home = getenv("SPARK_HOME");
+    if (spark_home && access(spark_home, F_OK) == 0) {
+        install_path = spark_home;
     } else {
-        FPRINTF(global_client_socket,  "Error: Unsupported Linux distribution\n");
+        // Fall back to OS detection
+        if (access("/etc/debian_version", F_OK) == 0) {
+            install_path = "/usr/local/spark";
+        } else if (access("/etc/redhat-release", F_OK) == 0 ||
+                   access("/etc/system-release", F_OK) == 0) {
+            install_path = "/opt/spark";
+        } else {
+            FPRINTF(global_client_socket,  "Error: Unsupported Linux distribution and SPARK_HOME not set\n");
+            return;
+        }
+    }
+
+    // Validate Spark installation
+    char start_script[PATH_MAX];
+    snprintf(start_script, sizeof(start_script), "%s/sbin/start-all.sh", install_path);
+    if (access(start_script, X_OK) != 0) {
+        FPRINTF(global_client_socket,  "Error: Spark installation not found or invalid at %s\n", install_path);
+        if (spark_home) {
+            FPRINTF(global_client_socket,  "SPARK_HOME is set to: %s\n", spark_home);
+        }
         return;
     }
 
     // Construct base commands with environment configuration
     char start_cmd[512];
     char stop_cmd[512];
-    long unsigned int cmd_len;
+    size_t cmd_len;
     CommandResult result;
 
     cmd_len = snprintf(start_cmd, sizeof(start_cmd),
-                       "export SPARK_HOME=%s && %s/sbin/start-all.sh" ,
+                       "export SPARK_HOME=%s && %s/sbin/start-all.sh", 
                        install_path, install_path);
     if (cmd_len >= sizeof(start_cmd)) {
         FPRINTF(global_client_socket,  "Error: Start command buffer overflow\n");
@@ -621,15 +638,21 @@ void livy_action(Action a) {
     const char *livy_home = NULL;
     CommandResult result;
     
-    // Detect OS distribution
-    if (access("/etc/debian_version", F_OK) == 0) {
-        livy_home = "/usr/local/livy";
-    } else if (access("/etc/redhat-release", F_OK) == 0 ||
-               access("/etc/system-release", F_OK) == 0) {
-        livy_home = "/opt/livy";
+    // Enhanced: Check LIVY_HOME environment variable first
+    const char* env_livy_home = getenv("LIVY_HOME");
+    if (env_livy_home && access(env_livy_home, F_OK) == 0) {
+        livy_home = env_livy_home;
     } else {
-        FPRINTF(global_client_socket,  "Error: Unsupported Linux distribution\n");
-        return;
+        // Fall back to OS detection
+        if (access("/etc/debian_version", F_OK) == 0) {
+            livy_home = "/usr/local/livy";
+        } else if (access("/etc/redhat-release", F_OK) == 0 ||
+                   access("/etc/system-release", F_OK) == 0) {
+            livy_home = "/opt/livy";
+        } else {
+            FPRINTF(global_client_socket,  "Error: Unsupported Linux distribution and LIVY_HOME not set\n");
+            return;
+        }
     }
     
     // Construct and validate server script path
@@ -643,6 +666,9 @@ void livy_action(Action a) {
 
     if (access(script_path, X_OK) != 0) {
         FPRINTF(global_client_socket,  "Livy server script not found or not executable: %s\n", script_path);
+        if (env_livy_home) {
+            FPRINTF(global_client_socket,  "LIVY_HOME is set to: %s\n", env_livy_home);
+        }
         return;
     }
 
@@ -796,21 +822,33 @@ void pig_action(Action a) {
 }
 
 void HBase_action(Action a) {
-    char hbase_home[256];
-    int os_found = 0;
+    char hbase_home[PATH_MAX] = {0};
+    int installation_found = 0;
     CommandResult result;
 
-    // Determine installation directory
-    if (access("/etc/debian_version", F_OK) == 0) {
-        strncpy(hbase_home, "/usr/local/hbase", sizeof(hbase_home));
-        os_found = 1;
-    } else if (access("/etc/redhat-release", F_OK) == 0) {
-        strncpy(hbase_home, "/opt/hbase", sizeof(hbase_home));
-        os_found = 1;
+    // Enhanced: Check HBASE_HOME environment variable first
+    const char* env_hbase_home = getenv("HBASE_HOME");
+    if (env_hbase_home && access(env_hbase_home, F_OK) == 0) {
+        strncpy(hbase_home, env_hbase_home, sizeof(hbase_home) - 1);
+        installation_found = 1;
+    } else {
+        // Fall back to OS detection
+        if (access("/etc/debian_version", F_OK) == 0) {
+            strncpy(hbase_home, "/usr/local/hbase", sizeof(hbase_home) - 1);
+            installation_found = 1;
+        } else if (access("/etc/redhat-release", F_OK) == 0) {
+            strncpy(hbase_home, "/opt/hbase", sizeof(hbase_home) - 1);
+            installation_found = 1;
+        }
     }
 
-    if (!os_found) {
-        FPRINTF(global_client_socket,  "Error: Unsupported OS\n");
+    if (!installation_found) {
+        FPRINTF(global_client_socket,  "Error: HBase installation not found.\n");
+        if (env_hbase_home) {
+            FPRINTF(global_client_socket,  "HBASE_HOME is set to invalid path: %s\n", env_hbase_home);
+        } else {
+            FPRINTF(global_client_socket,  "HBASE_HOME environment variable is not set.\n");
+        }
         exit(EXIT_FAILURE);
     }
 
@@ -821,7 +859,7 @@ void HBase_action(Action a) {
     }
 
     // Verify critical configuration directory
-    char conf_dir[512];
+    char conf_dir[PATH_MAX];
     snprintf(conf_dir, sizeof(conf_dir), "%s/conf", hbase_home);
     if (access(conf_dir, F_OK) != 0) {
         FPRINTF(global_client_socket,  "Missing configuration directory: %s\n", conf_dir);
@@ -829,7 +867,7 @@ void HBase_action(Action a) {
     }
 
     // Verify regionservers file exists
-    char regionservers_path[512];
+    char regionservers_path[PATH_MAX];
     snprintf(regionservers_path, sizeof(regionservers_path), "%s/conf/regionservers", hbase_home);
     if (access(regionservers_path, F_OK) != 0) {
         FPRINTF(global_client_socket,  "Missing regionservers file at %s\n", regionservers_path);
@@ -837,7 +875,7 @@ void HBase_action(Action a) {
     }
 
     // Construct script paths
-    char start_cmd[512], stop_cmd[512];
+    char start_cmd[PATH_MAX], stop_cmd[PATH_MAX];
     snprintf(start_cmd, sizeof(start_cmd), "%s/bin/start-hbase.sh", hbase_home);
     snprintf(stop_cmd, sizeof(stop_cmd), "%s/bin/stop-hbase.sh", hbase_home);
 
@@ -885,7 +923,7 @@ void HBase_action(Action a) {
     }
 
     // Verify service state
-    char verify_cmd[512];
+    char verify_cmd[PATH_MAX];
     snprintf(verify_cmd, sizeof(verify_cmd),
              "jps | grep HMaster >/dev/null && jps | grep HRegionServer >/dev/null");
 
@@ -1074,23 +1112,32 @@ int kafka_action(Action action) {
 
 void Solr_action(Action a) {
     const char *install_dir = NULL;
-    char solr_script[512];
+    char solr_script[PATH_MAX];
     CommandResult result;
 
-    // Determine installation directory
-    if (access("/etc/debian_version", F_OK) == 0) {
-        install_dir = "/usr/local/solr";
-    } else if (access("/etc/redhat-release", F_OK) == 0) {
-        install_dir = "/opt/solr";
+    // Enhanced: Check SOLR_HOME environment variable first
+    const char* solr_home = getenv("SOLR_HOME");
+    if (solr_home && access(solr_home, F_OK) == 0) {
+        install_dir = solr_home;
     } else {
-        FPRINTF(global_client_socket,  "Error: Unsupported Linux distribution\n");
-        return;
+        // Fall back to OS detection
+        if (access("/etc/debian_version", F_OK) == 0) {
+            install_dir = "/usr/local/solr";
+        } else if (access("/etc/redhat-release", F_OK) == 0) {
+            install_dir = "/opt/solr";
+        } else {
+            FPRINTF(global_client_socket,  "Error: Unsupported Linux distribution and SOLR_HOME not set\n");
+            return;
+        }
     }
 
     // Verify Solr installation
     snprintf(solr_script, sizeof(solr_script), "%s/bin/solr", install_dir);
     if (access(solr_script, X_OK) != 0) {
         FPRINTF(global_client_socket,  "Error: Solr not found at %s\n", solr_script);
+        if (solr_home) {
+            FPRINTF(global_client_socket,  "SOLR_HOME is set to: %s\n", solr_home);
+        }
         FPRINTF(global_client_socket,  "Run install_Solr first or check permissions\n");
         return;
     }
