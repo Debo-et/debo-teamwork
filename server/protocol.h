@@ -22,6 +22,9 @@
 #define CliMsg_Finish         'V'   /* Get version information */
 #define CliMsg_All             'A'   /* Apply to all components */
 
+/* Common Operations */
+#define CliMsg_Metrics        'M'   /* Metrics collection */
+
 /* Component Identifiers */
 #define CliMsg_Hdfs            0xC3   /* HDFS component */
 #define CliMsg_HBase           0xC5   /* HBase component */

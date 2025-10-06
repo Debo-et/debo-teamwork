@@ -22,6 +22,7 @@
 #include "action.h"
 #include "report.h"
 #include "protocol.h"
+#include "metrics.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -59,6 +60,7 @@ OS_TYPE detect_os() {
 
 static bool all = false;
 bool dependency = false;
+bool metrics = false;
 
 
 const char *port = NULL;
@@ -155,6 +157,7 @@ main(int argc, char *argv[])
         {"zookeeper", no_argument, NULL, 'z'},
         {"flink", no_argument, NULL, 'f'},
         {"storm", no_argument, NULL, 'S'},
+        {"metrics", no_argument, NULL, 'M'},
         {"hive", no_argument, NULL, 'm'},
         //	{"hue", no_argument, NULL, 'E'},
         {"pig", no_argument, NULL, 'p'},
@@ -185,7 +188,7 @@ main(int argc, char *argv[])
         exit(0);
     }
     /* process command-line options */
-    while ((c = getopt_long(argc, argv, "P:H:n:c:WAlITORUudaphyeLbzZSskfmtrtrxXvV:",
+    while ((c = getopt_long(argc, argv, "P:H:n:c:WAlITORUudaphyeLbzZSskfmMtrtrxXvV:",
                             long_options, &optindex)) != -1)
     {
 
@@ -214,6 +217,9 @@ main(int argc, char *argv[])
             break;
         case 'm':
             component = HIVE;
+            break;
+        case 'M':
+            metrics = true;
             break;
         case 'e':
             component = PRESTO;
@@ -305,7 +311,7 @@ main(int argc, char *argv[])
         }
 
         // Check connection options are used with component/--all
-        if (component == NONE && !all) {
+        if (component == NONE && !all && !metrics) {
             fprintf(stderr, "Error: Connection options require --all or a component\n");
             exit(EXIT_FAILURE);
         }
@@ -331,7 +337,7 @@ main(int argc, char *argv[])
     }
 
     // Validate component/--all specification
-    if (component == NONE && !all) {
+    if (component == NONE && !all && !metrics) {
         fprintf(stderr, "Error: Must specify either --all or at least one component\n");
         exit(EXIT_FAILURE);
     }
@@ -381,7 +387,8 @@ help(const char *progname)
     printf("  --install           Install the component\n");
     printf("  --verswitch           switch between version\n");
     printf("  --uninstall         Remove the component\n");
-    printf("  --configure         Apply configuration changes\n\n");
+    printf("  --configure         Apply configuration changes\n");
+    printf("  --metrics         Collect metrics\n\n");
 
     printf("Target components (use with action options):\n");
     printf("  --all               Apply action to all components\n");
@@ -415,6 +422,58 @@ help(const char *progname)
     printf("  Restart all components:  %s --restart --all\n", progname);
     printf("  Install Kafka:           %s --install --kafka\n", progname);
 }
+
+
+/////////////////////////////metrics///////////////////////////////////////
+
+void collect_metrics(void) {
+    printf("===== SYSTEM METRICS COLLECTION =====\n\n");
+    
+    // Collect and display CPU metrics
+    printf("--- CPU Usage ---\n");
+    char *cpu_metrics = get_cpu_usage_extended();
+    if (cpu_metrics != NULL) {
+        printf("%s\n", cpu_metrics);
+        free(cpu_metrics); // Free allocated memory
+    } else {
+        printf("Error: Failed to retrieve CPU metrics\n");
+    }
+    
+    // Collect and display memory metrics
+    printf("\n--- Memory Usage ---\n");
+    char *memory_metrics = get_memory_usage();
+    if (memory_metrics != NULL) {
+        printf("%s\n", memory_metrics);
+        free(memory_metrics); // Free allocated memory
+    } else {
+        printf("Error: Failed to retrieve memory metrics\n");
+    }
+    
+    // Collect and display disk metrics
+    printf("\n--- Disk Metrics ---\n");
+    char *disk_metrics = get_disk_metrics();
+    if (disk_metrics != NULL) {
+        printf("%s\n", disk_metrics);
+        free(disk_metrics); // Free allocated memory
+    } else {
+        printf("Error: Failed to retrieve disk metrics\n");
+    }
+    
+    // Collect and display network metrics
+    printf("\n--- Network Metrics ---\n");
+    char *network_metrics = get_network_metrics();
+    if (network_metrics != NULL) {
+        printf("%s\n", network_metrics);
+        free(network_metrics); // Free allocated memory
+    } else {
+        printf("Error: Failed to retrieve network metrics\n");
+    }
+    
+    printf("\n===== METRICS COLLECTION COMPLETE =====\n");
+}
+
+
+
 ///////////////////////////////////instalation//////////////////////////////
 
 
@@ -1169,11 +1228,15 @@ static void handle_local_components(bool ALL, Component component, Action action
         }
     } else {
         // Handle single component
-        if (component == NONE) {
+        if (component == NONE && !metrics) {
             fprintf(stderr, "Component must be specified when ALL=false\n");
             return;
         }
-
+        if (metrics){
+            collect_metrics();
+            return;
+        }
+        
         if (action != NO_ACTION) {
             printBorder("┌", "┐", YELLOW);
             printTextBlock(component_to_string(component), BOLD GREEN, YELLOW);
@@ -1191,8 +1254,6 @@ static void handle_local_components(bool ALL, Component component, Action action
         }
     }
 }
-
-
 
 void
 print_inBuffer(const Conn *conn)
@@ -1330,9 +1391,6 @@ static void process_dependencies(Component component, Action action, Conn *conn,
     }
 }
 
-
-
-
 static void handle_remote_components(bool ALL, Component component, Action action,
                                      char *version , char *config_param , char *value) {
     Conn* conn = connect_to_debo(host, port);
@@ -1398,7 +1456,7 @@ static void handle_remote_components(bool ALL, Component component, Action actio
         }
         // Fixed component handling code
     } else {
-        if (component == NONE) {
+        if (component == NONE && !metrics) {
             fprintf(stderr, "Component must be specified when ALL=false\n");
             return;
         }
@@ -1456,6 +1514,7 @@ static void handle_remote_components(bool ALL, Component component, Action actio
             case STOP:
             case RESTART:
             case REPORT:
+            case METRICS:
             case UNINSTALL:
                 // Single read for these actions
                 do_read(conn, 1, component, action);

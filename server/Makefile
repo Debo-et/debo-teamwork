@@ -6,7 +6,7 @@ LDLIBS = -lresolv -pthread
 
 # Separate main application objects from library objects
 MAIN_OBJ = apache.o
-LIB_OBJ = getopt_long.o utiles.o install.o action.o uninstall.o report.o connect.o misc.o expbuffer.o fe-secure-gssapi.o fe-gssapi-common.o configuration.o atalas_conf.o flink_conf.o hbase_conf.o hdfs_conf.o hive_conf.o kafka_conf.o livy_conf.o pig_conf.o presto_conf.o ranger_conf.o solar_conf.o spark_conf.o storm_conf.o tez_conf.o zeppelin_conf.o zookeeper_conf.o
+LIB_OBJ = getopt_long.o utiles.o install.o action.o uninstall.o report.o metrics.o connect.o misc.o expbuffer.o fe-secure-gssapi.o fe-gssapi-common.o configuration.o atalas_conf.o flink_conf.o hbase_conf.o hdfs_conf.o hive_conf.o kafka_conf.o livy_conf.o pig_conf.o presto_conf.o ranger_conf.o solar_conf.o spark_conf.o storm_conf.o tez_conf.o zeppelin_conf.o zookeeper_conf.o
 OBJ = $(MAIN_OBJ) $(LIB_OBJ)
 TARGET = debo
 

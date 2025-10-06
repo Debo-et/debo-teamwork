@@ -41,6 +41,7 @@
 #include "uninstall.h"
 #include "protocol.h"
 #include "latch.h"
+#include "metrics.h"
 
 #define DBINVALID_SOCKET (-1)
 #define WAIT_USE_EPOLL
@@ -483,11 +484,16 @@ static void handle_command(ClientSocket *client_socket) {
             return;  // Let ServerLoop free client_socket and update event_set
         }
 
+
         char **result = split_string(param_buffer.data);
         //printf(" the  data %s", param_buffer.data);
         // printf(" first second data %s", result[0]);
         //printf(" first second data %s", result[1]);
-
+        if (action_code == CliMsg_Metrics){
+            FPRINTF(global_client_socket, collect_metrics());
+            return;
+            }
+            
         switch (action_code) {
             /* ===================== HDFS Commands ===================== */
         case CliMsg_Hdfs_Start:

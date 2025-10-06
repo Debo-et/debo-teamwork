@@ -137,7 +137,7 @@ typedef struct {
 } ConfigParam;
 
 typedef enum {NO_ACTION, START, STOP, RESTART, INSTALL, VERSION_SWITCH,
-    UNINSTALL, REPORT ,CONFIGURE} Action;
+    UNINSTALL, REPORT ,CONFIGURE, METRICS} Action;
 
 typedef struct PromptInterruptContext
 {

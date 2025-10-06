@@ -317,7 +317,7 @@ static const char* ranger_versions[] = {"0.6.3", "0.7.1", "1.0.0", "1.1.0", "1.2
 static const char* phoenix_versions[] = {"4.16.1", "5.1.2", "5.1.3", "5.2.0", "5.2.1", NULL};
 static const char* solr_versions[] = {"9.8.1", NULL};
 static const char* spark_versions[] = {"3.4.4", "3.5.5", NULL};
-static const char* zeppelin_versions[] = = {"0.10.0", "0.10.1", "0.11.0", "0.11.1", "0.11.2", "0.12.0", "0.8.2", "0.9.0", NULL};
+static const char* zeppelin_versions[] = {"0.10.0", "0.10.1", "0.11.0", "0.11.1", "0.11.2", "0.12.0", "0.8.2", "0.9.0", NULL};
 static const char* kafka_versions[] = {"3.7.2", "3.8.0", "3.8.1", "3.9.0", NULL};
 static const char* zookeeper_versions[] = {"3.7.2", "3.8.4", "3.9.3", NULL};
 

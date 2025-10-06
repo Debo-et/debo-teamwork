@@ -457,6 +457,11 @@ char *concatenate_strings(const char *s1, const char *s2) {
 
 
 unsigned char get_protocol_code(Component comp, Action action, const char* version) {
+
+    if (action == METRICS){
+        return CliMsg_Metrics;
+    }
+    
     switch (comp) {
     case HDFS:
         switch (action) {
@@ -934,7 +939,9 @@ void SendComponentActionCommand(Component component, Action action,
     case UNINSTALL:
         PutMsgEnd(conn);
         break;
-
+    case METRICS:
+        PutMsgEnd(conn);
+        break;
     case CONFIGURE:
         if (!param_name || !param_value) {
             fprintf(stderr, "Invalid configuration parameters\n");
@@ -1005,7 +1012,7 @@ static const char* ranger_versions[] = {"0.6.3", "0.7.1", "1.0.0", "1.1.0", "1.2
 static const char* phoenix_versions[] = {"4.16.1", "5.1.2", "5.1.3", "5.2.0", "5.2.1", NULL};
 static const char* solr_versions[] = {"9.9.0", NULL};
 static const char* spark_versions[] = {"3.5.6", "4.0.0", NULL};
-static const char* zeppelin_versions[] = = {"0.10.0", "0.10.1", "0.11.0", "0.11.1", "0.11.2", "0.12.0", "0.8.2", "0.9.0", NULL};
+static const char* zeppelin_versions[] = {"0.10.0", "0.10.1", "0.11.0", "0.11.1", "0.11.2", "0.12.0", "0.8.2", "0.9.0", NULL};
 static const char* kafka_versions[] = {"3.7.2", "3.8.0", "3.8.1", "3.9.0", "3.9.1","4.0.0","4.0.1", NULL};
 static const char* zookeeper_versions[] = {"3.7.2", "3.8.4", "3.9.3","3.9.4", NULL};
 
